@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node server-dist/server.js",
     "build": "tsc",
+    "watch-webpack": "webpack --mode development && webpack-dev-server --mode development",
     "watch-ts": "tsc -w",
-    "watch-node": "nodemon dist/server.js",
+    "watch-node": "nodemon server-dist/server.js",
     "dev": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"yellow.bold,cyan.bold\" \"npm run watch-ts\" \"npm run watch-node\"",
     "test": "mocha -r ts-node/register src/**/*.spec.ts"
   },
@@ -22,16 +23,21 @@
     "concurrently": "^5.0.2",
     "express": "^4.17.1",
     "nodemon": "^2.0.2",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
+    "copy-webpack-plugin": "^5.1.1",
     "debug": "^4.1.1",
+    "expose-loader": "^0.7.5",
     "json-loader": "^0.5.7",
     "phaser": "^3.21.0",
     "ts-loader": "^6.2.1",
+    "typescript": "^3.7.4",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.1",
     "yaml-loader": "^0.5.0"
   }
 }
