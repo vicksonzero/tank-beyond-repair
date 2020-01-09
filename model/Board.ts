@@ -1,5 +1,15 @@
+import { Immutable } from "../client-src/utils/ImmutableType";
+
 export class Board {
 
+}
+
+export interface IBoardDef {
+    name: string;
+    radius: number;
+    boardWidth: number;
+    cells: Cell[];
+    stretchCells: StretchCell[];
 }
 
 export class Cell {
@@ -24,7 +34,8 @@ export class StretchEntranceCell extends Cell {
 export class StretchCell extends Cell {
     public type: string = 'stretchCell';
 
-    public prevID: integer;
+    public nextID: integer | null;
+    public prevID: integer | 'prev';
 
     public isGoal: boolean;
 }

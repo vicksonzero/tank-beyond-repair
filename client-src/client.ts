@@ -17,6 +17,7 @@ const phaserConfig: Phaser.Types.Core.GameConfig = {
     parent: "game",
     scene: MainScene,
     zoom: 1,
+    backgroundColor: 0xAAAAAA,
     // physics: {
     //     default: "matter",
     //     matter: {
