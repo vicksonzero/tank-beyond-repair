@@ -11,12 +11,8 @@ export class Cell {
     public y: number;
 }
 
-export class PrepCell extends Cell {
-    public type: string = 'prepCell';
-
-    public prevID: integer;
-
-    public isGoal: boolean;
+export class TakeOffCell extends Cell {
+    public type: string = 'takeOffCell';
 }
 
 export class StretchEntranceCell extends Cell {

@@ -7,6 +7,7 @@ robust multiplayer engine with solid definition of done
   - [Actions](#actions)
   - [State](#state)
   - [Game Rule](#game-rule)
+  - [Display Lists](#display-lists)
 - [Tech Stack](#tech-stack)
 
 # Design
@@ -30,6 +31,12 @@ robust multiplayer engine with solid definition of done
 - wall
 - take off
 
+## Display Lists
+- stretches
+- lines
+- cells
+- cut lines
+- bases
 
 # Tech Stack
 

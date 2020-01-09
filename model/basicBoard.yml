@@ -1,5 +1,5 @@
 name: Basic Board
-radius: 20
+radius: 10
 boardWidth: 120
 cells:
   - type: cutCell
@@ -50,7 +50,7 @@ cells:
     nextID: 9
     x: 100
     y: -60
-  - type: prepCell
+  - type: takeOffCell
     id: 9
     nextID: 10
     x: 120
