@@ -5,7 +5,7 @@ export class Board {
 export class Cell {
     public type: string = 'cell';
     public id: integer;
-    public nextID: integer;
+    public nextID: integer | 'next';
 
     public x: number;
     public y: number;
@@ -17,6 +17,12 @@ export class PrepCell extends Cell {
     public prevID: integer;
 
     public isGoal: boolean;
+}
+
+export class StretchEntranceCell extends Cell {
+    public type: string = 'stretchEntranceCell';
+
+    public nextStretchID: integer;
 }
 
 export class StretchCell extends Cell {
