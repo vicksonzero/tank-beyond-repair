@@ -2,13 +2,6 @@
 
 robust multiplayer engine with high scripting capability
 
-- [ludo-plus](#ludo-plus)
-- [Design](#design)
-  - [Actions](#actions)
-  - [State](#state)
-  - [Game Rule](#game-rule)
-  - [Display Lists](#display-lists)
-- [Tech Stack](#tech-stack)
 
 # Play here
 
