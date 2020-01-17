@@ -41,11 +41,11 @@ robust multiplayer engine with solid definition of done
 # Tech Stack
 
 - [x] typescript (For Static type)
-- [x] express (For REST API)
+- [x] express (For dev environment quick http server)
 - [x] socket io (For Real time interactions)
-- [x] webpack (For client side dependency management; server side just use `require()`)
+- [x] webpack (For client side dependency management; server side will just use `require()` after running tsc)
 - [x] phaser 3 (For Graphics and some game rules)
-- [ ] planck.js (For Physics Engine)
+- [ ] box2d.ts (For Physics Engine)
 - [ ] mongodb? (For Player Data)
 - [ ] rxjs? (For advanced Game rules)
 
