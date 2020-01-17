@@ -1,6 +1,6 @@
-# ludo-plus
+# cook-engine
 
-robust multiplayer engine with solid definition of done
+robust multiplayer engine with high scripting capability
 
 - [ludo-plus](#ludo-plus)
 - [Design](#design)
@@ -10,33 +10,17 @@ robust multiplayer engine with solid definition of done
   - [Display Lists](#display-lists)
 - [Tech Stack](#tech-stack)
 
-# Design
+# Play here
 
-## Actions
-- dice
-- move
-- emote
+Nothing yet
 
-## State
-- piece location
-- players
-  - home count
-  - win count
+# Getting started
 
-## Game Rule
-- cell connectivity
-- home stretch
-- cut through
-- eat
-- wall
-- take off
-
-## Display Lists
-- stretches
-- lines
-- cells
-- cut lines
-- bases
+```sh
+npm i
+npm run dev # server
+npm run watch-webpack # client
+```
 
 # Tech Stack
 
