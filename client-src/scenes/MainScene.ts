@@ -2,12 +2,12 @@
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload } from '../assets';
-import { Immutable } from '../utils/ImmutableType';
+// import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
 import { Item } from '../entities/Item';
-import { GameObjects } from 'phaser';
+// import { GameObjects } from 'phaser';
 import { IMatterContactPoints } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
@@ -66,27 +66,26 @@ export class MainScene extends Phaser.Scene {
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
-        this.bluePlayer.init(100, 100)
-            .initHpBar(new HpBar(this, 0, -25, 30, 4))
-            .initPhysics();
+        this.bluePlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initPhysics()
+            .init(100, 100);
+
+        this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
+        this.redPlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initPhysics()
+            .init(1100, 700);
 
         let box: Item;
         this.itemLayer.add(box = new Item(this));
         box.initPhysics();
         box.init(200, 200);
 
-        this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
-        this.redPlayer.init(1100, 700)
-            .initHpBar(new HpBar(this, 0, -25, 30, 4))
-            .initPhysics();
-        this.redPlayer.initPhysics();
-
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
-            ai.init(x, y)
-                .initHpBar(new HpBar(this, 0, -25, 30, 4))
-                .initPhysics();
+            ai.initHpBar(new HpBar(this, 0, -25, 30, 4))
+                .initPhysics()
+                .init(x, y);
             return ai
         };
         this.blueAi = [200, 400, 600].map((y) => {
@@ -120,8 +119,8 @@ export class MainScene extends Phaser.Scene {
         const updateAi = (tank: Tank) => {
             // AI decision logic
             const direction = tank.team === Team.BLUE ? 1 : -1;
-            const enemy = tank.team === Team.BLUE ?
-                [this.redPlayer, ...this.redAi] : [this.bluePlayer, ...this.blueAi];
+            const enemy = (tank.team === Team.BLUE ? [this.redPlayer, ...this.redAi]
+                : [this.bluePlayer, ...this.blueAi]);
 
             const findTankWithClosestDistance = (myTank: Tank, enemy: (Player | Tank)[]) => {
                 let minDist = Infinity;
@@ -144,8 +143,8 @@ export class MainScene extends Phaser.Scene {
                     if (!tank.canFire()) return;
                     tank.setFiring();
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-                    bullet.init(tank.x, tank.y, tank.getDamage());
                     bullet.initPhysics();
+                    bullet.init(tank.x, tank.y, tank.getDamage());
                     bullet.setVelocityX(Math.sign(target.x - tank.x) * 2);
                     bullet.setVelocityY(0);
                     this.bullets.push(bullet);
@@ -153,7 +152,7 @@ export class MainScene extends Phaser.Scene {
                 fireBullet(tank, target);
                 tank.setVelocityX(0);
             } else {
-                // console.log(target, distance)
+                console.log(target, distance)
                 tank.setVelocityX(direction);
             }
         }
@@ -191,7 +190,10 @@ export class MainScene extends Phaser.Scene {
             const checkPairGameObjectName = this.checkPairGameObjectName_(bodyA, bodyB);
 
             checkPairGameObjectName('player', 'item', (a: any, b: any) => {
-                (<Player>a.gameObject).onTouchingItemStart(b.gameObject as Item, activeContacts as IMatterContactPoints);
+                (<Player>a.gameObject).onTouchingItemStart(a, b, activeContacts as IMatterContactPoints);
+            });
+            checkPairGameObjectName('player', 'tank', (a: any, b: any) => {
+                (<Player>a.gameObject).onTouchingTankStart(a, b, activeContacts as IMatterContactPoints);
             });
             if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
@@ -212,7 +214,12 @@ export class MainScene extends Phaser.Scene {
             const checkPairGameObjectName = this.checkPairGameObjectName_(bodyA, bodyB);
 
             checkPairGameObjectName('player', 'item', (a: any, b: any) => {
-                (<Player>a.gameObject).onTouchingItemEnd(b.gameObject as Item, activeContacts as IMatterContactPoints);
+                (<Player>a.gameObject).onTouchingItemEnd(a, b, activeContacts as IMatterContactPoints);
+            });
+            if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+
+            checkPairGameObjectName('player', 'tank', (a: any, b: any) => {
+                (<Player>a.gameObject).onTouchingTankEnd(a, b, activeContacts as IMatterContactPoints);
             });
             if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
