@@ -122,6 +122,7 @@ export class MainScene extends Phaser.Scene {
             if (controlsList.down.isDown) { yy += 3; }
             if (controlsList.left.isDown) { xx -= 3; }
             if (controlsList.right.isDown) { xx += 3; }
+            player.tank?.repair();
             player.moveInDirection(xx, yy);
         }
         updatePlayer(this.bluePlayer, this.controlsList[0])
@@ -166,7 +167,7 @@ export class MainScene extends Phaser.Scene {
                     tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.initPhysics()
-                        .init(tank.x, tank.y, tank.getDamage())
+                        .init(tank.x, tank.y, tank.getDamage(), tank.getRange())
                         .setVelocityX(xDiff / distance)
                         .setVelocityY(yDiff / distance);
                     this.bullets.push(bullet);
@@ -182,6 +183,13 @@ export class MainScene extends Phaser.Scene {
         }
         this.blueAi.forEach((ai) => updateAi(ai))
         this.redAi.forEach((ai) => updateAi(ai))
+
+        const updateBullet = (bullet: Bullet) => {
+            if (bullet.isOutOfRange()) {
+                this.removeBullet(bullet);
+            }
+        };
+        this.bullets.forEach((bullet) => updateBullet(bullet))
     }
 
     setUpKeyboard() {
@@ -218,7 +226,10 @@ export class MainScene extends Phaser.Scene {
 
         this.spawnItem(position.x, position.y, upgrades, true);
     }
-
+    removeBullet(bullet: Bullet) {
+        this.bullets = this.bullets.filter(b => b !== bullet);
+        bullet.destroy();
+    }
     handleCollisions(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
@@ -239,12 +250,12 @@ export class MainScene extends Phaser.Scene {
                 if (tank.gameObject.hp <= 0) {
                     this.removeTank(tank.gameObject);
                 }
-                bullet.gameObject.destroy();
+                this.removeBullet(bullet.gameObject);
             });
             checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
                 player.gameObject.takeDamage(bullet.gameObject.damage);
                 player.gameObject.updateHpBar();
-                bullet.gameObject.destroy();
+                this.removeBullet(bullet.gameObject);
             });
             if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 

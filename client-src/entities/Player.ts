@@ -27,6 +27,7 @@ export class Player extends MatterContainer {
     hp: number;
     maxHP: number;
     hpBar: HpBar;
+    tank: Tank;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -34,7 +35,7 @@ export class Player extends MatterContainer {
     followingMouse?: boolean;
 
     bodySprite: Image;
-    barrelSprite: Image;
+    repairSprite: Image;
 
     pointerTarget: GameObject;
 
@@ -61,7 +62,12 @@ export class Player extends MatterContainer {
                 x: 0, y: 0,
                 key: `man${capitalize(color)}_hold`,
             }, false),
+            this.repairSprite = this.scene.make.image({
+                x: 0, y: - 40,
+                key: `repair`,
+            }, false),
         ]);
+        this.repairSprite.visible = false
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
@@ -243,6 +249,9 @@ export class Player extends MatterContainer {
         this.pointerTarget = tank;
         tank.on(Tank.TANK_DIE, this.onTargetDie);
 
+        this.tank = tank;
+        this.repairSprite.visible = true;
+
         tank.bodySprite.setTint(0xAAAAAA);
     }
 
@@ -255,6 +264,10 @@ export class Player extends MatterContainer {
 
         tank.off(Tank.TANK_DIE, this.onTargetDie);
         this.pointerTarget = null;
+
+        // for repair only
+        this.tank = null;
+        this.repairSprite.visible = false;
 
         tank.bodySprite.setTint(0xFFFFFF);
     }
