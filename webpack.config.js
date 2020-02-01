@@ -10,7 +10,8 @@ module.exports = {
         // version: './src/version.js',
     },
     output: {
-        filename: './client-dist/[name].js',
+        path: path.resolve(__dirname, 'client-dist'),
+        filename: '[name].js',
     },
     module: {
         rules: [
@@ -30,6 +31,8 @@ module.exports = {
         ],
     },
     devServer: {
+        contentBase: path.resolve(__dirname, '.'),
+        publicPath: '/client-dist/',
         host: '127.0.0.1',
         port: 8080,
         open: true,
