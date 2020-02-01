@@ -73,7 +73,7 @@ export class Player extends MatterContainer {
 
     moveInDirection(dirX: number, dirY: number) {
         this.setVelocity(dirX, dirY);
-        this.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
+        this.bodySprite.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
     }
 
     takeDamage(amount: number): this {
