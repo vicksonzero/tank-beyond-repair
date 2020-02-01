@@ -1,8 +1,9 @@
 import MatterContainer from './MatterContainer';
 import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
-import { capitalize } from '../utils/utils';
+import { capitalize, IMatterContactPoints } from '../utils/utils';
 import { Team } from './Team';
+import { Item } from './Item';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -67,6 +68,12 @@ export class Player extends MatterContainer {
     moveInDirection(dirX: number, dirY: number) {
         this.setVelocity(dirX, dirY);
         this.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
+    }
+    onTouchingItemStart(item: Item, activeContacts: any) {
+        item.itemSprite.setTint(0xffFF00);
+    }
+    onTouchingItemEnd(item: Item, activeContacts: IMatterContactPoints) {
+        item.itemSprite.setTint(0xFFFFFF);
     }
 
     takeDamage(amount: number): this {

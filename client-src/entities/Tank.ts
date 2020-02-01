@@ -29,7 +29,7 @@ export class Tank extends MatterContainer {
     constructor(scene: Phaser.Scene, team: Team) {
         super(scene, 0, 0, []);
         this
-            .setName('player')
+            .setName('tank')
             ;
         this.team = team
         const color = this.team === Team.BLUE ? 'dark' : 'sand';
