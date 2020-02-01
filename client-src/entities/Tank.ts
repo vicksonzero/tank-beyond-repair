@@ -102,17 +102,7 @@ export class Tank extends MatterContainer {
             }
         });
 
-        if (this.hp <= 0) {
-            if (this.undoTintEvent) this.undoTintEvent.destroy();
-            // this.gm.makeExplosion3(this.x, this.y);
-            // this.gm.gameIsOver = true;
-            this.visible = false;
-            this
-                .setCollisionCategory(0)
-                ;
-            // .setPosition(-1000, -1000);
-            this.scene.cameras.main.shake(1000, 0.04, false);
-        }
+        this.updateHpBar();
         return this;
     }
 
@@ -121,6 +111,18 @@ export class Tank extends MatterContainer {
     }
     canFire() {
         const time = Date.now();
-        return this.hp > 0 && (this.lastFired + this.attackSpeed < time);
+        return (this.lastFired + this.attackSpeed < time);
+    }
+    destroy() {
+        if (this.undoTintEvent) this.undoTintEvent.destroy();
+        // this.gm.makeExplosion3(this.x, this.y);
+        // this.gm.gameIsOver = true;
+        this.visible = false;
+        this
+            .setCollisionCategory(0)
+            ;
+        // .setPosition(-1000, -1000);
+        this.scene.cameras.main.shake(1000, 0.04, false);
+        super.destroy();
     }
 }

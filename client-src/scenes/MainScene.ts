@@ -194,6 +194,12 @@ export class MainScene extends Phaser.Scene {
 
     }
 
+    removeTank(tank: Tank) {
+        this.blueAi = this.blueAi.filter(t => t !== tank);
+        this.redAi = this.redAi.filter(t => t !== tank);
+        tank.destroy();
+    }
+
     handleCollisions(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
@@ -208,7 +214,9 @@ export class MainScene extends Phaser.Scene {
             });
             checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
                 tank.gameObject.takeDamage(bullet.gameObject.damage);
-                tank.gameObject.updateHpBar();
+                if (tank.gameObject.hp <= 0) {
+                    this.removeTank(tank.gameObject);
+                }
                 bullet.gameObject.destroy();
             });
             checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
