@@ -8,7 +8,7 @@ export function preload(this: Phaser.Scene) {
     
     this.load.image('manBlue_hold', './assets/sprites/topdown-shooter/PNG/manBlue_hold.png');
     this.load.image('manRed_hold', './assets/sprites/topdown-shooter/PNG/manRed_hold.png');
-    this.load.image('repair', './assets/sprites/kenney_emotespack/PNG/Vector/Style 1/emote_heart.png');
+    this.load.image('repair', './assets/sprites/kenney_emotespack/PNG/Vector/Style 8/emote_heart.png');
 }
 
 export function setUpAnimations(this: Phaser.Scene) {
