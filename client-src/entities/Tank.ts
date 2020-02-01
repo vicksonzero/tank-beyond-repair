@@ -17,6 +17,7 @@ export class Tank extends MatterContainer {
 
     range: number;
     damage: number;
+    repairCnt: number = 0;
     attackSpeed: number;
     maxHP: number;
     movementSpeed: number;
@@ -144,6 +145,16 @@ export class Tank extends MatterContainer {
     canFire() {
         const time = Date.now();
         return (this.lastFired + this.attackSpeed < time);
+    }
+    repair() {
+        if (this.maxHP > this.hp) {
+            this.repairCnt += 1;
+            if (this.repairCnt >= 100) {
+                this.hp += 1;
+                this.repairCnt = 0;
+            }
+        }
+        this.updateHpBar();
     }
     destroy() {
         if (this.undoTintEvent) this.undoTintEvent.destroy();
