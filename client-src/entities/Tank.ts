@@ -121,6 +121,6 @@ export class Tank extends MatterContainer {
     }
     canFire() {
         const time = Date.now();
-        return (this.lastFired + this.attackSpeed < time);
+        return this.hp > 0 && (this.lastFired + this.attackSpeed < time);
     }
 }
