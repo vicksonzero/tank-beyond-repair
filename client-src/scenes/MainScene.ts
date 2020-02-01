@@ -22,12 +22,16 @@ const log = Debug('tank-beyond-repair:MainScene:log');
 // warn.log = console.warn.bind(console);
 
 
+const SPAWN_INTERVAL = 5000;
+
 export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key };
 
 export class MainScene extends Phaser.Scene {
 
     controlsList: Controls[];
 
+    isGameOver: boolean;
+    spawnTimer: any;
     bg: Phaser.GameObjects.TileSprite;
 
     itemLayer: Container;
@@ -56,6 +60,7 @@ export class MainScene extends Phaser.Scene {
 
     create(): void {
         log('create');
+        this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, 1366, 768, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
 
@@ -88,12 +93,16 @@ export class MainScene extends Phaser.Scene {
                 .init(x, y);
             return ai
         };
-        this.blueAi = [200, 400, 600].map((y) => {
-            return createAi(Team.BLUE, 300, y);
-        });
-        this.redAi = [200, 400, 600].map((y) => {
-            return createAi(Team.RED, 1000, y);
-        });
+        this.blueAi = [];
+        this.redAi = [];
+        this.spawnTimer = setInterval(() => {
+           this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
+               return createAi(Team.BLUE, 300, y);
+           }));
+           this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
+               return createAi(Team.RED, 1000, y);
+           }));
+        }, SPAWN_INTERVAL);
 
         this.bullets = [];
 
@@ -116,6 +125,15 @@ export class MainScene extends Phaser.Scene {
         updatePlayer(this.bluePlayer, this.controlsList[0])
         updatePlayer(this.redPlayer, this.controlsList[1])
 
+        const detectGameOver = (tank: Tank) => {
+            const isBlue = tank.team === Team.BLUE;
+            if (tank.hp <= 0) return false;
+            if (isBlue) {
+                return tank.x > this.sys.game.canvas.width;
+            } else {
+                return tank.x < 0;
+            }
+        }
         const updateAi = (tank: Tank) => {
             // AI decision logic
             const direction = tank.team === Team.BLUE ? 1 : -1;
@@ -141,7 +159,9 @@ export class MainScene extends Phaser.Scene {
                 // stop and attack
                 const fireBullet = (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
-                    tank.setFiring();
+                    const xDiff = target.x - tank.x;
+                    const yDiff = target.y - tank.y;
+                    tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.initPhysics();
                     bullet.init(tank.x, tank.y, tank.getDamage());
@@ -152,8 +172,10 @@ export class MainScene extends Phaser.Scene {
                 fireBullet(tank, target);
                 tank.setVelocityX(0);
             } else {
-                console.log(target, distance)
                 tank.setVelocityX(direction);
+            }
+            if (detectGameOver(tank)) {
+                this.setGameOver(tank.team);
             }
         }
         this.blueAi.forEach((ai) => updateAi(ai))
@@ -180,6 +202,12 @@ export class MainScene extends Phaser.Scene {
 
     }
 
+    removeTank(tank: Tank) {
+        this.blueAi = this.blueAi.filter(t => t !== tank);
+        this.redAi = this.redAi.filter(t => t !== tank);
+        tank.destroy();
+    }
+
     handleCollisions(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
@@ -194,6 +222,18 @@ export class MainScene extends Phaser.Scene {
             });
             checkPairGameObjectName('player', 'tank', (a: any, b: any) => {
                 (<Player>a.gameObject).onTouchingTankStart(a, b, activeContacts as IMatterContactPoints);
+            });
+            checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
+                tank.gameObject.takeDamage(bullet.gameObject.damage);
+                if (tank.gameObject.hp <= 0) {
+                    this.removeTank(tank.gameObject);
+                }
+                bullet.gameObject.destroy();
+            });
+            checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
+                player.gameObject.takeDamage(bullet.gameObject.damage);
+                player.gameObject.updateHpBar();
+                bullet.gameObject.destroy();
             });
             if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
@@ -234,11 +274,18 @@ export class MainScene extends Phaser.Scene {
             nameA: string, nameB: string,
             matchFoundCallback: (a: any, b: any) => void
         ) => {
-            if (bodyA.gameObject.name === nameA && bodyB.gameObject.name === nameB) {
+            if (bodyA?.gameObject?.name === nameA && bodyB?.gameObject?.name === nameB) {
                 matchFoundCallback(bodyA, bodyB);
-            } else if (bodyB.gameObject.name === nameA && bodyA.gameObject.name === nameB) {
+            } else if (bodyB?.gameObject?.name === nameA && bodyA?.gameObject?.name === nameB) {
                 matchFoundCallback(bodyB, bodyA);
             }
         }
+    }
+
+    setGameOver(winner: Team) {
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+        const { height, width } = this.sys.game.canvas;
+        this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
     }
 }

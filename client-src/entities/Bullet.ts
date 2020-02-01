@@ -18,6 +18,8 @@ export class Bullet extends MatterContainer {
         const graphics = this.scene.add.graphics({ fillStyle: { color: 0x0000ff } });
         graphics.fillCircleShape(circle);
         this.sprite = graphics;
+        this
+            .setName('bullet');
     }
     init(x: number, y: number, damage: number): this {
         this
