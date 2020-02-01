@@ -227,9 +227,9 @@ export class MainScene extends Phaser.Scene {
             nameA: string, nameB: string,
             matchFoundCallback: (a: any, b: any) => void
         ) => {
-            if (bodyA.gameObject.name === nameA && bodyB.gameObject.name === nameB) {
+            if (bodyA?.gameObject?.name === nameA && bodyB?.gameObject?.name === nameB) {
                 matchFoundCallback(bodyA, bodyB);
-            } else if (bodyB.gameObject.name === nameA && bodyA.gameObject.name === nameB) {
+            } else if (bodyB?.gameObject?.name === nameA && bodyA?.gameObject?.name === nameB) {
                 matchFoundCallback(bodyB, bodyA);
             }
         }
