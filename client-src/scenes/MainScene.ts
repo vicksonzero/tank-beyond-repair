@@ -48,6 +48,10 @@ export class MainScene extends Phaser.Scene {
         this.bluePlayer.init(100, 100);
         this.bluePlayer.initPhysics();
 
+        this.redPlayer = <Player>this.add.existing(new Player(this, Team.RED));
+        this.redPlayer.init(200, 200);
+        this.redPlayer.initPhysics();
+
         this.setUpKeyboard();
     }
 
@@ -62,6 +66,7 @@ export class MainScene extends Phaser.Scene {
             player.setVelocity(xx, yy);
         }
         updatePlayer(this.bluePlayer, this.controlsList[0])
+        updatePlayer(this.redPlayer, this.controlsList[1])
     }
 
     setUpKeyboard() {
