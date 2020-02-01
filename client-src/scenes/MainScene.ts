@@ -72,22 +72,22 @@ export class MainScene extends Phaser.Scene {
         this.bg.setAlpha(0.7);
 
         const leftBaseLine = new Phaser.Geom.Line(
-          BASE_LINE_WIDTH,
-          0,
-          BASE_LINE_WIDTH,
-          WORLD_HEIGHT
+            BASE_LINE_WIDTH,
+            0,
+            BASE_LINE_WIDTH,
+            WORLD_HEIGHT
         );
         const rightBaseLine = new Phaser.Geom.Line(
-          WORLD_WIDTH - BASE_LINE_WIDTH,
-          0,
-          WORLD_WIDTH - BASE_LINE_WIDTH,
-          WORLD_HEIGHT
+            WORLD_WIDTH - BASE_LINE_WIDTH,
+            0,
+            WORLD_WIDTH - BASE_LINE_WIDTH,
+            WORLD_HEIGHT
         );
         const centerLine = new Phaser.Geom.Line(
-          WORLD_WIDTH / 2,
-          0,
-          WORLD_WIDTH / 2,
-          WORLD_HEIGHT
+            WORLD_WIDTH / 2,
+            0,
+            WORLD_WIDTH / 2,
+            WORLD_HEIGHT
         );
         // in Scene.update()
         this.add.graphics().lineStyle(1, 0x0000FF, 1).strokeLineShape(leftBaseLine);
@@ -149,8 +149,8 @@ export class MainScene extends Phaser.Scene {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
             ai.initPhysics()
-                .init(x, y)
-                .initHpBar(new HpBar(this, 0, -25, 30, 4));
+                .initHpBar(new HpBar(this, 0, -25, 30, 4))
+                .init(x, y);
             return ai
         };
         this.blueAi = [];

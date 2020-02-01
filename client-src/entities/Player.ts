@@ -210,6 +210,7 @@ export class Player extends MatterContainer {
                 tank.off(Tank.TANK_DIE, this.onTargetDie);
 
                 tank.bodySprite.setTint(0xFFFFFF);
+                tank.uiContainer.setVisible(false);
             } else {
                 return;
             }
@@ -253,6 +254,7 @@ export class Player extends MatterContainer {
         this.repairSprite.visible = true;
 
         tank.bodySprite.setTint(0xAAAAAA);
+        tank.uiContainer.setVisible(true);
     }
 
     onTouchingTankEnd(myBody: any, tankBody: any, activeContacts: IMatterContactPoints) {
@@ -270,6 +272,7 @@ export class Player extends MatterContainer {
         this.repairSprite.visible = false;
 
         tank.bodySprite.setTint(0xFFFFFF);
+        tank.uiContainer.setVisible(false);
     }
 
     takeDamage(amount: number): this {
