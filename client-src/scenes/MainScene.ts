@@ -22,7 +22,8 @@ export class MainScene extends Phaser.Scene {
     scrollSpeed = 10;
 
     bg: Phaser.GameObjects.TileSprite;
-    player: Player;
+    bluePlayer: Player;
+    redPlayer: Player;
 
     get mainCamera() { return this.sys.cameras.main; }
 
@@ -43,21 +44,29 @@ export class MainScene extends Phaser.Scene {
         this.bg.setOrigin(0, 0);
 
 
-        this.player = <Player>this.add.existing(new Player(this, Team.BLUE));
-        this.player.init(100, 100);
-        this.player.initPhysics();
+        this.bluePlayer = <Player>this.add.existing(new Player(this, Team.BLUE));
+        this.bluePlayer.init(100, 100);
+        this.bluePlayer.initPhysics();
+
+        this.redPlayer = <Player>this.add.existing(new Player(this, Team.RED));
+        this.redPlayer.init(200, 200);
+        this.redPlayer.initPhysics();
 
         this.setUpKeyboard();
     }
 
     update(time: number, dt: number) {
-        let xx = 0;
-        let yy = 0;
-        if (this.controlsList[0].up.isDown) { yy -= 10; log(xx, yy) }
-        if (this.controlsList[0].down.isDown) { yy += 10; log(xx, yy) }
-        if (this.controlsList[0].left.isDown) { xx -= 10; log(xx, yy) }
-        if (this.controlsList[0].right.isDown) { xx += 10; log(xx, yy) }
-        this.player.setVelocity(xx, yy);
+        const updatePlayer = (player: Player, controlsList: Controls) => {
+            let xx = 0;
+            let yy = 0;
+            if (controlsList.up.isDown) { yy -= 10; log(xx, yy) }
+            if (controlsList.down.isDown) { yy += 10; log(xx, yy) }
+            if (controlsList.left.isDown) { xx -= 10; log(xx, yy) }
+            if (controlsList.right.isDown) { xx += 10; log(xx, yy) }
+            player.setVelocity(xx, yy);
+        }
+        updatePlayer(this.bluePlayer, this.controlsList[0])
+        updatePlayer(this.redPlayer, this.controlsList[1])
     }
 
     setUpKeyboard() {
