@@ -9,7 +9,7 @@ export type IMatterContactPoints = { vertex: { x: number; y: number; }; }[];
 export function makeUpgradeString(upgrades: UpgradeObject) {
     return (Object.entries(upgrades)
         .filter(([key, value]) => value !== 0)
-        .map(([key, value]) => `${key}${(value >= 0 ? '+' + value : value)}`)
+        .map(([key, value]) => `${key}${(value >= 0 ? '+lv' + value : value)}`)
         .join('\n')
     );
 }
