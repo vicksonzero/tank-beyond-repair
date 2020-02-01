@@ -71,8 +71,7 @@ export class Tank extends MatterContainer {
         this.barrelSprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
 
         this.on('destroy', () => {
-            console.log('hi die');
-            this.emit(Tank.TANK_DIE)
+            this.emit(Tank.TANK_DIE);
         });
     }
     init(x: number, y: number): this {
