@@ -22,6 +22,8 @@ const log = Debug('tank-beyond-repair:MainScene:log');
 // warn.log = console.warn.bind(console);
 
 
+const SPAWN_INTERVAL = 5000;
+
 export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key };
 
 export class MainScene extends Phaser.Scene {
@@ -29,6 +31,7 @@ export class MainScene extends Phaser.Scene {
     controlsList: Controls[];
 
     isGameOver: boolean;
+    spawnTimer: any;
     bg: Phaser.GameObjects.TileSprite;
 
     itemLayer: Container;
@@ -82,7 +85,6 @@ export class MainScene extends Phaser.Scene {
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics();
         this.redPlayer.initPhysics();
-
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
@@ -91,12 +93,16 @@ export class MainScene extends Phaser.Scene {
                 .initPhysics();
             return ai
         };
-        this.blueAi = [200].map((y) => {
-            return createAi(Team.BLUE, 300, y);
-        });
-        this.redAi = [300].map((y) => {
-            return createAi(Team.RED, 1000, y);
-        });
+        this.blueAi = [];
+        this.redAi = [];
+        this.spawnTimer = setInterval(() => {
+           this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
+               return createAi(Team.BLUE, 300, y);
+           }));
+           this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
+               return createAi(Team.RED, 1000, y);
+           }));
+        }, SPAWN_INTERVAL);
 
         this.bullets = [];
 
