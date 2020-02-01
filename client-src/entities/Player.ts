@@ -4,6 +4,7 @@ import { collisionCategory } from './collisionCategory';
 import { capitalize, IMatterContactPoints } from '../utils/utils';
 import { Team } from './Team';
 import { Item } from './Item';
+import { HpBar } from '../ui/HpBar';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -15,6 +16,7 @@ export class Player extends MatterContainer {
 
     hp: number;
     maxHP: number;
+    hpBar: HpBar;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -46,10 +48,15 @@ export class Player extends MatterContainer {
     init(x: number, y: number): this {
         this
             .setX(x)
-            .setY(y)
-            ;
+            .setY(y);
         this.hp = 5;
         this.maxHP = 5;
+        return this;
+    }
+    initHpBar(hpBar:HpBar) {
+        this.add(hpBar);
+        this.hpBar = hpBar;
+        this.hpBar.updateHPBar(this.hp, this.maxHP);
         return this;
     }
 
@@ -67,7 +74,7 @@ export class Player extends MatterContainer {
 
     moveInDirection(dirX: number, dirY: number) {
         this.setVelocity(dirX, dirY);
-        this.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
+        this.bodySprite.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
     }
     onTouchingItemStart(item: Item, activeContacts: any) {
         item.itemSprite.setTint(0xffFF00);

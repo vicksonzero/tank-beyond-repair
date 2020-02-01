@@ -9,6 +9,7 @@ import { Team } from '../entities/Team';
 import { Item } from '../entities/Item';
 import { GameObjects } from 'phaser';
 import { IMatterContactPoints } from '../utils/utils';
+import { HpBar } from '../ui/HpBar';
 
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
@@ -63,8 +64,9 @@ export class MainScene extends Phaser.Scene {
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
-        this.bluePlayer.init(100, 100);
-        this.bluePlayer.initPhysics();
+        this.bluePlayer.init(100, 100)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initPhysics();
 
         let box: Item;
         this.itemLayer.add(box = new Item(this));
@@ -72,22 +74,25 @@ export class MainScene extends Phaser.Scene {
         box.init(200, 200);
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
-        this.redPlayer.init(1100, 700);
+        this.redPlayer.init(1100, 700)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initPhysics();
         this.redPlayer.initPhysics();
 
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
-            ai.init(x, y);
-            ai.initPhysics();
+            ai.init(x, y)
+                .initHpBar(new HpBar(this, 0, -25, 30, 4))
+                .initPhysics();
             return ai
-        }
+        };
         this.blueAi = [200, 400, 600].map((y) => {
             return createAi(Team.BLUE, 300, y);
-        })
+        });
         this.redAi = [200, 400, 600].map((y) => {
             return createAi(Team.RED, 1000, y);
-        })
+        });
 
         this.matter.world.on('collisionstart', (event: any) => this.handleCollisions(event));
         this.matter.world.on('collisionend', (event: any) => this.handleCollisionsEnd(event));
