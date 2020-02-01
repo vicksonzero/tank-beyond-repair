@@ -13,13 +13,17 @@ export class Tank extends MatterContainer {
     team: Team;
     hp: number;
     maxHP: number;
-    hpBar: HpBar;
+    damage: number;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
     mouseOffset?: { x: number, y: number };
     followingMouse?: boolean;
 
+    lastFired: number;
+    attackSpeed: number;
+
+    hpBar: HpBar;
     bodySprite: Image;
     barrelSprite: Image;
 
@@ -55,6 +59,9 @@ export class Tank extends MatterContainer {
             ;
         this.hp = 5;
         this.maxHP = 5;
+        this.damage = 10;
+        this.lastFired = 0;
+        this.attackSpeed = 1000;
         return this;
     }
     initHpBar(hpBar:HpBar) {
@@ -65,15 +72,21 @@ export class Tank extends MatterContainer {
     }
 
     initPhysics(): this {
+        const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
+        const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
         this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: 20 } });
         this
             .setMass(1)
             .setFrictionAir(0)
             .setFixedRotation()
-            .setCollisionCategory(collisionCategory.PLAYER)
-            .setCollidesWith(collisionCategory.WORLD | collisionCategory.ENEMY | collisionCategory.ENEMY_BULLET)
+            .setCollisionCategory(hostCollision)
+            .setCollidesWith(collisionCategory.WORLD | bulletCollison | collisionCategory.RED | collisionCategory.BLUE)
             ;
         return this;
+    }
+
+    getDamage() {
+        return this.damage;
     }
 
     takeDamage(amount: number): this {
@@ -98,5 +111,13 @@ export class Tank extends MatterContainer {
             this.scene.cameras.main.shake(1000, 0.04, false);
         }
         return this;
+    }
+
+    setFiring() {
+        this.lastFired = Date.now();
+    }
+    canFire() {
+        const time = Date.now();
+        return (this.lastFired + this.attackSpeed < time);
     }
 }
