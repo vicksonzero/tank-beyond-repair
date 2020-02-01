@@ -6,13 +6,15 @@ Phaser 3 starter copied from cook-engine, with server side stripped away
 - [How To Play](#how-to-play)
   - [Controls](#controls)
 - [Getting started](#getting-started)
+  - [Dev](#dev)
+  - [Prod](#prod)
   - [How to read logs made with `log()`](#how-to-read-logs-made-with-log)
 - [Tech Stack](#tech-stack)
 - [License](#license)
 
 # How To Play
 
-Play here: https://vicksonzero.github.io/tank-beyond-repair
+Play here: https://vicksonzero.github.io/tank-beyond-repair/client-dist
 
 ## Controls
 
@@ -22,6 +24,8 @@ P2: Arrows to move, `/` to do actions
 
 # Getting started
 
+## Dev
+
 ```sh
 npm install
 npm run watch-webpack # client
@@ -30,6 +34,15 @@ npm run watch-webpack # client
 Entry point is client.ts  
 Main Phaser scene is `MainScene.ts` (duh)  
 All meat starts with the `create()` and `update()` calls
+
+## Prod
+
+```sh
+npm install
+npm run build-client # client
+```
+
+Built content will be put in `
 
 ## How to read logs made with `log()`
 

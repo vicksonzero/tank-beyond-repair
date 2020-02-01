@@ -1,0 +1,1 @@
+// hack: to satisfy the tsconfig.json although we don't use server

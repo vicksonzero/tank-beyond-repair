@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server-dist/server.js",
     "build": "tsc",
+    "build-client": "tsc",
     "watch-webpack": "webpack --mode development && webpack-dev-server --mode development",
     "watch-ts": "tsc -w",
     "watch-node": "nodemon server-dist/server.js",
