@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node server-dist/server.js",
     "build": "tsc",
-    "build-client": "tsc",
     "watch-webpack": "webpack --mode development && webpack-dev-server --mode development",
+    "build-client": "webpack --mode production && webpack-dev-server --mode production",
     "watch-ts": "tsc -w",
     "watch-node": "nodemon server-dist/server.js",
     "dev": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"yellow.bold,cyan.bold\" \"npm run watch-ts\" \"npm run watch-node\"",

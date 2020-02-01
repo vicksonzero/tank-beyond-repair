@@ -4,7 +4,7 @@ import { MainScene } from "./scenes/MainScene";
 import './utils/window';
 
 window._Debug = Debug;
-const log = Debug('tank-beyond-repair:client:log');
+const verbose = Debug('tank-beyond-repair:client:verbose ');
 // const warn = Debug('tank-beyond-repair:client:warn');
 // warn.log = console.warn.bind(console);
 
@@ -44,7 +44,7 @@ window.onload = () => {
         const hh = window.innerHeight / Number(phaserConfig.height);
 
         const min = Math.min(ww, hh);
-        log(`handleSizeUpdate\n window: ${window.innerWidth}, ${window.innerHeight}\n ratio: ${ww}, ${hh}\n min: ${min}`);
+        verbose(`handleSizeUpdate\n window: ${window.innerWidth}, ${window.innerHeight}\n ratio: ${ww}, ${hh}\n min: ${min}`);
 
         game.canvas.style.width = `${min * Number(phaserConfig.width)}px`;
         game.canvas.style.height = `${min * Number(phaserConfig.height)}px`;
@@ -53,7 +53,7 @@ window.onload = () => {
     if (!window.location.search.includes('video')) {
         window.addEventListener('resize', handleSizeUpdate);
 
-        log('init handleSizeUpdate');
+        verbose('init handleSizeUpdate');
         handleSizeUpdate();
     }
 };

@@ -47,7 +47,7 @@ https://photonstorm.github.io/phaser3-docs
 
 ```sh
 npm install
-npm run build-client # client
+npm run build-client # client prod
 ```
 
 Built content will be put in `
