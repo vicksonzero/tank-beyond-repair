@@ -16,6 +16,7 @@ import { HpBar } from '../ui/HpBar';
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
 
+const Vector2 = Phaser.Math.Vector2;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
 
 const log = Debug('tank-beyond-repair:MainScene:log');
@@ -61,6 +62,7 @@ export class MainScene extends Phaser.Scene {
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
+        this.bg.setAlpha(0.7);
 
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
@@ -90,14 +92,15 @@ export class MainScene extends Phaser.Scene {
         };
         this.blueAi = [];
         this.redAi = [];
-        this.spawnTimer = setInterval(() => {
+        const spawnCallback = () => {
             this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
                 return createAi(Team.BLUE, 300, y);
             }));
             this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
                 return createAi(Team.RED, 1000, y);
             }));
-        }, SPAWN_INTERVAL);
+        };
+        this.spawnTimer = this.time.addEvent({ delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
 
         this.bullets = [];
 
@@ -153,7 +156,7 @@ export class MainScene extends Phaser.Scene {
                 return { target, distance: minDist }
             }
             const { target, distance } = findTankWithClosestDistance(tank, enemy)
-            if (target && distance <= 250) {
+            if (target && distance <= tank.range) {
                 // stop and attack
                 const fireBullet = (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
@@ -209,12 +212,15 @@ export class MainScene extends Phaser.Scene {
         this.blueAi = this.blueAi.filter(t => t !== tank);
         this.redAi = this.redAi.filter(t => t !== tank);
         const position = { x: tank.x, y: tank.y };
+        const { upgrades } = tank;
         tank.destroy();
         let box: Item;
         this.itemLayer.add(box = new Item(this));
-        box.initPhysics();
-        box.init(position.x, position.y);
-
+        box.initPhysics()
+            .init(position.x, position.y, upgrades);
+        const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+        log(dir);
+        box.setVelocity(dir.x, dir.y);
     }
 
     handleCollisions(event: any) {

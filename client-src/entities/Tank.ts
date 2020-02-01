@@ -4,6 +4,7 @@ import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
 import { HpBar } from '../ui/HpBar';
+import { UpgradeObject, UpgradeType } from './Upgrade';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -11,10 +12,16 @@ type Image = Phaser.GameObjects.Image;
 export class Tank extends MatterContainer {
 
     team: Team;
+
     hp: number;
-    maxHP: number;
+
+    range: number;
     damage: number;
-    upgrades: any[];
+    attackSpeed: number;
+    maxHP: number;
+    movementSpeed: number;
+
+    upgrades: UpgradeObject;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -22,7 +29,6 @@ export class Tank extends MatterContainer {
     followingMouse?: boolean;
 
     lastFired: number;
-    attackSpeed: number;
 
     hpBar: HpBar;
     bodySprite: Image;
@@ -39,6 +45,13 @@ export class Tank extends MatterContainer {
             .setName('tank')
             ;
         this.team = team
+        this.upgrades = {
+          range: 0,
+          damage: 0,
+          attackSpeed: 0,
+          maxHP: 0,
+          movementSpeed: 0,
+        }
         const color = this.team === Team.BLUE ? 'dark' : 'sand';
         this.add([
             this.bodySprite = this.scene.make.image({
@@ -60,6 +73,7 @@ export class Tank extends MatterContainer {
             .setX(x)
             .setY(y)
             ;
+        this.range = 250;
         this.hp = 5;
         this.maxHP = 5;
         this.damage = 1;
@@ -109,13 +123,14 @@ export class Tank extends MatterContainer {
         return this;
     }
 
-    setUpgrade(upgrade: any) {
-        this.upgrades.push(upgrade)
-        // TODO: update the data base on upgrade type
-        // Example:
-        // this.attackSpeed -= 100;
-        // this.maxHp += 5;
-        // this.hp += 5;
+    setUpgrade(upgrades: UpgradeObject) {
+        Object.keys(upgrades).forEach((key: UpgradeType) => {
+            this[key] += upgrades[key];
+            this.upgrades[key] += upgrades[key];
+        })
+        // always heal at least 1
+        const healAmount = Math.max(upgrades.maxHP, 1);
+        this.hp = Math.min(this.hp + healAmount, this.maxHP);
     }
 
     setFiring({ x, y }: { x: number, y: number}) {
