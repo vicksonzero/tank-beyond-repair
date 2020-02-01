@@ -84,7 +84,7 @@ export class MainScene extends Phaser.Scene {
         this.redPlayer.init(1100, 700)
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics();
-        this.redPlayer.initPhysics();
+            
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
@@ -163,10 +163,11 @@ export class MainScene extends Phaser.Scene {
                     const yDiff = target.y - tank.y;
                     tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-                    bullet.init(tank.x, tank.y, tank.getDamage());
-                    bullet.initPhysics();
-                    bullet.setVelocityX(xDiff / distance);
-                    bullet.setVelocityY(yDiff / distance);
+                    bullet
+                        .init(tank.x, tank.y, tank.getDamage())
+                        .initPhysics()
+                        .setVelocityX(xDiff / distance)
+                        .setVelocityY(yDiff / distance);
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
