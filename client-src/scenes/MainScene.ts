@@ -52,13 +52,16 @@ export class MainScene extends Phaser.Scene {
     }
 
     update(time: number, dt: number) {
-        let xx = 0;
-        let yy = 0;
-        if (this.controlsList[0].up.isDown) { yy -= 10; log(xx, yy) }
-        if (this.controlsList[0].down.isDown) { yy += 10; log(xx, yy) }
-        if (this.controlsList[0].left.isDown) { xx -= 10; log(xx, yy) }
-        if (this.controlsList[0].right.isDown) { xx += 10; log(xx, yy) }
-        this.bluePlayer.setVelocity(xx, yy);
+        const updatePlayer = (player: Player, controlsList: Controls) => {
+            let xx = 0;
+            let yy = 0;
+            if (controlsList.up.isDown) { yy -= 10; log(xx, yy) }
+            if (controlsList.down.isDown) { yy += 10; log(xx, yy) }
+            if (controlsList.left.isDown) { xx -= 10; log(xx, yy) }
+            if (controlsList.right.isDown) { xx += 10; log(xx, yy) }
+            player.setVelocity(xx, yy);
+        }
+        updatePlayer(this.bluePlayer, this.controlsList[0])
     }
 
     setUpKeyboard() {
