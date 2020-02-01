@@ -194,12 +194,12 @@ export class MainScene extends Phaser.Scene {
                 (<Player>a.gameObject).onTouchingItemStart(b.gameObject as Item, activeContacts as IMatterContactPoints);
             });
             checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
-                tank.gameObject.takeDamage(bullet.damage);
+                tank.gameObject.takeDamage(bullet.gameObject.damage);
                 tank.gameObject.updateHpBar();
                 bullet.gameObject.destroy();
             });
             checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
-                player.gameObject.takeDamage(bullet.damage);
+                player.gameObject.takeDamage(bullet.gameObject.damage);
                 player.gameObject.updateHpBar();
                 bullet.gameObject.destroy();
             });
