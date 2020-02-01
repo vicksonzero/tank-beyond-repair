@@ -131,7 +131,28 @@ export class MainScene extends Phaser.Scene {
                 return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
         };
-        this.spawnTimer = this.time.addEvent({ delay: SPAWN_DELAY, callback: spawnCallback, loop: true });
+        this.spawnTimer = this.time.addEvent({ startAt: SPAWN_DELAY, delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
+
+        let countDownValue = SPAWN_DELAY / 1000;
+        const countDownText = this.add.text(
+            WORLD_WIDTH / 2,
+            WORLD_HEIGHT / 2,
+            countDownValue.toString(),
+            {
+                fontSize: '128px',
+                fill: '#FFF',
+                align: "center",
+            },
+        ).setOrigin(0.5);
+        this.time.addEvent({
+            delay: 1000,
+            callback: () => {
+                countDownValue -= 1;
+                countDownText.setText(countDownValue.toString())
+                if (countDownValue <= 0) countDownText.setVisible(false)
+            },
+            repeat: SPAWN_DELAY / 1000,
+        })
 
         this.bullets = [];
 
@@ -348,7 +369,16 @@ export class MainScene extends Phaser.Scene {
         this.isGameOver = true;
         const height = WORLD_HEIGHT;
         const width = WORLD_WIDTH;
-        this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
+        this.add.text(
+            width / 2,
+            height / 2,
+            `${winner} Wins!`,
+            {
+                fontSize: '64px',
+                fill: isBlue ? '#0000FF' : '#FF0000',
+                align: "center",
+            },
+        ).setOrigin(0.5);
     }
 
     spawnItem = (x: number, y: number, upgrades: UpgradeObject, isScatter = false) => {
