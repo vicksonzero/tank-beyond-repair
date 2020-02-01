@@ -335,8 +335,18 @@ export class MainScene extends Phaser.Scene {
 
     setGameOver(winner: Team) {
         if (this.isGameOver) return;
+        const isBlue = winner === Team.BLUE;
+        if (isBlue) {
+            this.redAi.forEach(ai => ai.destroy());
+            this.redAi = [];
+        } else {
+            this.blueAi.forEach(ai => ai.destroy());
+            this.blueAi = [];
+        }
+        this.cameras.main.shake(1000, 0.04, false);
         this.isGameOver = true;
-        const { height, width } = this.sys.game.canvas;
+        const height = WORLD_HEIGHT;
+        const width = WORLD_WIDTH;
         this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
     }
 
