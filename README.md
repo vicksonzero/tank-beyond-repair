@@ -30,19 +30,12 @@ P2: Arrows to move, `/` to do actions
 
 watcher is currently out of service... use this instead
 
-```sh
-git clone xxxxxxx
-git checkout gh-pages
-npm install
-npx http-server
-npm run webpack -- --mode development # client
-```
 
 ```sh
 git clone xxxxxxx
 git checkout gh-pages
 npm install
-npm run watch-webpack # if watcher is fixed
+npm run watch-webpack
 ```
 
 It is a share-screen offline multiplayer game. we do all development work onto `gh-pages`  
