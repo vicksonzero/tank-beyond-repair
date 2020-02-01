@@ -18,12 +18,13 @@ const phaserConfig: Phaser.Types.Core.GameConfig = {
     scene: MainScene,
     zoom: 1,
     backgroundColor: 0xAAAAAA,
-    // physics: {
-    //     default: "matter",
-    //     matter: {
-    //         // debug: true,
-    //     }
-    // },
+    physics: {
+        default: "matter",
+        matter: {
+            debug: true,
+            gravity: { x: 0, y: 0 },
+        }
+    },
 };
 
 // game class
@@ -35,7 +36,7 @@ export class Game extends Phaser.Game {
 
 // when the page is loaded, create our game instance
 window.onload = () => {
-    var game = new Game({ ...phaserConfig });
+    var game = new Game({ ...phaserConfig }); 
 
     // setTimeout(() => {
     // }, 100);

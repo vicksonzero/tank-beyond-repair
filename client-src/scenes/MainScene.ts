@@ -1,7 +1,10 @@
 
 import * as Debug from 'debug';
 import "phaser";
+import { preload as _preload } from '../assets';
 import { Immutable } from '../utils/ImmutableType';
+import { Player } from '../entities/Player';
+import { Team } from '../entities/Team';
 
 type Key = Phaser.Input.Keyboard.Key;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
@@ -18,6 +21,9 @@ export class MainScene extends Phaser.Scene {
     controlsList: Controls[];
     scrollSpeed = 10;
 
+    bg: Phaser.GameObjects.TileSprite;
+    player: Player;
+
     get mainCamera() { return this.sys.cameras.main; }
 
     constructor() {
@@ -27,23 +33,31 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        // _preload.call(this);
+        log('preload');
+        _preload.call(this);
     }
 
     create(): void {
+        log('create');
+        this.bg = this.add.tileSprite(0, 0, 1366, 768, 'allSprites_default', 'tileGrass1');
+        this.bg.setOrigin(0, 0);
+
+
+        this.player = <Player>this.add.existing(new Player(this, Team.BLUE));
+        this.player.init(100, 100);
+        this.player.initPhysics();
 
         this.setUpKeyboard();
-
     }
 
     update(time: number, dt: number) {
-        // let xx = this.boardContainer.x;
-        // let yy = this.boardContainer.y;
-        // if (this.arrowKeys.up.isDown) yy += this.scrollSpeed;
-        // if (this.arrowKeys.down.isDown) yy -= this.scrollSpeed;
-        // if (this.arrowKeys.left.isDown) xx += this.scrollSpeed;
-        // if (this.arrowKeys.right.isDown) xx -= this.scrollSpeed;
-
+        let xx = 0;
+        let yy = 0;
+        if (this.controlsList[0].up.isDown) { yy -= 10; log(xx, yy) }
+        if (this.controlsList[0].down.isDown) { yy += 10; log(xx, yy) }
+        if (this.controlsList[0].left.isDown) { xx -= 10; log(xx, yy) }
+        if (this.controlsList[0].right.isDown) { xx += 10; log(xx, yy) }
+        this.player.setVelocity(xx, yy);
     }
 
     setUpKeyboard() {

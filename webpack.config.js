@@ -34,8 +34,8 @@ module.exports = {
         contentBase: path.resolve(__dirname, '.'),
         publicPath: '/',
         host: '127.0.0.1',
-        port: 5050,
-        open: true
+        port: 8080,
+        open: true,
     },
     resolve: {
         extensions: ['.ts', '.js'],
@@ -67,9 +67,9 @@ module.exports = {
         usedExports: true,
     },
     plugins: [
-        new CopyPlugin([
-            { from: '*.html', context: 'client-src/' },
-            { from: '**/*.css', context: 'client-src/' },
-        ])
+        // new CopyPlugin([
+        //     { from: '*.html', context: 'client-src/' },
+        //     { from: '**/*.css', context: 'client-src/' },
+        // ])
     ]
 };
