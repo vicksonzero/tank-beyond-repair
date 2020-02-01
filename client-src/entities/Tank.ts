@@ -67,8 +67,8 @@ export class Tank extends MatterContainer {
                 frame: `tank${capitalize(color)}_barrel2_outline`,
             }, false),
         ])
-        this.bodySprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
-        this.barrelSprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
+        this.bodySprite.setAngle(this.team === Team.BLUE ? 90 : -90);
+        this.barrelSprite.setAngle(this.team === Team.BLUE ? 90 : -90);
 
         this.on('destroy', () => {
             this.emit(Tank.TANK_DIE);
@@ -123,9 +123,10 @@ export class Tank extends MatterContainer {
 
         this.hp -= amount;
 
+        this.bodySprite.setTint(0xFF0000);
         this.undoTintEvent = this.scene.time.addEvent({
-            delay: 200, loop: false, callback: () => {
-                // some_sprite.setTint(0xAAAAAA);
+            delay: 100, loop: false, callback: () => {
+                this.bodySprite.setTint(0xFFFFFF);
             }
         });
 
@@ -144,7 +145,7 @@ export class Tank extends MatterContainer {
     }
 
     setFiring({ x, y }: { x: number, y: number }) {
-        this.barrelSprite.setRotation(Math.atan2(y, x) + 1.57);
+        this.barrelSprite.setRotation(Math.atan2(y, x) + Math.PI / 2);
         this.lastFired = Date.now();
     }
     canFire() {

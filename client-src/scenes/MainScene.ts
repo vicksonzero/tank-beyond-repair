@@ -73,22 +73,22 @@ export class MainScene extends Phaser.Scene {
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
         this.bluePlayer.spawnItem = this.spawnItem;
-        this.bluePlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
-            .initPhysics()
-            .init(100, 100);
+        this.bluePlayer.initPhysics()
+            .init(100, 100)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4));
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
         this.redPlayer.spawnItem = this.spawnItem;
-        this.redPlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
-            .initPhysics()
-            .init(1100, 700);
+        this.redPlayer.initPhysics()
+            .init(1100, 700)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4));
 
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
-            ai.initHpBar(new HpBar(this, 0, -25, 30, 4))
-                .initPhysics()
-                .init(x, y);
+            ai.initPhysics()
+                .init(x, y)
+                .initHpBar(new HpBar(this, 0, -25, 30, 4));
             return ai
         };
         this.blueAi = [];
