@@ -12,10 +12,12 @@ import { Item } from '../entities/Item';
 import { IMatterContactPoints } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
+import { UpgradeObject } from '../entities/Upgrade';
 
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
 
+const Vector2 = Phaser.Math.Vector2;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
 
 const log = Debug('tank-beyond-repair:MainScene:log');
@@ -61,6 +63,7 @@ export class MainScene extends Phaser.Scene {
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
+        this.bg.setAlpha(0.7);
 
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
@@ -69,11 +72,13 @@ export class MainScene extends Phaser.Scene {
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
+        this.bluePlayer.spawnItem = this.spawnItem;
         this.bluePlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics()
             .init(100, 100);
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
+        this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics()
             .init(1100, 700);
@@ -88,14 +93,15 @@ export class MainScene extends Phaser.Scene {
         };
         this.blueAi = [];
         this.redAi = [];
-        this.spawnTimer = setInterval(() => {
+        const spawnCallback = () => {
             this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
                 return createAi(Team.BLUE, 300, y);
             }));
             this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
                 return createAi(Team.RED, 1000, y);
             }));
-        }, SPAWN_INTERVAL);
+        };
+        this.spawnTimer = this.time.addEvent({ delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
 
         this.bullets = [];
 
@@ -152,7 +158,7 @@ export class MainScene extends Phaser.Scene {
                 return { target, distance: minDist }
             }
             const { target, distance } = findTankWithClosestDistance(tank, enemy)
-            if (target && distance <= 250) {
+            if (target && distance <= tank.range) {
                 // stop and attack
                 const fireBullet = (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
@@ -161,7 +167,7 @@ export class MainScene extends Phaser.Scene {
                     tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.initPhysics()
-                        .init(tank.x, tank.y, tank.getDamage())
+                        .init(tank.x, tank.y, tank.getDamage(), tank.getRange())
                         .setVelocityX(xDiff / distance)
                         .setVelocityY(yDiff / distance);
                     this.bullets.push(bullet);
@@ -177,6 +183,13 @@ export class MainScene extends Phaser.Scene {
         }
         this.blueAi.forEach((ai) => updateAi(ai))
         this.redAi.forEach((ai) => updateAi(ai))
+
+        const updateBullet = (bullet: Bullet) => {
+            if (bullet.isOutOfRange()) {
+                this.removeBullet(bullet);
+            }
+        };
+        this.bullets.forEach((bullet) => updateBullet(bullet))
     }
 
     setUpKeyboard() {
@@ -196,21 +209,27 @@ export class MainScene extends Phaser.Scene {
                 action: this.input.keyboard.addKey(KeyCodes.FORWARD_SLASH),
             }
         ];
-
+        this.controlsList[0].action.on('down', (evt: any) => {
+            this.bluePlayer.onActionPressed();
+        });
+        this.controlsList[1].action.on('down', (evt: any) => {
+            this.redPlayer.onActionPressed();
+        });
     }
 
     removeTank(tank: Tank) {
         this.blueAi = this.blueAi.filter(t => t !== tank);
         this.redAi = this.redAi.filter(t => t !== tank);
         const position = { x: tank.x, y: tank.y };
+        const { upgrades } = tank;
         tank.destroy();
-        let box: Item;
-        this.itemLayer.add(box = new Item(this));
-        box.initPhysics();
-        box.init(position.x, position.y);
 
+        this.spawnItem(position.x, position.y, upgrades, true);
     }
-
+    removeBullet(bullet: Bullet) {
+        this.bullets = this.bullets.filter(b => b !== bullet);
+        bullet.destroy();
+    }
     handleCollisions(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
@@ -231,12 +250,12 @@ export class MainScene extends Phaser.Scene {
                 if (tank.gameObject.hp <= 0) {
                     this.removeTank(tank.gameObject);
                 }
-                bullet.gameObject.destroy();
+                this.removeBullet(bullet.gameObject);
             });
             checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
                 player.gameObject.takeDamage(bullet.gameObject.damage);
                 player.gameObject.updateHpBar();
-                bullet.gameObject.destroy();
+                this.removeBullet(bullet.gameObject);
             });
             if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
@@ -290,5 +309,19 @@ export class MainScene extends Phaser.Scene {
         this.isGameOver = true;
         const { height, width } = this.sys.game.canvas;
         this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
+    }
+
+    spawnItem = (x: number, y: number, upgrades: UpgradeObject, isScatter = false) => {
+
+        let box: Item;
+        this.itemLayer.add(box = new Item(this));
+        box.initPhysics()
+            .init(x, y, upgrades);
+        if (isScatter) {
+            const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+            box.setVelocity(dir.x, dir.y);
+
+        }
+        return box;
     }
 }
