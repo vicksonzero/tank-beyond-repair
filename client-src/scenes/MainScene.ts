@@ -146,7 +146,8 @@ export class MainScene extends Phaser.Scene {
         this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer.initPhysics()
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
-            .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100);
+            .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
+            .faceLeft();
 
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
