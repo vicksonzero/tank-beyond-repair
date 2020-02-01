@@ -95,10 +95,10 @@ export class MainScene extends Phaser.Scene {
         this.redAi = [];
         const spawnCallback = () => {
             this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
-                return createAi(Team.BLUE, 300, y);
+                return createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
             this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
-                return createAi(Team.RED, 1000, y);
+                return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
         };
         this.spawnTimer = this.time.addEvent({ delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
