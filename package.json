@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server-dist/server.js",
     "build": "tsc",
+    "lint": "eslint client-src --ext .js,.ts,.tsx",
     "webpack": "webpack",
     "watch-webpack": "webpack-dev-server --progress --color --mode development --config webpack.config.js",
     "build-client": "webpack --mode production && webpack-dev-server --mode production",
@@ -22,8 +23,11 @@
   "dependencies": {},
   "devDependencies": {
     "@types/debug": "^4.1.5",
+    "@typescript-eslint/eslint-plugin": "^2.18.0",
+    "@typescript-eslint/parser": "^2.18.0",
     "copy-webpack-plugin": "^5.1.1",
     "debug": "^4.1.1",
+    "eslint": "^6.8.0",
     "expose-loader": "^0.7.5",
     "json-loader": "^0.5.7",
     "phaser": "^3.21.0",
