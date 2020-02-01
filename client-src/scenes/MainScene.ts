@@ -130,7 +130,7 @@ export class MainScene extends Phaser.Scene {
                 return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
         };
-        this.spawnTimer = this.time.addEvent({ delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
+        this.spawnTimer = this.time.addEvent({ delay: SPAWN_DELAY, callback: spawnCallback, loop: true });
 
         this.bullets = [];
 
