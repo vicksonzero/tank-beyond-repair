@@ -88,14 +88,15 @@ export class MainScene extends Phaser.Scene {
         };
         this.blueAi = [];
         this.redAi = [];
-        this.spawnTimer = setInterval(() => {
+        const spawnCallback = () => {
             this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
                 return createAi(Team.BLUE, 300, y);
             }));
             this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
                 return createAi(Team.RED, 1000, y);
             }));
-        }, SPAWN_INTERVAL);
+        };
+        this.spawnTimer = this.time.addEvent({ delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
 
         this.bullets = [];
 
