@@ -5,8 +5,9 @@ import { capitalize, IMatterContactPoints } from '../utils/utils';
 import { Team } from './Team';
 import { Item } from './Item';
 import { HpBar } from '../ui/HpBar';
+import { Tank } from './Tank';
 
-const log = Debug('tank-beyond-repair:Player:log');
+// const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
 // warn.log = console.warn.bind(console);
 
@@ -48,14 +49,12 @@ export class Player extends MatterContainer {
         ]);
     }
     init(x: number, y: number): this {
-        this
-            .setX(x)
-            .setY(y);
+        this.setPosition(x, y);
         this.hp = 5;
         this.maxHP = 5;
         return this;
     }
-    initHpBar(hpBar:HpBar) {
+    initHpBar(hpBar: HpBar) {
         this.add(hpBar);
         this.hpBar = hpBar;
         this.updateHpBar();
@@ -68,7 +67,17 @@ export class Player extends MatterContainer {
     initPhysics(): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
         const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
-        this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: 20 } });
+
+        var MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
+
+        var circleBody = MatterMatter.Bodies.circle(0, 0, 20, { isSensor: false, label: 'body' });
+        var circleHand = MatterMatter.Bodies.circle(26, 0, 12, { isSensor: true, label: 'hand' });
+        const compoundBody = MatterMatter.Body.create({
+            parts: [circleBody, circleHand],
+            inertia: Infinity
+        });
+        this.scene.matter.add.gameObject(this, compoundBody);
+
         this
             .setMass(1)
             .setFrictionAir(0)
@@ -81,17 +90,54 @@ export class Player extends MatterContainer {
 
     moveInDirection(dirX: number, dirY: number) {
         this.setVelocity(dirX, dirY);
-        this.bodySprite.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
+
+        type Body = any;
+
+        if (dirX !== 0 || dirY !== 0) {
+            const rotation = Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x);
+            const hand: Body = ((<any>this.body).parts as Array<any>).find(({ label }) => label === 'hand');
+            var MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
+            MatterMatter.Body.setPosition(hand, {
+                x: this.x + Math.cos(rotation) * 30,
+                y: this.y + Math.sin(rotation) * 30,
+            });
+
+            this.bodySprite.setRotation(rotation);
+        }
     }
-    onTouchingItemStart(item: Item, activeContacts: any) {
-        item.itemSprite.setTint(0xffFF00);
+    onTouchingItemStart(myBody: any, itemBody: any, activeContacts: any) {
+        // a and b are bodies, but no TS definition...
+        if (!itemBody.isSensor) return;
+        if (myBody.label !== 'hand') return;
+
+        const item = itemBody.gameObject as Item;
+        item.itemSprite.setTint(0xAAAAAA);
     }
-    onTouchingItemEnd(item: Item, activeContacts: IMatterContactPoints) {
+    onTouchingItemEnd(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
+        if (!myBody.isSensor) return;
+        if (myBody.label !== 'hand') return;
+        const item = itemBody.gameObject as Item;
         item.itemSprite.setTint(0xFFFFFF);
     }
 
-    takeDamage(amount: number): this {
+    onTouchingTankStart(myBody: any, tankBody: any, activeContacts: any) {
+        // a and b are bodies, but no TS definition...
+        if (!myBody.isSensor) return;
+        if (myBody.label !== 'hand') return;
 
+        const tank = tankBody.gameObject as Tank;
+        tank.bodySprite.setTint(0xAAAAAA);
+    }
+
+    onTouchingTankEnd(myBody: any, tankBody: any, activeContacts: IMatterContactPoints) {
+        if (!myBody.isSensor) return;
+        if (myBody.label !== 'hand') return;
+
+        const tank = tankBody.gameObject as Tank;
+        tank.bodySprite.setTint(0xFFFFFF);
+    }
+
+    takeDamage(amount: number): this {
         this.hp -= amount;
 
         this.undoTintEvent = this.scene.time.addEvent({

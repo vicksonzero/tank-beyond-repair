@@ -83,7 +83,7 @@ export class Tank extends MatterContainer {
         this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: 20 } });
         this
             .setMass(1)
-            .setFrictionAir(0)
+            .setFrictionAir(0.5)
             .setFixedRotation()
             .setCollisionCategory(hostCollision)
             .setCollidesWith(collisionCategory.WORLD | bulletCollison | collisionCategory.RED | collisionCategory.BLUE)
