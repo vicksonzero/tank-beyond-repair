@@ -75,11 +75,11 @@ export class MainScene extends Phaser.Scene {
         const updatePlayer = (player: Player, controlsList: Controls) => {
             let xx = 0;
             let yy = 0;
-            if (controlsList.up.isDown) { yy -= 10; log(xx, yy) }
-            if (controlsList.down.isDown) { yy += 10; log(xx, yy) }
-            if (controlsList.left.isDown) { xx -= 10; log(xx, yy) }
-            if (controlsList.right.isDown) { xx += 10; log(xx, yy) }
-            player.setVelocity(xx, yy);
+            if (controlsList.up.isDown) { yy -= 3; log(xx, yy) }
+            if (controlsList.down.isDown) { yy += 3; log(xx, yy) }
+            if (controlsList.left.isDown) { xx -= 3; log(xx, yy) }
+            if (controlsList.right.isDown) { xx += 3; log(xx, yy) }
+            player.moveInDirection(xx, yy);
         }
         updatePlayer(this.bluePlayer, this.controlsList[0])
         updatePlayer(this.redPlayer, this.controlsList[1])
