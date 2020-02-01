@@ -31,7 +31,7 @@ module.exports = {
         ],
     },
     devServer: {
-        contentBase: path.resolve(__dirname, './client-dist'),
+        contentBase: path.resolve(__dirname, '.'),
         publicPath: '/',
         host: '127.0.0.1',
         port: 5050,

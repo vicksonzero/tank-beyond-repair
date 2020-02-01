@@ -15,7 +15,7 @@ Phaser 3 starter copied from cook-engine, with server side stripped away
 
 # How To Play
 
-Play here: https://vicksonzero.github.io/tank-beyond-repair/client-dist
+Play here: https://vicksonzero.github.io/tank-beyond-repair/
 
 ## Controls
 
