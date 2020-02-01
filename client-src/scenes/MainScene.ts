@@ -153,12 +153,14 @@ export class MainScene extends Phaser.Scene {
                 // stop and attack
                 const fireBullet = (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
-                    tank.setFiring();
+                    const xDiff = target.x - tank.x;
+                    const yDiff = target.y - tank.y;
+                    tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.init(tank.x, tank.y, tank.getDamage());
                     bullet.initPhysics();
-                    bullet.setVelocityX((target.x - tank.x) / distance);
-                    bullet.setVelocityY((target.y - tank.y) / distance);
+                    bullet.setVelocityX(xDiff / distance);
+                    bullet.setVelocityY(yDiff / distance);
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);

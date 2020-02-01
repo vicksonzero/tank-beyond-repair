@@ -51,6 +51,8 @@ export class Tank extends MatterContainer {
                 frame: `tank${capitalize(color)}_barrel2_outline`,
             }, false),
         ])
+        this.bodySprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
+        this.barrelSprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
     }
     init(x: number, y: number): this {
         this
@@ -106,7 +108,8 @@ export class Tank extends MatterContainer {
         return this;
     }
 
-    setFiring() {
+    setFiring({ x, y }: { x: number, y: number}) {
+        this.barrelSprite.setRotation(Math.atan2(y, x) + 1.57);
         this.lastFired = Date.now();
     }
     canFire() {
