@@ -57,13 +57,15 @@ export class Tank extends MatterContainer {
     }
 
     initPhysics(): this {
+        const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
+        const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
         this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: 20 } });
         this
             .setMass(1)
             .setFrictionAir(0)
             .setFixedRotation()
-            .setCollisionCategory(collisionCategory.PLAYER)
-            .setCollidesWith(collisionCategory.WORLD | collisionCategory.ENEMY | collisionCategory.ENEMY_BULLET)
+            .setCollisionCategory(hostCollision)
+            .setCollidesWith(collisionCategory.WORLD | bulletCollison | collisionCategory.RED | collisionCategory.BLUE)
             ;
         return this;
     }
