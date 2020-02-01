@@ -1,17 +1,17 @@
 import * as Debug from 'debug';
 import "phaser";
 import { MainScene } from "./scenes/MainScene";
-import './utils/window.ts';
+import './utils/window';
 
 window._Debug = Debug;
-const log = Debug('ludo-plus:client:log');
-// const warn = Debug('ludo-plus:client:warn');
+const log = Debug('tank-beyond-repair:client:log');
+// const warn = Debug('tank-beyond-repair:client:warn');
 // warn.log = console.warn.bind(console);
 
 // main game configuration
 const phaserConfig: Phaser.Types.Core.GameConfig = {
-    width: 768,
-    height: 1366,
+    width: 1366,
+    height: 768,
     disableContextMenu: true,
     type: Phaser.AUTO,
     parent: "game",
