@@ -22,6 +22,8 @@ const log = Debug('tank-beyond-repair:MainScene:log');
 // warn.log = console.warn.bind(console);
 
 
+const SPAWN_INTERVAL = 5000;
+
 export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key };
 
 export class MainScene extends Phaser.Scene {
@@ -29,6 +31,7 @@ export class MainScene extends Phaser.Scene {
     controlsList: Controls[];
 
     isGameOver: boolean;
+    spawnTimer: any;
     bg: Phaser.GameObjects.TileSprite;
 
     itemLayer: Container;
@@ -82,7 +85,6 @@ export class MainScene extends Phaser.Scene {
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics();
         this.redPlayer.initPhysics();
-
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
@@ -91,12 +93,16 @@ export class MainScene extends Phaser.Scene {
                 .initPhysics();
             return ai
         };
-        this.blueAi = [200].map((y) => {
-            return createAi(Team.BLUE, 300, y);
-        });
-        this.redAi = [300].map((y) => {
-            return createAi(Team.RED, 1000, y);
-        });
+        this.blueAi = [];
+        this.redAi = [];
+        this.spawnTimer = setInterval(() => {
+           this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
+               return createAi(Team.BLUE, 300, y);
+           }));
+           this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
+               return createAi(Team.RED, 1000, y);
+           }));
+        }, SPAWN_INTERVAL);
 
         this.bullets = [];
 
@@ -153,12 +159,14 @@ export class MainScene extends Phaser.Scene {
                 // stop and attack
                 const fireBullet = (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
-                    tank.setFiring();
+                    const xDiff = target.x - tank.x;
+                    const yDiff = target.y - tank.y;
+                    tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.init(tank.x, tank.y, tank.getDamage());
                     bullet.initPhysics();
-                    bullet.setVelocityX((target.x - tank.x) / distance);
-                    bullet.setVelocityY((target.y - tank.y) / distance);
+                    bullet.setVelocityX(xDiff / distance);
+                    bullet.setVelocityY(yDiff / distance);
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
@@ -194,6 +202,12 @@ export class MainScene extends Phaser.Scene {
 
     }
 
+    removeTank(tank: Tank) {
+        this.blueAi = this.blueAi.filter(t => t !== tank);
+        this.redAi = this.redAi.filter(t => t !== tank);
+        tank.destroy();
+    }
+
     handleCollisions(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
@@ -208,7 +222,9 @@ export class MainScene extends Phaser.Scene {
             });
             checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
                 tank.gameObject.takeDamage(bullet.gameObject.damage);
-                tank.gameObject.updateHpBar();
+                if (tank.gameObject.hp <= 0) {
+                    this.removeTank(tank.gameObject);
+                }
                 bullet.gameObject.destroy();
             });
             checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {

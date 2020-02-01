@@ -51,6 +51,8 @@ export class Tank extends MatterContainer {
                 frame: `tank${capitalize(color)}_barrel2_outline`,
             }, false),
         ])
+        this.bodySprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
+        this.barrelSprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
     }
     init(x: number, y: number): this {
         this
@@ -102,25 +104,28 @@ export class Tank extends MatterContainer {
             }
         });
 
-        if (this.hp <= 0) {
-            if (this.undoTintEvent) this.undoTintEvent.destroy();
-            // this.gm.makeExplosion3(this.x, this.y);
-            // this.gm.gameIsOver = true;
-            this.visible = false;
-            this
-                .setCollisionCategory(0)
-                ;
-            // .setPosition(-1000, -1000);
-            this.scene.cameras.main.shake(1000, 0.04, false);
-        }
+        this.updateHpBar();
         return this;
     }
 
-    setFiring() {
+    setFiring({ x, y }: { x: number, y: number}) {
+        this.barrelSprite.setRotation(Math.atan2(y, x) + 1.57);
         this.lastFired = Date.now();
     }
     canFire() {
         const time = Date.now();
-        return this.hp > 0 && (this.lastFired + this.attackSpeed < time);
+        return (this.lastFired + this.attackSpeed < time);
+    }
+    destroy() {
+        if (this.undoTintEvent) this.undoTintEvent.destroy();
+        // this.gm.makeExplosion3(this.x, this.y);
+        // this.gm.gameIsOver = true;
+        this.visible = false;
+        this
+            .setCollisionCategory(0)
+            ;
+        // .setPosition(-1000, -1000);
+        this.scene.cameras.main.shake(1000, 0.04, false);
+        super.destroy();
     }
 }
