@@ -84,13 +84,14 @@ export class MainScene extends Phaser.Scene {
         updatePlayer(this.bluePlayer, this.controlsList[0])
         updatePlayer(this.redPlayer, this.controlsList[1])
         
-        const updateAi = (tank: Tank, team: Team) => {
+        const updateAi = (tank: Tank) => {
             // AI decision logic
-            team === Team.BLUE ?
-            tank.setVelocityX(1): tank.setVelocityX(-1);
+            const direction = tank.team === Team.BLUE ? 1 : -1;
+
+            tank.setVelocityX(direction);
         }
-        this.blueAi.forEach((ai) => updateAi(ai, Team.BLUE))
-        this.redAi.forEach((ai) => updateAi(ai, Team.RED))
+        this.blueAi.forEach((ai) => updateAi(ai))
+        this.redAi.forEach((ai) => updateAi(ai))
     }
 
     setUpKeyboard() {

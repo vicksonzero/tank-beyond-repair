@@ -9,6 +9,7 @@ type Image = Phaser.GameObjects.Image;
 
 export class Tank extends MatterContainer {
 
+    team: Team;
     hp: number;
     maxHP: number;
 
@@ -30,8 +31,8 @@ export class Tank extends MatterContainer {
         this
             .setName('player')
             ;
-
-        const color = team === Team.BLUE ? 'dark' : 'sand';
+        this.team = team
+        const color = this.team === Team.BLUE ? 'dark' : 'sand';
         this.add([
             this.bodySprite = this.scene.make.image({
                 x: 0, y: 0,
