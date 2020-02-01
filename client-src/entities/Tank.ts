@@ -73,6 +73,7 @@ export class Tank extends MatterContainer {
             .setX(x)
             .setY(y)
             ;
+        this.range = 250;
         this.hp = 5;
         this.maxHP = 5;
         this.damage = 1;

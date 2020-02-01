@@ -154,7 +154,7 @@ export class MainScene extends Phaser.Scene {
                 return { target, distance: minDist }
             }
             const { target, distance } = findTankWithClosestDistance(tank, enemy)
-            if (target && distance <= 250) {
+            if (target && distance <= tank.range) {
                 // stop and attack
                 const fireBullet = (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
