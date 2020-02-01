@@ -87,13 +87,13 @@ export class MainScene extends Phaser.Scene {
         const updateAi = (tank: Tank) => {
             // AI decision logic
             const direction = tank.team === Team.BLUE ? 1 : -1;
-            const enemyTanks = tank.team === Team.BLUE ? 
-                [...this.redAi] : [...this.blueAi];
+            const enemy = tank.team === Team.BLUE ? 
+                [this.redPlayer, ...this.redAi] : [this.bluePlayer, ...this.blueAi];
 
-            const findTankWithClosestDistance = (myTank: Tank, enemyTanks: Tank[]) => {
+            const findTankWithClosestDistance = (myTank: Tank, enemy: (Player|Tank)[]) => {
                 let minDist = Infinity;
-                let target:Tank = null;
-                enemyTanks.forEach((enemyTank) => {
+                let target:(Player|Tank) = null;
+                enemy.forEach((enemyTank) => {
                     const distance = Phaser.Math.Distance.Between(
                         myTank.x, myTank.y, enemyTank.x, enemyTank.y
                     );
@@ -104,7 +104,7 @@ export class MainScene extends Phaser.Scene {
                 }) 
                 return {target, distance: minDist}
             }
-            const {target, distance} = findTankWithClosestDistance(tank, enemyTanks)
+            const {target, distance} = findTankWithClosestDistance(tank, enemy)
             if (target && distance <= 250) {
                 // stop and attack
                 tank.setVelocityX(0);
