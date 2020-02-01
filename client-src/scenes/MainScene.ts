@@ -19,6 +19,7 @@ import { IMatterContactPoints } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
 import { UpgradeObject } from '../entities/Upgrade';
+import { Time } from 'phaser';
 
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
@@ -37,7 +38,7 @@ export class MainScene extends Phaser.Scene {
     controlsList: Controls[];
 
     isGameOver: boolean;
-    spawnTimer: any;
+    spawnTimer: Phaser.Time.TimerEvent;
     bg: Phaser.GameObjects.TileSprite;
 
     itemLayer: Container;
@@ -136,14 +137,14 @@ export class MainScene extends Phaser.Scene {
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
         this.bluePlayer.spawnItem = this.spawnItem;
         this.bluePlayer.initPhysics()
-            .init(100, 100)
-            .initHpBar(new HpBar(this, 0, -25, 30, 4));
+            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .init(100, 100);
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
         this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer.initPhysics()
-            .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
-            .initHpBar(new HpBar(this, 0, -25, 30, 4));
+            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100);
 
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
@@ -151,8 +152,9 @@ export class MainScene extends Phaser.Scene {
             ai.initPhysics()
                 .initHpBar(new HpBar(this, 0, -25, 30, 4))
                 .init(x, y);
-            return ai
+            return ai;
         };
+
         this.blueAi = [];
         this.redAi = [];
         const spawnCallback = () => {
@@ -208,6 +210,7 @@ export class MainScene extends Phaser.Scene {
             if (controlsList.right.isDown) { xx += 3; }
             player.tank?.repair();
             player.moveInDirection(xx, yy);
+            player.updateAim();
         }
         updatePlayer(this.bluePlayer, this.controlsList[0])
         updatePlayer(this.redPlayer, this.controlsList[1])
@@ -317,18 +320,24 @@ export class MainScene extends Phaser.Scene {
     handleCollisions(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
+        console.log('handleCollisions', pairs.slice());
         pairs.forEach((pair: any) => {
             const bodyA: any = pair.bodyA;
             const bodyB: any = pair.bodyB;
             const activeContacts: any = pair.activeContacts;
             const checkPairGameObjectName = this.checkPairGameObjectName_(bodyA, bodyB);
+            const checkPairBodyLabels = this.checkPairBodyLabels_(bodyA, bodyB);
 
-            checkPairGameObjectName('player', 'item', (a: any, b: any) => {
-                (<Player>a.gameObject).onTouchingItemStart(a, b, activeContacts as IMatterContactPoints);
+            checkPairBodyLabels('hand', 'tank-body', (a: any, b: any) => {
+                (<Player>a.player).onTouchingTankStart(a, b, activeContacts as IMatterContactPoints);
             });
-            checkPairGameObjectName('player', 'tank', (a: any, b: any) => {
-                (<Player>a.gameObject).onTouchingTankStart(a, b, activeContacts as IMatterContactPoints);
+            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+
+            checkPairBodyLabels('hand', 'item-body', (a: any, b: any) => {
+                (<Player>a.player).onTouchingItemStart(a, b, activeContacts as IMatterContactPoints);
             });
+            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+
             checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
                 tank.gameObject.takeDamage(bullet.gameObject.damage);
                 if (tank.gameObject.hp <= 0) {
@@ -336,12 +345,14 @@ export class MainScene extends Phaser.Scene {
                 }
                 this.removeBullet(bullet.gameObject);
             });
+            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+
             checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
                 player.gameObject.takeDamage(bullet.gameObject.damage);
                 player.gameObject.updateHpBar();
                 this.removeBullet(bullet.gameObject);
             });
-            if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
             // checkPairGameObjectName('player_bullet', 'enemy', (a: any, b: any) => {
             //     // (<PlayerBullet>a.gameObject).onHitEnemy(b.gameObject, activeContacts as IMatterContactPoints);
@@ -353,21 +364,25 @@ export class MainScene extends Phaser.Scene {
     handleCollisionsEnd(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
+        // console.log('handleCollisionsEnd', pairs.slice());
+
         pairs.forEach((pair: any) => {
             const bodyA: any = pair.bodyA;
             const bodyB: any = pair.bodyB;
             const activeContacts: any = pair.activeContacts;
             const checkPairGameObjectName = this.checkPairGameObjectName_(bodyA, bodyB);
+            const checkPairBodyLabels = this.checkPairBodyLabels_(bodyA, bodyB);
 
-            checkPairGameObjectName('player', 'item', (a: any, b: any) => {
-                (<Player>a.gameObject).onTouchingItemEnd(a, b, activeContacts as IMatterContactPoints);
+            checkPairBodyLabels('hand', 'tank-body', (a: any, b: any) => {
+                (<Player>a.player).onTouchingTankEnd(a, b, activeContacts as IMatterContactPoints);
             });
-            if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
-            checkPairGameObjectName('player', 'tank', (a: any, b: any) => {
-                (<Player>a.gameObject).onTouchingTankEnd(a, b, activeContacts as IMatterContactPoints);
+            checkPairBodyLabels('hand', 'item-body', (a: any, b: any) => {
+                (<Player>a.player).onTouchingItemEnd(a, b, activeContacts as IMatterContactPoints);
             });
-            if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
+
 
             // checkPairGameObjectName('player_bullet', 'enemy', (a: any, b: any) => {
             //     // (<PlayerBullet>a.gameObject).onHitEnemy(b.gameObject, activeContacts as IMatterContactPoints);
@@ -383,6 +398,20 @@ export class MainScene extends Phaser.Scene {
             if (bodyA?.gameObject?.name === nameA && bodyB?.gameObject?.name === nameB) {
                 matchFoundCallback(bodyA, bodyB);
             } else if (bodyB?.gameObject?.name === nameA && bodyA?.gameObject?.name === nameB) {
+                matchFoundCallback(bodyB, bodyA);
+            }
+        }
+    }
+
+    private checkPairBodyLabels_(bodyA: any, bodyB: any) {
+        // console.log(bodyA?.label, bodyB?.label);
+        return (
+            nameA: string, nameB: string,
+            matchFoundCallback: (a: any, b: any) => void
+        ) => {
+            if (bodyA?.label === nameA && bodyB?.label === nameB) {
+                matchFoundCallback(bodyA, bodyB);
+            } else if (bodyB?.label === nameA && bodyA?.label === nameB) {
                 matchFoundCallback(bodyB, bodyA);
             }
         }

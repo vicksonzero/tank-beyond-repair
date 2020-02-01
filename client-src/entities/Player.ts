@@ -8,7 +8,7 @@ import { HpBar } from '../ui/HpBar';
 import { Tank } from './Tank';
 import { UpgradeObject } from './Upgrade';
 
-// const log = Debug('tank-beyond-repair:Player:log');
+const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
 // warn.log = console.warn.bind(console);
 
@@ -28,6 +28,11 @@ export class Player extends MatterContainer {
     maxHP: number;
     hpBar: HpBar;
     tank: Tank;
+
+    armLength = 30;
+    armRadius = 20;
+
+    playerHandSensor: MatterJS.Body;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -73,6 +78,7 @@ export class Player extends MatterContainer {
         this.setPosition(x, y);
         this.hp = 500;
         this.maxHP = 500;
+        this.updateHpBar();
         return this;
     }
     initHpBar(hpBar: HpBar) {
@@ -80,9 +86,6 @@ export class Player extends MatterContainer {
         this.hpBar = hpBar;
         this.updateHpBar();
         return this;
-    }
-    updateHpBar() {
-        this.hpBar.updateHPBar(this.hp, this.maxHP);
     }
 
     initPhysics(): this {
@@ -92,12 +95,14 @@ export class Player extends MatterContainer {
         const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
 
         const circleBody = MatterMatter.Bodies.circle(0, 0, 20, { isSensor: false, label: 'body' });
-        const circleHand = MatterMatter.Bodies.circle(26, 0, 20, { isSensor: true, label: 'hand' });
-        const compoundBody = MatterMatter.Body.create({
-            parts: [circleBody, circleHand],
-            inertia: Infinity
-        });
-        this.scene.matter.add.gameObject(this, compoundBody);
+
+        this.scene.matter.add.gameObject(this, circleBody);
+
+        this.playerHandSensor = this.scene.matter.add.circle(this.armLength, 0, this.armRadius, { isSensor: true, label: 'hand' });
+
+        (<any>this.playerHandSensor).player = this;
+        (<any>this.playerHandSensor).collisionFilter.category = hostCollision;
+        (<any>this.playerHandSensor).collisionFilter.mask = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollison;
 
         MatterMatter.Body.setPosition(circleBody, {
             x: this.x,
@@ -114,6 +119,10 @@ export class Player extends MatterContainer {
         return this;
     }
 
+    updateHpBar() {
+        this.hpBar.updateHPBar(this.hp, this.maxHP);
+    }
+
     moveInDirection(dirX: number, dirY: number) {
         this.setVelocity(dirX, dirY);
 
@@ -121,14 +130,8 @@ export class Player extends MatterContainer {
 
         if (dirX !== 0 || dirY !== 0) {
             const rotation = Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x);
-            const hand: Body = ((<any>this.body).parts as Array<any>).find(({ label }) => label === 'hand');
-            const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
-            const xx = Math.cos(rotation) * 30;
-            const yy = Math.sin(rotation) * 30;
-            MatterMatter.Body.setPosition(hand, {
-                x: this.x + xx,
-                y: this.y + yy,
-            });
+            const xx = Math.cos(rotation) * this.armLength;
+            const yy = Math.sin(rotation) * this.armLength;
 
             if (this.holdingItem) {
                 this.holdingItem.setX(xx).setY(yy);
@@ -136,6 +139,17 @@ export class Player extends MatterContainer {
 
             this.bodySprite.setRotation(rotation);
         }
+    }
+
+    updateAim() {
+        const rotation = this.bodySprite.rotation;
+        const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
+        const xx = Math.cos(rotation) * this.armLength;
+        const yy = Math.sin(rotation) * this.armLength;
+        MatterMatter.Body.setPosition(this.playerHandSensor, {
+            x: this.x + xx,
+            y: this.y + yy,
+        });
     }
 
     onActionPressed() {
@@ -184,7 +198,6 @@ export class Player extends MatterContainer {
 
                 this.pointerTarget.destroy();
                 this.pointerTarget = null;
-
             }
         } else if (this.pointerTarget.name === 'tank') {
             const tank = this.pointerTarget as Tank;
@@ -199,9 +212,11 @@ export class Player extends MatterContainer {
     }
 
     onTouchingItemStart(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
+        // log('onTouchingItemStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
         // a and b are bodies, but no TS definition...
         if (!itemBody.isSensor) return;
         if (myBody.label !== 'hand') return;
+        // console.log('onTouchingItemStart do');
 
         // prefer item over tank
         if (this.pointerTarget) {
@@ -228,6 +243,7 @@ export class Player extends MatterContainer {
         if (myBody.label !== 'hand') return;
 
         const item = itemBody.gameObject as Item;
+        if (!item) return;
         if (this.pointerTarget !== item) return;
 
         item.off(Item.ITEM_DIE, this.onTargetDie);
@@ -238,13 +254,18 @@ export class Player extends MatterContainer {
 
     onTargetDie = () => {
         this.pointerTarget = null;
+        this.tank = null;
     }
 
     onTouchingTankStart(myBody: any, tankBody: any, activeContacts: any) {
         // a and b are bodies, but no TS definition...
+        // log('onTouchingTankStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
+
         if (!myBody.isSensor) return;
         if (myBody.label !== 'hand') return;
         if (this.pointerTarget) return;
+
+        // console.log('onTouchingTankStart do');
 
         const tank = tankBody.gameObject as Tank;
         this.pointerTarget = tank;
@@ -258,11 +279,17 @@ export class Player extends MatterContainer {
     }
 
     onTouchingTankEnd(myBody: any, tankBody: any, activeContacts: IMatterContactPoints) {
+        // log('onTouchingTankEnd', myBody.isSensor, myBody.label, this.pointerTarget?.name);
         if (!myBody.isSensor) return;
         if (myBody.label !== 'hand') return;
 
         const tank = tankBody.gameObject as Tank;
         if (this.pointerTarget !== tank) return;
+        // console.log('onTouchingTankEnd do', new Error());
+
+        // const dist = Phaser.Math.Distance.Between(myBody.position.x, myBody.position.y, tankBody.position.x, tankBody.position.y);
+
+        // if (dist <= (this.armRadius + tank.bodyRadius)) return;
 
         tank.off(Tank.TANK_DIE, this.onTargetDie);
         this.pointerTarget = null;
