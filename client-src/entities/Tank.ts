@@ -62,7 +62,7 @@ export class Tank extends MatterContainer {
             ;
         this.hp = 5;
         this.maxHP = 5;
-        this.damage = 10;
+        this.damage = 1;
         this.lastFired = 0;
         this.attackSpeed = 1000;
         return this;
