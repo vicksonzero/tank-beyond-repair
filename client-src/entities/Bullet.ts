@@ -25,8 +25,7 @@ export class Bullet extends MatterContainer {
         this
             .setX(x)
             .setY(y)
-            ;
-        this.damage = 5;
+        this.damage = damage;
         return this;
     }
 

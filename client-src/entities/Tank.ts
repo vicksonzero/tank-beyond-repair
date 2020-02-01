@@ -14,6 +14,7 @@ export class Tank extends MatterContainer {
     hp: number;
     maxHP: number;
     damage: number;
+    upgrades: any[];
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -61,7 +62,7 @@ export class Tank extends MatterContainer {
             ;
         this.hp = 5;
         this.maxHP = 5;
-        this.damage = 10;
+        this.damage = 1;
         this.lastFired = 0;
         this.attackSpeed = 1000;
         return this;
@@ -106,6 +107,15 @@ export class Tank extends MatterContainer {
 
         this.updateHpBar();
         return this;
+    }
+
+    setUpgrade(upgrade: any) {
+        this.upgrades.push(upgrade)
+        // TODO: update the data base on upgrade type
+        // Example:
+        // this.attackSpeed -= 100;
+        // this.maxHp += 5;
+        // this.hp += 5;
     }
 
     setFiring({ x, y }: { x: number, y: number}) {

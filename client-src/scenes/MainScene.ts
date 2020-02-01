@@ -96,12 +96,12 @@ export class MainScene extends Phaser.Scene {
         this.blueAi = [];
         this.redAi = [];
         this.spawnTimer = setInterval(() => {
-           this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
-               return createAi(Team.BLUE, 300, y);
-           }));
-           this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
-               return createAi(Team.RED, 1000, y);
-           }));
+            this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
+                return createAi(Team.BLUE, 300, y);
+            }));
+            this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
+                return createAi(Team.RED, 1000, y);
+            }));
         }, SPAWN_INTERVAL);
 
         this.bullets = [];
@@ -163,10 +163,10 @@ export class MainScene extends Phaser.Scene {
                     const yDiff = target.y - tank.y;
                     tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-                    bullet.initPhysics();
-                    bullet.init(tank.x, tank.y, tank.getDamage());
-                    bullet.setVelocityX(Math.sign(target.x - tank.x) * 2);
-                    bullet.setVelocityY(0);
+                    bullet.initPhysics()
+                        .init(tank.x, tank.y, tank.getDamage())
+                        .setVelocityX(Math.sign(target.x - tank.x) * 2)
+                        .setVelocityY(0);
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
