@@ -41,8 +41,8 @@ export class Item extends MatterContainer {
         this.scene.matter.add.gameObject(this, (<any>this.scene.matter.bodies).rectangle(0, 0, 32, 32, { isSensor: true, label: 'left' }));
         this
             .setMass(1)
-            .setFrictionAir(0.7)
-            .setFixedRotation()
+            .setFrictionAir(0.2)
+            // .setFixedRotation()
             .setCollisionCategory(collisionCategory.WORLD)
             .setCollidesWith(collisionCategory.WORLD | collisionCategory.BLUE | collisionCategory.RED)
             ;
