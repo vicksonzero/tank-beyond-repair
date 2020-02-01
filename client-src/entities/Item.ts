@@ -81,7 +81,7 @@ export class Item extends MatterContainer {
     }
 
     initPhysics(): this {
-        this.scene.matter.add.gameObject(this, (<any>this.scene.matter.bodies).rectangle(0, 0, 32, 32, { isSensor: true, label: 'left' }));
+        this.scene.matter.add.gameObject(this, (<any>this.scene.matter.bodies).rectangle(0, 0, 32, 32, { isSensor: true, label: 'item-body' }));
         this
             .setMass(1)
             .setFrictionAir(0.2)
