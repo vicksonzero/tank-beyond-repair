@@ -193,6 +193,16 @@ export class MainScene extends Phaser.Scene {
             checkPairGameObjectName('player', 'item', (a: any, b: any) => {
                 (<Player>a.gameObject).onTouchingItemStart(b.gameObject as Item, activeContacts as IMatterContactPoints);
             });
+            checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
+                tank.gameObject.takeDamage(bullet.damage);
+                tank.gameObject.updateHpBar();
+                bullet.gameObject.destroy();
+            });
+            checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
+                player.gameObject.takeDamage(bullet.damage);
+                player.gameObject.updateHpBar();
+                bullet.gameObject.destroy();
+            });
             if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
             // checkPairGameObjectName('player_bullet', 'enemy', (a: any, b: any) => {
