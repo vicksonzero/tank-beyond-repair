@@ -1,4 +1,10 @@
-import { SPAWN_INTERVAL, WORLD_WIDTH, WORLD_HEIGHT } from '../constants'
+import {
+    SPAWN_DELAY,
+    SPAWN_INTERVAL,
+    BASE_LINE_WIDTH,
+    WORLD_WIDTH,
+    WORLD_HEIGHT,
+} from '../constants'
 
 import * as Debug from 'debug';
 import "phaser";
@@ -65,6 +71,62 @@ export class MainScene extends Phaser.Scene {
         this.bg.setOrigin(0, 0);
         this.bg.setAlpha(0.7);
 
+        const leftBaseLine = new Phaser.Geom.Line(
+          BASE_LINE_WIDTH,
+          0,
+          BASE_LINE_WIDTH,
+          WORLD_HEIGHT
+        );
+        const rightBaseLine = new Phaser.Geom.Line(
+          WORLD_WIDTH - BASE_LINE_WIDTH,
+          0,
+          WORLD_WIDTH - BASE_LINE_WIDTH,
+          WORLD_HEIGHT
+        );
+        const centerLine = new Phaser.Geom.Line(
+          WORLD_WIDTH / 2,
+          0,
+          WORLD_WIDTH / 2,
+          WORLD_HEIGHT
+        );
+        // in Scene.update()
+        this.add.graphics().lineStyle(1, 0x0000FF, 1).strokeLineShape(leftBaseLine);
+        this.add.graphics().lineStyle(1, 0xFF0000, 1).strokeLineShape(rightBaseLine);
+        this.add.graphics().lineStyle(1, 0xFFFFFF, 0.5).strokeLineShape(centerLine);
+
+        const controlTexts = [];
+        const controlGraphic = this.add.graphics()
+        controlGraphic.lineStyle(1, 0xFFFFFF, 1);
+        const creatButton = (offsetX: number, offsetY: number, letters: string[]) => {
+            let i = 0;
+            controlGraphic.strokeRoundedRect(offsetX + 64, offsetY + 32, 32, 32, 6);
+            controlTexts.push(this.add.text(
+                offsetX + 64 + 32 / 2,
+                offsetY + 32 + 32 / 2,
+                letters[i++],
+                {
+                    fontSize: '16px',
+                    fill: '#FFF',
+                    align: "center",
+                },
+            ).setOrigin(0.5));
+            [32, 64, 96, 160].map((x) => {
+                controlGraphic.strokeRoundedRect(offsetX + x, offsetY + 64, 32, 32, 6);
+                controlTexts.push(this.add.text(
+                    offsetX + x + 32 / 2,
+                    offsetY + 64 + 32 / 2,
+                    letters[i++],
+                    {
+                        fontSize: '16px',
+                        fill: '#FFF',
+                        align: "center",
+                    },
+                ).setOrigin(0.5));
+            });
+        };
+        creatButton(150, 0, ['W', 'A', 'S', 'D', 'C']);
+        creatButton(WORLD_WIDTH - 350, WORLD_HEIGHT - 150, ['↑', '←', '↓', '→', '/']);
+
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
@@ -73,35 +135,57 @@ export class MainScene extends Phaser.Scene {
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
         this.bluePlayer.spawnItem = this.spawnItem;
-        this.bluePlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
-            .initPhysics()
-            .init(100, 100);
+        this.bluePlayer.initPhysics()
+            .init(100, 100)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4));
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
         this.redPlayer.spawnItem = this.spawnItem;
-        this.redPlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
-            .initPhysics()
-            .init(1100, 700);
+        this.redPlayer.initPhysics()
+            .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4));
 
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
-            ai.initHpBar(new HpBar(this, 0, -25, 30, 4))
-                .initPhysics()
-                .init(x, y);
+            ai.initPhysics()
+                .init(x, y)
+                .initHpBar(new HpBar(this, 0, -25, 30, 4));
             return ai
         };
         this.blueAi = [];
         this.redAi = [];
         const spawnCallback = () => {
+            if (this.isGameOver) return;
             this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
-                return createAi(Team.BLUE, 300, y);
+                return createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
             this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
-                return createAi(Team.RED, 1000, y);
+                return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
         };
-        this.spawnTimer = this.time.addEvent({ delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
+        this.spawnTimer = this.time.addEvent({ startAt: SPAWN_DELAY, delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
+
+        let countDownValue = SPAWN_DELAY / 1000;
+        const countDownText = this.add.text(
+            WORLD_WIDTH / 2,
+            WORLD_HEIGHT / 2,
+            countDownValue.toString(),
+            {
+                fontSize: '128px',
+                fill: '#FFF',
+                align: "center",
+            },
+        ).setOrigin(0.5);
+        this.time.addEvent({
+            delay: 1000,
+            callback: () => {
+                countDownValue -= 1;
+                countDownText.setText(countDownValue.toString())
+                if (countDownValue <= 0) countDownText.setVisible(false)
+            },
+            repeat: SPAWN_DELAY / 1000,
+        })
 
         this.bullets = [];
 
@@ -132,9 +216,9 @@ export class MainScene extends Phaser.Scene {
             const isBlue = tank.team === Team.BLUE;
             if (tank.hp <= 0) return false;
             if (isBlue) {
-                return tank.x > this.sys.game.canvas.width;
+                return tank.x > (WORLD_WIDTH - BASE_LINE_WIDTH);
             } else {
-                return tank.x < 0;
+                return tank.x < BASE_LINE_WIDTH;
             }
         }
         const updateAi = (tank: Tank) => {
@@ -306,9 +390,28 @@ export class MainScene extends Phaser.Scene {
 
     setGameOver(winner: Team) {
         if (this.isGameOver) return;
+        const isBlue = winner === Team.BLUE;
+        if (isBlue) {
+            this.redAi.forEach(ai => ai.destroy());
+            this.redAi = [];
+        } else {
+            this.blueAi.forEach(ai => ai.destroy());
+            this.blueAi = [];
+        }
+        this.cameras.main.shake(1000, 0.04, false);
         this.isGameOver = true;
-        const { height, width } = this.sys.game.canvas;
-        this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
+        const height = WORLD_HEIGHT;
+        const width = WORLD_WIDTH;
+        this.add.text(
+            width / 2,
+            height / 2,
+            `${winner} Wins!`,
+            {
+                fontSize: '64px',
+                fill: isBlue ? '#0000FF' : '#FF0000',
+                align: "center",
+            },
+        ).setOrigin(0.5);
     }
 
     spawnItem = (x: number, y: number, upgrades: UpgradeObject, isScatter = false) => {
