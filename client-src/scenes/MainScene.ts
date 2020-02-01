@@ -123,6 +123,7 @@ export class MainScene extends Phaser.Scene {
         this.blueAi = [];
         this.redAi = [];
         const spawnCallback = () => {
+            if (this.isGameOver) return;
             this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
                 return createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
