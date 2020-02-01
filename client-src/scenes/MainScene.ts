@@ -116,6 +116,7 @@ export class MainScene extends Phaser.Scene {
             if (controlsList.down.isDown) { yy += 3; }
             if (controlsList.left.isDown) { xx -= 3; }
             if (controlsList.right.isDown) { xx += 3; }
+            player.tank?.repair();
             player.moveInDirection(xx, yy);
         }
         updatePlayer(this.bluePlayer, this.controlsList[0])
