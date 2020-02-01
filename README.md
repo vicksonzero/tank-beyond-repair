@@ -27,10 +27,13 @@ P2: Arrows to move, `/` to do actions
 ## Dev
 
 ```sh
+git clone xxxxxxx
+git checkout gh-pages
 npm install
 npm run watch-webpack # client
 ```
 
+It is a share-screen offline multiplayer game. we do all development work onto `gh-pages`  
 Entry point is client.ts  
 Main Phaser scene is `MainScene.ts` (duh)  
 All meat starts with the `create()` and `update()` calls
