@@ -28,18 +28,13 @@ P2: Arrows to move, `/` to do actions
 
 ## Dev
 
-watcher is currently out of service... use this instead
-
-
 ```sh
-git clone xxxxxxx
-git checkout gh-pages
 npm install
 npm run watch-webpack
 ```
 
-It is a share-screen offline multiplayer game. we do all development work onto `gh-pages`  
-Entry point is client.ts  
+It is a share-screen offline multiplayer game. we do all development work onto `master`, and it will be seen on gh-pages    
+Entry point is `client.ts`  
 Main Phaser scene is `MainScene.ts` (duh)  
 All meat starts with the `create()` and `update()` calls
 
@@ -49,19 +44,22 @@ https://photonstorm.github.io/phaser3-docs
 
 ### Important links
 
-https://globalgamejam.org/2020/games/tank-beyond-repair-5
-https://github.com/vicksonzero/tank-beyond-repair
-https://globalgamejam.org/2020/jam-sites/hong-kong
+https://globalgamejam.org/2020/games/tank-beyond-repair-5  
+https://github.com/vicksonzero/tank-beyond-repair  
+https://globalgamejam.org/2020/jam-sites/hong-kong  
 
 
 ## Prod
 
 ```sh
 npm install
-npm run build-client # client prod
+npm run build
+git add .
+git commit
+git push # into master
 ```
 
-Built content will be put in `
+Built content will be put in `master`
 
 ## How to read logs made with `log()`
 
