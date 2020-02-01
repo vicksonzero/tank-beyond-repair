@@ -1,3 +1,4 @@
+import { SPAWN_INTERVAL, WORLD_WIDTH, WORLD_HEIGHT } from '../constants'
 
 import * as Debug from 'debug';
 import "phaser";
@@ -20,11 +21,6 @@ const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
 const log = Debug('tank-beyond-repair:MainScene:log');
 // const warn = Debug('tank-beyond-repair:MainScene:warn');
 // warn.log = console.warn.bind(console);
-
-
-const SPAWN_INTERVAL = 5000;
-const WORLD_WIDTH = 1366;
-const WORLD_HEIGHT = 768
 
 export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key };
 
