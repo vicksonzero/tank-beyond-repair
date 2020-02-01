@@ -155,7 +155,7 @@ export class Player extends MatterContainer {
                 .setCollisionCategory(0)
                 ;
             // .setPosition(-1000, -1000);
-            this.scene.cameras.main.shake(1000, 0.04, false);
+            this.scene.cameras.main.shake(100, 0.005, false);
         }
         return this;
     }

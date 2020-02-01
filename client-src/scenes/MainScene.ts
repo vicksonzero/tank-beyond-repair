@@ -61,6 +61,7 @@ export class MainScene extends Phaser.Scene {
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
+        this.bg.setAlpha(0.7);
 
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
