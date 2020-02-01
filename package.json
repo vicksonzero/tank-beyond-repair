@@ -7,7 +7,7 @@
     "start": "node server-dist/server.js",
     "build": "tsc",
     "webpack": "webpack",
-    "watch-webpack": "webpack --mode development && webpack-dev-server --mode development",
+    "watch-webpack": "webpack-dev-server --progress --color --mode development --config webpack.config.js",
     "build-client": "webpack --mode production && webpack-dev-server --mode production",
     "watch-ts": "tsc -w",
     "watch-node": "nodemon server-dist/server.js",
