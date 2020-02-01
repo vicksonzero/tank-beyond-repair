@@ -2,6 +2,7 @@ import MatterContainer from './MatterContainer';
 import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
 import { UpgradeObject, UpgradeType } from './Upgrade';
+import { makeUpgradeString } from '../utils/utils';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
@@ -11,15 +12,12 @@ type Image = Phaser.GameObjects.Image;
 type Text = Phaser.GameObjects.Text;
 
 
-export type UpgradeDef = { [x: string]: integer };
-
 export class Item extends MatterContainer {
 
 
     static ITEM_DIE = 'item-die';
     itemSprite: Image;
     itemText: Text;
-    upgrades: UpgradeDef = { 'dummy': Math.floor(Math.random() * 100) };
 
     upgrades: UpgradeObject;
 
@@ -31,11 +29,11 @@ export class Item extends MatterContainer {
             .setName('item')
             ;
         this.upgrades = {
-          range: 0,
-          damage: 0,
-          attackSpeed: 0,
-          maxHP: 0,
-          movementSpeed: 0,
+            range: 0,
+            damage: 0,
+            attackSpeed: 0,
+            maxHP: 0,
+            movementSpeed: 0,
         }
 
         this.add([
@@ -45,7 +43,7 @@ export class Item extends MatterContainer {
                 frame: 'crateMetal',
             }, false),
             this.itemText = this.scene.make.text({
-                x: 0, y: -10,
+                x: 0, y: -20,
                 text: '',
                 style: {},
             })
@@ -109,13 +107,10 @@ export class Item extends MatterContainer {
         this.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
     }
 
-    setUpgrades(upgrades: UpgradeDef) {
+    setUpgrades(upgrades: UpgradeObject) {
         this.upgrades = { ...upgrades };
 
-        const upgradeText = (Object.entries(this.upgrades)
-            .map(([key, value]) => `${key}${(value >= 0 ? '+' + value : value)}`)
-            .join('\n')
-        );
+        const upgradeText = makeUpgradeString(this.upgrades);
         this.itemText.setText(upgradeText);
     }
 }

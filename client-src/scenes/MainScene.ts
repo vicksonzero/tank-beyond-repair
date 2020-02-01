@@ -7,11 +7,12 @@ import { preload as _preload } from '../assets';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
-import { Item, UpgradeDef } from '../entities/Item';
+import { Item } from '../entities/Item';
 // import { GameObjects } from 'phaser';
 import { IMatterContactPoints } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
+import { UpgradeObject } from '../entities/Upgrade';
 
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
@@ -214,13 +215,8 @@ export class MainScene extends Phaser.Scene {
         const position = { x: tank.x, y: tank.y };
         const { upgrades } = tank;
         tank.destroy();
-        let box: Item;
-        this.itemLayer.add(box = new Item(this));
-        box.initPhysics()
-            .init(position.x, position.y, upgrades);
-        const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
-        log(dir);
-        box.setVelocity(dir.x, dir.y);
+
+        this.spawnItem(position.x, position.y, upgrades, true);
     }
 
     handleCollisions(event: any) {
@@ -304,12 +300,17 @@ export class MainScene extends Phaser.Scene {
         this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
     }
 
-    spawnItem = (x: number, y: number, upgrades?: UpgradeDef) => {
+    spawnItem = (x: number, y: number, upgrades: UpgradeObject, isScatter = false) => {
+
         let box: Item;
         this.itemLayer.add(box = new Item(this));
-        box.initPhysics();
-        box.init(x, y);
+        box.initPhysics()
+            .init(x, y, upgrades);
+        if (isScatter) {
+            const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+            box.setVelocity(dir.x, dir.y);
 
+        }
         return box;
     }
 }

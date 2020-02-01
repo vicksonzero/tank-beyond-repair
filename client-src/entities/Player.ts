@@ -1,11 +1,12 @@
 import MatterContainer from './MatterContainer';
 import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
-import { capitalize, IMatterContactPoints } from '../utils/utils';
+import { capitalize, IMatterContactPoints, makeUpgradeString } from '../utils/utils';
 import { Team } from './Team';
-import { Item, UpgradeDef } from './Item';
+import { Item } from './Item';
 import { HpBar } from '../ui/HpBar';
 import { Tank } from './Tank';
+import { UpgradeObject } from './Upgrade';
 
 // const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -17,7 +18,7 @@ type Container = Phaser.GameObjects.Container;
 type Text = Phaser.GameObjects.Text;
 
 interface HoldingItem extends Container {
-    upgrades?: UpgradeDef;
+    upgrades?: UpgradeObject;
 }
 
 export class Player extends MatterContainer {
@@ -40,7 +41,7 @@ export class Player extends MatterContainer {
     holdingItem: HoldingItem;
     holdingItemText: Text;
 
-    spawnItem: (x: number, y: number, upgrades: UpgradeDef) => Item; // to be filled in by MainScene
+    spawnItem: (x: number, y: number, upgrades: UpgradeObject) => Item; // to be filled in by MainScene
 
 
     // onHitPart?: (parent: any, part: Part, contactPoints: { vertex: { x: number, y: number } }[]) => void;
@@ -85,7 +86,7 @@ export class Player extends MatterContainer {
         const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
 
         const circleBody = MatterMatter.Bodies.circle(0, 0, 20, { isSensor: false, label: 'body' });
-        const circleHand = MatterMatter.Bodies.circle(26, 0, 12, { isSensor: true, label: 'hand' });
+        const circleHand = MatterMatter.Bodies.circle(26, 0, 20, { isSensor: true, label: 'hand' });
         const compoundBody = MatterMatter.Body.create({
             parts: [circleBody, circleHand],
             inertia: Infinity
@@ -157,10 +158,7 @@ export class Player extends MatterContainer {
                 const myOldUpgrade = { ...this.holdingItem.upgrades };
 
                 this.holdingItem.upgrades = { ...item.upgrades };
-                const upgradeText = (Object.entries(this.holdingItem.upgrades)
-                    .map(([key, value]) => `${key}${(value >= 0 ? '+' + value : value)}`)
-                    .join('\n')
-                );
+                const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
                 this.holdingItemText.setText(upgradeText);
 
                 item.setUpgrades(myOldUpgrade);
@@ -177,12 +175,9 @@ export class Player extends MatterContainer {
                 }));
 
                 this.holdingItem.upgrades = { ...item.upgrades };
-                const upgradeText = (Object.entries(this.holdingItem.upgrades)
-                    .map(([key, value]) => `${key}${(value >= 0 ? '+' + value : value)}`)
-                    .join('\n')
-                );
+                const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
 
-                this.holdingItem.add(this.holdingItemText = this.scene.make.text({ x: 0, y: -10, text: upgradeText, style: {} }));
+                this.holdingItem.add(this.holdingItemText = this.scene.make.text({ x: 0, y: -20, text: upgradeText, style: {} }));
                 this.holdingItemText.setOrigin(0.5, 1);
 
                 this.pointerTarget.destroy();
@@ -211,7 +206,7 @@ export class Player extends MatterContainer {
     onTouchingItemEnd(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
         if (!myBody.isSensor) return;
         if (myBody.label !== 'hand') return;
-        
+
         const item = itemBody.gameObject as Item;
         if (this.pointerTarget !== item) return;
 
