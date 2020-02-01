@@ -205,7 +205,7 @@ export class Player extends MatterContainer {
 
         // prefer item over tank
         if (this.pointerTarget) {
-            if (this.pointerTarget.name === 'tank') {
+            if (this.pointerTarget.name === 'tank' && !this.holdingItem) {
                 const tank = this.pointerTarget as Tank;
                 tank.off(Tank.TANK_DIE, this.onTargetDie);
 
