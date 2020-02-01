@@ -28,6 +28,7 @@ export class MainScene extends Phaser.Scene {
 
     controlsList: Controls[];
 
+    isGameOver: boolean;
     bg: Phaser.GameObjects.TileSprite;
 
     itemLayer: Container;
@@ -56,6 +57,7 @@ export class MainScene extends Phaser.Scene {
 
     create(): void {
         log('create');
+        this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, 1366, 768, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
 
@@ -117,6 +119,15 @@ export class MainScene extends Phaser.Scene {
         updatePlayer(this.bluePlayer, this.controlsList[0])
         updatePlayer(this.redPlayer, this.controlsList[1])
 
+        const detectGameOver = (tank: Tank) => {
+            const isBlue = tank.team === Team.BLUE;
+            if (tank.hp <= 0) return false;
+            if (isBlue) {
+                return tank.x > this.sys.game.canvas.width;
+            } else {
+                return tank.x < 0;
+            }
+        }
         const updateAi = (tank: Tank) => {
             // AI decision logic
             const direction = tank.team === Team.BLUE ? 1 : -1;
@@ -153,8 +164,10 @@ export class MainScene extends Phaser.Scene {
                 fireBullet(tank, target);
                 tank.setVelocityX(0);
             } else {
-                // console.log(target, distance)
                 tank.setVelocityX(direction);
+            }
+            if (detectGameOver(tank)) {
+                this.setGameOver(tank.team);
             }
         }
         this.blueAi.forEach((ai) => updateAi(ai))
@@ -243,5 +256,12 @@ export class MainScene extends Phaser.Scene {
                 matchFoundCallback(bodyB, bodyA);
             }
         }
+    }
+
+    setGameOver(winner: Team) {
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+        const { height, width } = this.sys.game.canvas;
+        this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
     }
 }
