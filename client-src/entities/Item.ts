@@ -51,7 +51,7 @@ export class Item extends MatterContainer {
         ]);
 
         this.on('destroy', () => {
-            this.emit(Item.ITEM_DIE)
+            this.emit(Item.ITEM_DIE, this);
         });
     }
     init(x: number, y: number, upgrades: UpgradeObject): this {
