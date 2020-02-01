@@ -3,6 +3,7 @@ import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
+import { HpBar } from '../UI/HpBar';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -14,6 +15,7 @@ export class Player extends MatterContainer {
 
     hp: number;
     maxHP: number;
+    hpBar: HpBar;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -45,10 +47,15 @@ export class Player extends MatterContainer {
     init(x: number, y: number): this {
         this
             .setX(x)
-            .setY(y)
-            ;
+            .setY(y);
         this.hp = 5;
         this.maxHP = 5;
+        return this;
+    }
+    initHpBar(hpBar:HpBar) {
+        this.add(hpBar);
+        this.hpBar = hpBar;
+        this.hpBar.updateHPBar(this.hp, this.maxHP);
         return this;
     }
 

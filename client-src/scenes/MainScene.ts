@@ -6,6 +6,7 @@ import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
+import { HpBar } from '../UI/HpBar';
 
 type Key = Phaser.Input.Keyboard.Key;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
@@ -47,12 +48,15 @@ export class MainScene extends Phaser.Scene {
         this.bg.setOrigin(0, 0);
 
 
-        this.bluePlayer = <Player>this.add.existing(new Player(this, Team.BLUE));
-        this.bluePlayer.init(100, 100);
-        this.bluePlayer.initPhysics();
+        this.bluePlayer = <Player>this.add.existing(new Player(this, Team.BLUE))
+        this.bluePlayer.init(100, 100)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initPhysics();
 
         this.redPlayer = <Player>this.add.existing(new Player(this, Team.RED));
-        this.redPlayer.init(1100, 700);
+        this.redPlayer.init(1100, 700)
+            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initPhysics();
         this.redPlayer.initPhysics();
 
         const createAi = (team: Team, x: number, y: number) => {
