@@ -78,11 +78,6 @@ export class MainScene extends Phaser.Scene {
             .initPhysics()
             .init(1100, 700);
 
-        let box: Item;
-        this.itemLayer.add(box = new Item(this));
-        box.initPhysics();
-        box.init(200, 200);
-
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
@@ -206,7 +201,13 @@ export class MainScene extends Phaser.Scene {
     removeTank(tank: Tank) {
         this.blueAi = this.blueAi.filter(t => t !== tank);
         this.redAi = this.redAi.filter(t => t !== tank);
+        const position = { x: tank.x, y: tank.y };
         tank.destroy();
+        let box: Item;
+        this.itemLayer.add(box = new Item(this));
+        box.initPhysics();
+        box.init(position.x, position.y);
+
     }
 
     handleCollisions(event: any) {
