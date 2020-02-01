@@ -71,8 +71,8 @@ export class Player extends MatterContainer {
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
-        this.hp = 5;
-        this.maxHP = 5;
+        this.hp = 500;
+        this.maxHP = 500;
         return this;
     }
     initHpBar(hpBar: HpBar) {
@@ -153,11 +153,7 @@ export class Player extends MatterContainer {
                 this.holdingItem.destroy();
                 this.holdingItem = null;
             }
-
-            return;
-        }
-
-        if (this.pointerTarget.name === 'item') {
+        } else if (this.pointerTarget.name === 'item') {
             const item = this.pointerTarget as Item;
 
             if (this.holdingItem) {
@@ -190,9 +186,15 @@ export class Player extends MatterContainer {
                 this.pointerTarget = null;
 
             }
-        }
-        else if (this.pointerTarget.name === 'tank') {
-            this.holdingItem
+        } else if (this.pointerTarget.name === 'tank') {
+            const tank = this.pointerTarget as Tank;
+            if (this.holdingItem) {
+
+                tank.setUpgrade(this.holdingItem.upgrades);
+
+                this.holdingItem.destroy();
+                this.holdingItem = null;
+            }
         }
     }
 
@@ -200,7 +202,18 @@ export class Player extends MatterContainer {
         // a and b are bodies, but no TS definition...
         if (!itemBody.isSensor) return;
         if (myBody.label !== 'hand') return;
-        if (this.pointerTarget) return;
+
+        // prefer item over tank
+        if (this.pointerTarget) {
+            if (this.pointerTarget.name === 'tank' && !this.holdingItem) {
+                const tank = this.pointerTarget as Tank;
+                tank.off(Tank.TANK_DIE, this.onTargetDie);
+
+                tank.bodySprite.setTint(0xFFFFFF);
+            } else {
+                return;
+            }
+        }
 
         const item = itemBody.gameObject as Item;
         this.pointerTarget = item;
@@ -230,10 +243,15 @@ export class Player extends MatterContainer {
         // a and b are bodies, but no TS definition...
         if (!myBody.isSensor) return;
         if (myBody.label !== 'hand') return;
+        if (this.pointerTarget) return;
 
         const tank = tankBody.gameObject as Tank;
+        this.pointerTarget = tank;
+        tank.on(Tank.TANK_DIE, this.onTargetDie);
+
         this.tank = tank;
-        this.repairSprite.visible = true
+        this.repairSprite.visible = true;
+
         tank.bodySprite.setTint(0xAAAAAA);
     }
 
@@ -242,8 +260,15 @@ export class Player extends MatterContainer {
         if (myBody.label !== 'hand') return;
 
         const tank = tankBody.gameObject as Tank;
+        if (this.pointerTarget !== tank) return;
+
+        tank.off(Tank.TANK_DIE, this.onTargetDie);
+        this.pointerTarget = null;
+
+        // for repair only
         this.tank = null;
-        this.repairSprite.visible = false
+        this.repairSprite.visible = false;
+
         tank.bodySprite.setTint(0xFFFFFF);
     }
 

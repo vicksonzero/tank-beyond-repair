@@ -51,7 +51,6 @@ export class Item extends MatterContainer {
         ]);
 
         this.on('destroy', () => {
-            console.log('hi die');
             this.emit(Item.ITEM_DIE)
         });
     }

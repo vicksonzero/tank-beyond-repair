@@ -11,6 +11,7 @@ type Image = Phaser.GameObjects.Image;
 
 export class Tank extends MatterContainer {
 
+    static TANK_DIE = 'item-die';
     team: Team;
 
     hp: number;
@@ -47,12 +48,12 @@ export class Tank extends MatterContainer {
             ;
         this.team = team
         this.upgrades = {
-          range: 0,
-          damage: 0,
-          attackSpeed: 0,
-          maxHP: 0,
-          movementSpeed: 0,
-        }
+            range: 0,
+            damage: 0,
+            attackSpeed: 0,
+            maxHP: 0,
+            movementSpeed: 0,
+        };
         const color = this.team === Team.BLUE ? 'dark' : 'sand';
         this.add([
             this.bodySprite = this.scene.make.image({
@@ -68,6 +69,10 @@ export class Tank extends MatterContainer {
         ])
         this.bodySprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
         this.barrelSprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
+
+        this.on('destroy', () => {
+            this.emit(Tank.TANK_DIE);
+        });
     }
     init(x: number, y: number): this {
         this
@@ -82,7 +87,7 @@ export class Tank extends MatterContainer {
         this.attackSpeed = 1000;
         return this;
     }
-    initHpBar(hpBar:HpBar) {
+    initHpBar(hpBar: HpBar) {
         this.add(hpBar);
         this.hpBar = hpBar;
         this.updateHpBar();
@@ -138,7 +143,7 @@ export class Tank extends MatterContainer {
         this.hp = Math.min(this.hp + healAmount, this.maxHP);
     }
 
-    setFiring({ x, y }: { x: number, y: number}) {
+    setFiring({ x, y }: { x: number, y: number }) {
         this.barrelSprite.setRotation(Math.atan2(y, x) + 1.57);
         this.lastFired = Date.now();
     }
