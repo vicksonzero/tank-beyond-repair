@@ -6,7 +6,8 @@ export function preload(this: Phaser.Scene) {
         './assets/sprites/kenney_topdowntanksredux/allSprites_default.xml'
     );
     
-    // this.load.image('button_close', './assets/kenney/onscreencontrols/Sprites/shadedLight/shadedLight47.png');
+    this.load.image('manBlue_hold', './assets/sprites/topdown-shooter/PNG/manBlue_hold.png');
+    this.load.image('manRed_hold', './assets/sprites/topdown-shooter/PNG/manRed_hold.png');
 }
 
 export function setUpAnimations(this: Phaser.Scene) {
