@@ -1,7 +1,7 @@
 export enum collisionCategory {
     WORLD = 1 << 0,
-    PLAYER = 1 << 1,
-    PLAYER_BULLET = 1 << 2,
-    ENEMY = 1 << 3,
-    ENEMY_BULLET = 1 << 4,
+    RED = 1 << 1,
+    RED_BULLET = 1 << 2,
+    BLUE = 1 << 3,
+    BLUE_BULLET = 1 << 4,
 }

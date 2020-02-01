@@ -14,6 +14,7 @@ type Image = Phaser.GameObjects.Image;
 
 export class Player extends MatterContainer {
 
+    team: Team;
     hp: number;
     maxHP: number;
     hpBar: HpBar;
@@ -33,6 +34,7 @@ export class Player extends MatterContainer {
 
     constructor(scene: Phaser.Scene, team: Team) {
         super(scene, 0, 0, []);
+        this.team = team;
         this
             .setName('player')
             ;
@@ -61,13 +63,15 @@ export class Player extends MatterContainer {
     }
 
     initPhysics(): this {
+        const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
+        const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
         this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: 20 } });
         this
             .setMass(1)
             .setFrictionAir(0)
             .setFixedRotation()
-            .setCollisionCategory(collisionCategory.PLAYER)
-            .setCollidesWith(collisionCategory.WORLD | collisionCategory.PLAYER | collisionCategory.ENEMY | collisionCategory.ENEMY_BULLET)
+            .setCollisionCategory(hostCollision)
+            .setCollidesWith(collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollison)
             ;
         return this;
     }

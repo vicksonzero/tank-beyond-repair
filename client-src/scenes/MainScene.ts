@@ -9,6 +9,7 @@ import { Team } from '../entities/Team';
 import { Item } from '../entities/Item';
 import { GameObjects } from 'phaser';
 import { IMatterContactPoints } from '../utils/utils';
+import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
 
 type Key = Phaser.Input.Keyboard.Key;
@@ -38,6 +39,7 @@ export class MainScene extends Phaser.Scene {
     blueAi: Tank[];
     redPlayer: Player;
     redAi: Tank[];
+    bullets: Bullet[];
 
     get mainCamera() { return this.sys.cameras.main; }
 
@@ -94,8 +96,11 @@ export class MainScene extends Phaser.Scene {
             return createAi(Team.RED, 1000, y);
         });
 
+        this.bullets = [];
+
         this.matter.world.on('collisionstart', (event: any) => this.handleCollisions(event));
         this.matter.world.on('collisionend', (event: any) => this.handleCollisionsEnd(event));
+
         this.setUpKeyboard();
     }
 
@@ -135,6 +140,17 @@ export class MainScene extends Phaser.Scene {
             const { target, distance } = findTankWithClosestDistance(tank, enemy)
             if (target && distance <= 250) {
                 // stop and attack
+                const fireBullet = (tank: Tank, target: Tank | Player) => {
+                    if (!tank.canFire()) return;
+                    tank.setFiring();
+                    const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
+                    bullet.init(tank.x, tank.y, tank.getDamage());
+                    bullet.initPhysics();
+                    bullet.setVelocityX((target.x - tank.x) / 1000);
+                    bullet.setVelocityY((target.y - tank.y) / 1000);
+                    this.bullets.push(bullet);
+                }
+                fireBullet(tank, target);
                 tank.setVelocityX(0);
             } else {
                 // console.log(target, distance)
