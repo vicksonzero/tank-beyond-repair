@@ -94,6 +94,39 @@ export class MainScene extends Phaser.Scene {
         this.add.graphics().lineStyle(1, 0xFF0000, 1).strokeLineShape(rightBaseLine);
         this.add.graphics().lineStyle(1, 0xFFFFFF, 0.5).strokeLineShape(centerLine);
 
+        const controlTexts = [];
+        const controlGraphic = this.add.graphics()
+        controlGraphic.lineStyle(1, 0xFFFFFF, 1);
+        const creatButton = (offsetX: number, offsetY: number, letters: string[]) => {
+            let i = 0;
+            controlGraphic.strokeRoundedRect(offsetX + 64, offsetY + 32, 32, 32, 6);
+            controlTexts.push(this.add.text(
+                offsetX + 64 + 32 / 2,
+                offsetY + 32 + 32 / 2,
+                letters[i++],
+                {
+                    fontSize: '16px',
+                    fill: '#FFF',
+                    align: "center",
+                },
+            ).setOrigin(0.5));
+            [32, 64, 96, 160].map((x) => {
+                controlGraphic.strokeRoundedRect(offsetX + x, offsetY + 64, 32, 32, 6);
+                controlTexts.push(this.add.text(
+                    offsetX + x + 32 / 2,
+                    offsetY + 64 + 32 / 2,
+                    letters[i++],
+                    {
+                        fontSize: '16px',
+                        fill: '#FFF',
+                        align: "center",
+                    },
+                ).setOrigin(0.5));
+            });
+        };
+        creatButton(150, 0, ['W', 'A', 'S', 'D', 'C']);
+        creatButton(WORLD_WIDTH - 350, WORLD_HEIGHT - 150, ['↑', '←', '↓', '→', '/']);
+
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
@@ -109,7 +142,7 @@ export class MainScene extends Phaser.Scene {
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
         this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer.initPhysics()
-            .init(1100, 700)
+            .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
             .initHpBar(new HpBar(this, 0, -25, 30, 4));
 
         const createAi = (team: Team, x: number, y: number) => {
