@@ -7,6 +7,7 @@ Phaser 3 starter copied from cook-engine, with server side stripped away
   - [Controls](#controls)
 - [Getting started](#getting-started)
   - [Dev](#dev)
+    - [Docs](#docs)
   - [Prod](#prod)
   - [How to read logs made with `log()`](#how-to-read-logs-made-with-log)
 - [Tech Stack](#tech-stack)
@@ -38,6 +39,10 @@ Entry point is client.ts
 Main Phaser scene is `MainScene.ts` (duh)  
 All meat starts with the `create()` and `update()` calls
 
+### Docs
+
+https://photonstorm.github.io/phaser3-docs
+
 ## Prod
 
 ```sh
@@ -52,7 +57,7 @@ Built content will be put in `
 1. open the game in browser
 2. Open console
 3. input `_Debug.enable('tank-beyond-repair:*')` and press enter
-4. Replace `'tank-beyond-repair:*'` with any filter you want. consult `npm Debug.js` for more doc
+4. Replace `'tank-beyond-repair:*'` with any filter you want. consult [npm package debug](https://www.npmjs.com/package/debug) for more doc
 
 
 
