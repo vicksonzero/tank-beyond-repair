@@ -7,10 +7,18 @@ const log = Debug('tank-beyond-repair:Item:log');
 // warn.log = console.warn.bind(console);
 
 type Image = Phaser.GameObjects.Image;
+type Text = Phaser.GameObjects.Text;
+
+
+export type UpgradeDef = { [x: string]: integer };
 
 export class Item extends MatterContainer {
 
+
+    static ITEM_DIE = 'item-die';
     itemSprite: Image;
+    itemText: Text;
+    upgrades: UpgradeDef = { 'dummy': Math.floor(Math.random() * 100) };
 
 
     private undoTintEvent?: Phaser.Time.TimerEvent;
@@ -27,7 +35,18 @@ export class Item extends MatterContainer {
                 key: `allSprites_default`,
                 frame: 'crateMetal',
             }, false),
+            this.itemText = this.scene.make.text({
+                x: 0, y: -10,
+                text: '',
+                style: {},
+            })
+
         ]);
+
+        this.on('destroy', () => {
+            console.log('hi die');
+            this.emit(Item.ITEM_DIE)
+        });
     }
     init(x: number, y: number): this {
         this
@@ -52,5 +71,15 @@ export class Item extends MatterContainer {
     moveInDirection(dirX: number, dirY: number) {
         this.setVelocity(dirX, dirY);
         this.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
+    }
+
+    setUpgrades(upgrades: UpgradeDef) {
+        this.upgrades = { ...upgrades };
+
+        const upgradeText = (Object.entries(this.upgrades)
+            .map(([key, value]) => `${key}${(value >= 0 ? '+' + value : value)}`)
+            .join('\n')
+        );
+        this.itemText.setText(upgradeText);
     }
 }

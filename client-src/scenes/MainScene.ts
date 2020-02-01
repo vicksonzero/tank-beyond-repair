@@ -7,7 +7,7 @@ import { preload as _preload } from '../assets';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
-import { Item } from '../entities/Item';
+import { Item, UpgradeDef } from '../entities/Item';
 // import { GameObjects } from 'phaser';
 import { IMatterContactPoints } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
@@ -69,11 +69,13 @@ export class MainScene extends Phaser.Scene {
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
+        this.bluePlayer.spawnItem = this.spawnItem;
         this.bluePlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics()
             .init(100, 100);
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
+        this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics()
             .init(1100, 700);
@@ -195,7 +197,12 @@ export class MainScene extends Phaser.Scene {
                 action: this.input.keyboard.addKey(KeyCodes.FORWARD_SLASH),
             }
         ];
-
+        this.controlsList[0].action.on('down', (evt: any) => {
+            this.bluePlayer.onActionPressed();
+        });
+        this.controlsList[1].action.on('down', (evt: any) => {
+            this.redPlayer.onActionPressed();
+        });
     }
 
     removeTank(tank: Tank) {
@@ -289,5 +296,14 @@ export class MainScene extends Phaser.Scene {
         this.isGameOver = true;
         const { height, width } = this.sys.game.canvas;
         this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
+    }
+
+    spawnItem = (x: number, y: number, upgrades?: UpgradeDef) => {
+        let box: Item;
+        this.itemLayer.add(box = new Item(this));
+        box.initPhysics();
+        box.init(x, y);
+
+        return box;
     }
 }
