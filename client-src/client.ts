@@ -1,3 +1,5 @@
+import { WORLD_WIDTH, WORLD_HEIGHT } from './constants'
+
 import * as Debug from 'debug';
 import "phaser";
 import { MainScene } from "./scenes/MainScene";
@@ -10,8 +12,8 @@ const verbose = Debug('tank-beyond-repair:client:verbose ');
 
 // main game configuration
 const phaserConfig: Phaser.Types.Core.GameConfig = {
-    width: 1366,
-    height: 768,
+    width: WORLD_WIDTH,
+    height: WORLD_HEIGHT,
     disableContextMenu: true,
     type: Phaser.AUTO,
     parent: "game",
