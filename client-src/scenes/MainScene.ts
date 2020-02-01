@@ -61,8 +61,9 @@ export class MainScene extends Phaser.Scene {
 
         const createAi = (team: Team, x: number, y: number) => {
             const ai = <Tank>this.add.existing(new Tank(this, team));
-            ai.init(x, y);
-            ai.initPhysics();
+            ai.init(x, y)
+                .initHpBar(new HpBar(this, 0, -25, 30, 4))
+                .initPhysics();
             return ai
         }
         this.blueAi = [200, 400, 600].map((y) => {

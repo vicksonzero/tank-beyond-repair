@@ -3,6 +3,7 @@ import MatterContainer from './MatterContainer';
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
+import { HpBar } from '../UI/HpBar';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -12,6 +13,7 @@ export class Tank extends MatterContainer {
     team: Team;
     hp: number;
     maxHP: number;
+    hpBar: HpBar;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -53,6 +55,12 @@ export class Tank extends MatterContainer {
             ;
         this.hp = 5;
         this.maxHP = 5;
+        return this;
+    }
+    initHpBar(hpBar:HpBar) {
+        this.add(hpBar);
+        this.hpBar = hpBar;
+        this.hpBar.updateHPBar(this.hp, this.maxHP);
         return this;
     }
 
