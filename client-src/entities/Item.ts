@@ -46,8 +46,8 @@ export class Item extends MatterContainer {
             .setMass(1)
             .setFrictionAir(0.7)
             .setFixedRotation()
-            .setCollisionCategory(collisionCategory.PLAYER)
-            .setCollidesWith(collisionCategory.WORLD | collisionCategory.PLAYER | collisionCategory.ENEMY | collisionCategory.ENEMY_BULLET)
+            .setCollisionCategory(collisionCategory.WORLD)
+            .setCollidesWith(collisionCategory.WORLD | collisionCategory.BLUE | collisionCategory.RED)
             ;
         return this;
     }

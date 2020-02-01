@@ -146,8 +146,8 @@ export class MainScene extends Phaser.Scene {
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.init(tank.x, tank.y, tank.getDamage());
                     bullet.initPhysics();
-                    bullet.setVelocityX((target.x - tank.x) / 1000);
-                    bullet.setVelocityY((target.y - tank.y) / 1000);
+                    bullet.setVelocityX(Math.sign(target.x - tank.x) * 2);
+                    bullet.setVelocityY(0);
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
