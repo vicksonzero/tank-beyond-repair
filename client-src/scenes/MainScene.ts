@@ -1,4 +1,10 @@
-import { SPAWN_INTERVAL, WORLD_WIDTH, WORLD_HEIGHT } from '../constants'
+import {
+    SPAWN_DELAY,
+    SPAWN_INTERVAL,
+    BASE_LINE_WIDTH,
+    WORLD_WIDTH,
+    WORLD_HEIGHT,
+} from '../constants'
 
 import * as Debug from 'debug';
 import "phaser";
@@ -64,6 +70,29 @@ export class MainScene extends Phaser.Scene {
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
         this.bg.setAlpha(0.7);
+
+        const leftBaseLine = new Phaser.Geom.Line(
+          BASE_LINE_WIDTH,
+          0,
+          BASE_LINE_WIDTH,
+          WORLD_HEIGHT
+        );
+        const rightBaseLine = new Phaser.Geom.Line(
+          WORLD_WIDTH - BASE_LINE_WIDTH,
+          0,
+          WORLD_WIDTH - BASE_LINE_WIDTH,
+          WORLD_HEIGHT
+        );
+        const centerLine = new Phaser.Geom.Line(
+          WORLD_WIDTH / 2,
+          0,
+          WORLD_WIDTH / 2,
+          WORLD_HEIGHT
+        );
+        // in Scene.update()
+        this.add.graphics().lineStyle(1, 0x0000FF, 1).strokeLineShape(leftBaseLine);
+        this.add.graphics().lineStyle(1, 0xFF0000, 1).strokeLineShape(rightBaseLine);
+        this.add.graphics().lineStyle(1, 0xFFFFFF, 0.5).strokeLineShape(centerLine);
 
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
@@ -132,9 +161,9 @@ export class MainScene extends Phaser.Scene {
             const isBlue = tank.team === Team.BLUE;
             if (tank.hp <= 0) return false;
             if (isBlue) {
-                return tank.x > this.sys.game.canvas.width;
+                return tank.x > (WORLD_WIDTH - BASE_LINE_WIDTH);
             } else {
-                return tank.x < 0;
+                return tank.x < BASE_LINE_WIDTH;
             }
         }
         const updateAi = (tank: Tank) => {
