@@ -1,8 +1,6 @@
 import MatterContainer from './MatterContainer';
 import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
-import { capitalize } from '../utils/utils';
-import { Team } from './Team';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
@@ -14,7 +12,6 @@ export class Item extends MatterContainer {
 
     itemSprite: Image;
 
-    // onHitPart?: (parent: any, part: Part, contactPoints: { vertex: { x: number, y: number } }[]) => void;
 
     private undoTintEvent?: Phaser.Time.TimerEvent;
 
@@ -56,28 +53,4 @@ export class Item extends MatterContainer {
         this.setVelocity(dirX, dirY);
         this.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
     }
-
-    // takeDamage(amount: number): this {
-
-    //     this.hp -= amount;
-
-    //     this.undoTintEvent = this.scene.time.addEvent({
-    //         delay: 200, loop: false, callback: () => {
-    //             // some_sprite.setTint(0xAAAAAA);
-    //         }
-    //     });
-
-    //     if (this.hp <= 0) {
-    //         if (this.undoTintEvent) this.undoTintEvent.destroy();
-    //         // this.gm.makeExplosion3(this.x, this.y);
-    //         // this.gm.gameIsOver = true;
-    //         this.visible = false;
-    //         this
-    //             .setCollisionCategory(0)
-    //             ;
-    //         // .setPosition(-1000, -1000);
-    //         this.scene.cameras.main.shake(1000, 0.04, false);
-    //     }
-    //     return this;
-    // }
 }
