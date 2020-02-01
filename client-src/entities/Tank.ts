@@ -109,6 +109,10 @@ export class Tank extends MatterContainer {
         return this.damage;
     }
 
+    getRange() {
+        return this.range;
+    }
+
     takeDamage(amount: number): this {
 
         this.hp -= amount;
