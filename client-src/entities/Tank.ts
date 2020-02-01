@@ -103,7 +103,6 @@ export class Tank extends MatterContainer {
         this.damage = 1;
         this.lastFired = 0;
         this.attackSpeed = 1000;
-        this.refreshUpgradeGraphics();
         this.updateHpBar();
         this.refreshUpgradeGraphics();
         return this;
