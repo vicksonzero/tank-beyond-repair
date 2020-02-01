@@ -8,10 +8,14 @@ import { UpgradeObject, UpgradeType } from './Upgrade';
 
 
 type Image = Phaser.GameObjects.Image;
+type Graphics = Phaser.GameObjects.Graphics;
+type Text = Phaser.GameObjects.Text;
+type Container = Phaser.GameObjects.Container;
 
 export class Tank extends MatterContainer {
 
     static TANK_DIE = 'item-die';
+    bodyRadius = 20;
     team: Team;
 
     hp: number;
@@ -35,6 +39,10 @@ export class Tank extends MatterContainer {
     hpBar: HpBar;
     bodySprite: Image;
     barrelSprite: Image;
+    uiContainer: Container;
+    detailsText: Text;
+    rangeMarker: Graphics;
+
 
 
     // onHitPart?: (parent: any, part: Part, contactPoints: { vertex: { x: number, y: number } }[]) => void;
@@ -66,7 +74,17 @@ export class Tank extends MatterContainer {
                 key: 'allSprites_default',
                 frame: `tank${capitalize(color)}_barrel2_outline`,
             }, false),
-        ])
+            this.uiContainer = this.scene.make.container({ x: 0, y: 0 }),
+        ]);
+
+        this.uiContainer.add([
+            this.detailsText = this.scene.make.text({ x: 0, y: -20, text: '', style: { align: 'center' } }),
+            this.rangeMarker = this.scene.make.graphics({ x: 0, y: 0 }),
+        ]);
+        this.uiContainer.setVisible(false);
+        this.detailsText.setOrigin(0.5, 1);
+
+
         this.bodySprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
         this.barrelSprite.setRotation(this.team === Team.BLUE ? 1.57 : -1.57);
 
@@ -85,6 +103,9 @@ export class Tank extends MatterContainer {
         this.damage = 1;
         this.lastFired = 0;
         this.attackSpeed = 1000;
+        this.refreshUpgradeGraphics();
+        this.updateHpBar();
+        this.refreshUpgradeGraphics();
         return this;
     }
     initHpBar(hpBar: HpBar) {
@@ -100,7 +121,7 @@ export class Tank extends MatterContainer {
     initPhysics(): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
         const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
-        this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: 20 } });
+        this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: this.bodyRadius }, label: 'tank-body' });
         this
             .setMass(1)
             .setFrictionAir(0.5)
@@ -130,6 +151,7 @@ export class Tank extends MatterContainer {
         });
 
         this.updateHpBar();
+        this.refreshUpgradeGraphics();
         return this;
     }
 
@@ -141,6 +163,23 @@ export class Tank extends MatterContainer {
         // always heal at least 1
         const healAmount = Math.max(upgrades.maxHP, 1);
         this.hp = Math.min(this.hp + healAmount, this.maxHP);
+
+        this.refreshUpgradeGraphics();
+    }
+
+    refreshUpgradeGraphics(): this {
+        const str = `HP: ${this.hp}/${this.maxHP}\n` +
+            `DMG: ${this.damage} x ${1000 / this.attackSpeed}\n` +
+            ``;
+        this.detailsText.setText(str);
+
+        this.rangeMarker.clear();
+        this.rangeMarker.lineStyle(2, 0xFFFFFF, 0.8);
+        this.rangeMarker.strokeCircle(0, 0, this.range);
+        this.rangeMarker.lineStyle(2, 0xAAAAAA, 0.8);
+        this.rangeMarker.strokeCircle(0, 0, this.range - 2);
+
+        return this;
     }
 
     setFiring({ x, y }: { x: number, y: number }) {
@@ -160,6 +199,7 @@ export class Tank extends MatterContainer {
             }
         }
         this.updateHpBar();
+        this.refreshUpgradeGraphics();
     }
     destroy() {
         if (this.undoTintEvent) this.undoTintEvent.destroy();
