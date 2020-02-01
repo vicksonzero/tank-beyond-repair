@@ -76,8 +76,8 @@ export class Player extends MatterContainer {
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
-        this.hp = 500;
-        this.maxHP = 500;
+        this.hp = 100;
+        this.maxHP = 100;
         this.updateHpBar();
         return this;
     }
@@ -193,7 +193,7 @@ export class Player extends MatterContainer {
                 this.holdingItem.upgrades = { ...item.upgrades };
                 const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
 
-                this.holdingItem.add(this.holdingItemText = this.scene.make.text({ x: 0, y: -20, text: upgradeText, style: {} }));
+                this.holdingItem.add(this.holdingItemText = this.scene.make.text({ x: 0, y: -20, text: upgradeText, style: { align: 'center' } }));
                 this.holdingItemText.setOrigin(0.5, 1);
 
                 this.pointerTarget.destroy();

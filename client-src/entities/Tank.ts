@@ -86,6 +86,7 @@ export class Tank extends MatterContainer {
 
 
         this.bodySprite.setAngle(this.team === Team.BLUE ? 90 : -90);
+        this.barrelSprite.setOrigin(0.5, 0.7);
         this.barrelSprite.setAngle(this.team === Team.BLUE ? 90 : -90);
 
         this.on('destroy', () => {
@@ -114,7 +115,7 @@ export class Tank extends MatterContainer {
         return this;
     }
     updateHpBar() {
-        this.hpBar.updateHPBar(this.hp, this.maxHP);
+        this.hpBar.updateHPBar(this.hp, this.maxHP, (this.maxHP - 5) * 2);
     }
 
     initPhysics(): this {
@@ -188,6 +189,8 @@ export class Tank extends MatterContainer {
         this.rangeMarker.strokeCircle(0, 0, this.range);
         this.rangeMarker.lineStyle(8, 0xFFFFFF, 0.2);
         this.rangeMarker.strokeCircle(0, 0, this.range - 6);
+
+        this.barrelSprite.setScale(1 + 0.2 * this.upgrades.damage, 1 + 0.2 * this.upgrades.range);
 
         return this;
     }

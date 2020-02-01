@@ -19,7 +19,7 @@ import { Item } from '../entities/Item';
 import { IMatterContactPoints } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
-import { UpgradeObject } from '../entities/Upgrade';
+import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
 import { Time } from 'phaser';
 
 type Key = Phaser.Input.Keyboard.Key;
@@ -37,6 +37,7 @@ export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key 
 export class MainScene extends Phaser.Scene {
 
     controlsList: Controls[];
+    cheats: { spawnUpgrades: Key };
 
     isGameOver: boolean;
     spawnTimer: Phaser.Time.TimerEvent;
@@ -281,6 +282,9 @@ export class MainScene extends Phaser.Scene {
     }
 
     setUpKeyboard() {
+        this.cheats = {
+            spawnUpgrades: this.input.keyboard.addKey(KeyCodes.ZERO),
+        };
         this.controlsList = [
             {
                 up: this.input.keyboard.addKey(KeyCodes.W),
@@ -303,6 +307,19 @@ export class MainScene extends Phaser.Scene {
         this.controlsList[1].action.on('down', (evt: any) => {
             this.redPlayer.onActionPressed();
         });
+        this.cheats.spawnUpgrades.on('down', (evt: any) => {
+            const upgrades = {
+                range: 0,
+                damage: 0,
+                attackSpeed: 0,
+                maxHP: 0,
+                movementSpeed: 0,
+            };
+            const keys = Object.keys(upgrades);
+            const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
+            upgrades[randomUpgradeKey] += 1;
+            this.spawnItem(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, upgrades, true);
+        });
     }
 
     removeTank(tank: Tank) {
@@ -316,6 +333,9 @@ export class MainScene extends Phaser.Scene {
         const { upgrades } = tank;
         tank.destroy();
 
+        const keys = Object.keys(upgrades);
+        const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
+        upgrades[randomUpgradeKey] += 1;
         this.spawnItem(position.x, position.y, upgrades, true);
     }
     removeBullet(bullet: Bullet) {
@@ -325,7 +345,7 @@ export class MainScene extends Phaser.Scene {
     handleCollisions(event: any) {
         //  Loop through all of the collision pairs
         const { pairs } = event;
-        console.log('handleCollisions', pairs.slice());
+        // console.log('handleCollisions', pairs.slice());
         pairs.forEach((pair: any) => {
             const bodyA: any = pair.bodyA;
             const bodyB: any = pair.bodyB;
@@ -453,7 +473,8 @@ export class MainScene extends Phaser.Scene {
         let box: Item;
         this.itemLayer.add(box = new Item(this));
         box.initPhysics()
-            .init(x, y, upgrades);
+            .init(x, y, upgrades)
+            .setUpgrades(upgrades);
         if (isScatter) {
             const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
             box.setVelocity(dir.x, dir.y);

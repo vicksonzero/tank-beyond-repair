@@ -45,10 +45,11 @@ export class Item extends MatterContainer {
             this.itemText = this.scene.make.text({
                 x: 0, y: -20,
                 text: '',
-                style: {},
+                style: { align: 'center' },
             })
 
         ]);
+        this.itemText.setOrigin(0.5, 1);
 
         this.on('destroy', () => {
             this.emit(Item.ITEM_DIE, this);
@@ -59,9 +60,6 @@ export class Item extends MatterContainer {
             .setX(x)
             .setY(y)
             ;
-        let max = 0;
-        const keys = Object.keys(upgrades);
-        const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
         const {
             range,
             damage,
@@ -76,7 +74,6 @@ export class Item extends MatterContainer {
             maxHP,
             movementSpeed,
         }
-        this.upgrades[randomUpgradeKey] += 1;
         return this;
     }
 

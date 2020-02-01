@@ -11,9 +11,9 @@ export class HpBar extends Phaser.GameObjects.Graphics {
     }
 
 
-    updateHPBar(hp: number, maxHP: number) {
+    updateHPBar(hp: number, maxHP: number, widthBonus=0) {
         this.clear();
-        const width = this.barWidth;
+        const width = this.barWidth + widthBonus;
         const height = this.barHeight;
 
         const hue = (hp / maxHP * 120 / 360);
