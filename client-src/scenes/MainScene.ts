@@ -205,11 +205,12 @@ export class MainScene extends Phaser.Scene {
         this.blueAi = this.blueAi.filter(t => t !== tank);
         this.redAi = this.redAi.filter(t => t !== tank);
         const position = { x: tank.x, y: tank.y };
+        const { upgrades } = tank;
         tank.destroy();
         let box: Item;
         this.itemLayer.add(box = new Item(this));
         box.initPhysics()
-            .init(position.x, position.y);
+            .init(position.x, position.y, upgrades);
         const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
         log(dir);
         box.setVelocity(dir.x, dir.y);
