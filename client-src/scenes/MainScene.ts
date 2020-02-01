@@ -193,6 +193,16 @@ export class MainScene extends Phaser.Scene {
             checkPairGameObjectName('player', 'item', (a: any, b: any) => {
                 (<Player>a.gameObject).onTouchingItemStart(b.gameObject as Item, activeContacts as IMatterContactPoints);
             });
+            checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
+                tank.gameObject.takeDamage(bullet.gameObject.damage);
+                tank.gameObject.updateHpBar();
+                bullet.gameObject.destroy();
+            });
+            checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
+                player.gameObject.takeDamage(bullet.gameObject.damage);
+                player.gameObject.updateHpBar();
+                bullet.gameObject.destroy();
+            });
             if (!(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
             // checkPairGameObjectName('player_bullet', 'enemy', (a: any, b: any) => {
@@ -227,9 +237,9 @@ export class MainScene extends Phaser.Scene {
             nameA: string, nameB: string,
             matchFoundCallback: (a: any, b: any) => void
         ) => {
-            if (bodyA.gameObject.name === nameA && bodyB.gameObject.name === nameB) {
+            if (bodyA?.gameObject?.name === nameA && bodyB?.gameObject?.name === nameB) {
                 matchFoundCallback(bodyA, bodyB);
-            } else if (bodyB.gameObject.name === nameA && bodyA.gameObject.name === nameB) {
+            } else if (bodyB?.gameObject?.name === nameA && bodyA?.gameObject?.name === nameB) {
                 matchFoundCallback(bodyB, bodyA);
             }
         }

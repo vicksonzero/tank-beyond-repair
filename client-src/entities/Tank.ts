@@ -67,8 +67,11 @@ export class Tank extends MatterContainer {
     initHpBar(hpBar:HpBar) {
         this.add(hpBar);
         this.hpBar = hpBar;
-        this.hpBar.updateHPBar(this.hp, this.maxHP);
+        this.updateHpBar();
         return this;
+    }
+    updateHpBar() {
+        this.hpBar.updateHPBar(this.hp, this.maxHP);
     }
 
     initPhysics(): this {
