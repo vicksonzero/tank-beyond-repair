@@ -23,6 +23,8 @@ const log = Debug('tank-beyond-repair:MainScene:log');
 
 
 const SPAWN_INTERVAL = 5000;
+const WORLD_WIDTH = 1366;
+const WORLD_HEIGHT = 768
 
 export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key };
 
@@ -61,7 +63,7 @@ export class MainScene extends Phaser.Scene {
     create(): void {
         log('create');
         this.isGameOver = false;
-        this.bg = this.add.tileSprite(0, 0, 1366, 768, 'allSprites_default', 'tileGrass1');
+        this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
 
         this.itemLayer = this.add.container(0, 0);
@@ -106,6 +108,9 @@ export class MainScene extends Phaser.Scene {
 
         this.bullets = [];
 
+        this.matter.world
+            .setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
+            ;
         this.matter.world.on('collisionstart', (event: any) => this.handleCollisions(event));
         this.matter.world.on('collisionend', (event: any) => this.handleCollisionsEnd(event));
 
