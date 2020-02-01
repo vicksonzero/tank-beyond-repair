@@ -157,11 +157,21 @@ export class Tank extends MatterContainer {
 
     setUpgrade(upgrades: UpgradeObject) {
         Object.keys(upgrades).forEach((key: UpgradeType) => {
-            this[key] += upgrades[key];
             this.upgrades[key] += upgrades[key];
+            let value = 0;
+            let level = upgrades[key];
+            switch (key) {
+                case 'range': value = 10; break;
+                case 'damage': value = 1; break;
+                case 'attackSpeed': value = -50; break;
+                case 'maxHP': value = 5; break;
+                case 'movementSpeed': value = 0.1; break;
+                default: break;
+            }
+            this[key] += level * value;
         })
         // always heal at least 1
-        const healAmount = Math.max(upgrades.maxHP, 1);
+        const healAmount = Math.max(upgrades.maxHP * 5, 1);
         this.hp = Math.min(this.hp + healAmount, this.maxHP);
 
         this.refreshUpgradeGraphics();

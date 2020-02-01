@@ -76,16 +76,7 @@ export class Item extends MatterContainer {
             maxHP,
             movementSpeed,
         }
-        let value = 0;
-        switch (randomUpgradeKey) {
-            case 'range': value = 10; break;
-            case 'damage': value = 1; break;
-            case 'attackSpeed': value = -50; break;
-            case 'maxHP': value = 5; break;
-            case 'movementSpeed': value = 0.1; break;
-            default: break;
-        }
-        this.upgrades[randomUpgradeKey] += value;
+        this.upgrades[randomUpgradeKey] += 1;
         return this;
     }
 
