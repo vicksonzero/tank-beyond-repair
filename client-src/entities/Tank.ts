@@ -129,7 +129,8 @@ export class Tank extends MatterContainer {
             this.upgrades[key] += upgrades[key];
         })
         // always heal at least 1
-        this.hp += Math.max(upgrades.maxHP, 1);
+        const healAmount = Math.max(upgrades.maxHP, 1);
+        this.hp = Math.min(this.hp + healAmount, this.maxHP);
     }
 
     setFiring({ x, y }: { x: number, y: number}) {
