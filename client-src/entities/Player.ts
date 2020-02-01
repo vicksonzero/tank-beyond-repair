@@ -80,8 +80,10 @@ export class Player extends MatterContainer {
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
-        this.hp = 100;
-        this.maxHP = 100;
+        this.hp = 50;
+        
+        this.maxHP = 50;
+        
         this.updateHpBar();
         return this;
     }
