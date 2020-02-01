@@ -3,6 +3,7 @@ import MatterContainer from './MatterContainer';
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
+import { HpBar } from '../ui/HpBar';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -22,6 +23,7 @@ export class Tank extends MatterContainer {
     lastFired: number;
     attackSpeed: number;
 
+    hpBar: HpBar;
     bodySprite: Image;
     barrelSprite: Image;
 
@@ -60,6 +62,12 @@ export class Tank extends MatterContainer {
         this.damage = 10;
         this.lastFired = 0;
         this.attackSpeed = 1000;
+        return this;
+    }
+    initHpBar(hpBar:HpBar) {
+        this.add(hpBar);
+        this.hpBar = hpBar;
+        this.hpBar.updateHPBar(this.hp, this.maxHP);
         return this;
     }
 
