@@ -12,7 +12,7 @@ export class Bullet extends MatterContainer {
     sprite: any;
 
     constructor(scene: Phaser.Scene, team: Team) {
-        var circle = new Phaser.Geom.Circle(0, 0, 1);
+        const circle = new Phaser.Geom.Circle(0, 0, 1);
         super(scene, 0, 0, []);
         this.team = team
         const graphics = this.scene.add.graphics({ fillStyle: { color: 0x0000ff } });

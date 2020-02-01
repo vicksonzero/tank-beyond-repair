@@ -12,6 +12,7 @@ import { Item } from '../entities/Item';
 import { IMatterContactPoints } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
+import { UpgradeObject } from '../entities/Upgrade';
 
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
@@ -71,11 +72,13 @@ export class MainScene extends Phaser.Scene {
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
+        this.bluePlayer.spawnItem = this.spawnItem;
         this.bluePlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics()
             .init(100, 100);
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
+        this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer.initHpBar(new HpBar(this, 0, -25, 30, 4))
             .initPhysics()
             .init(1100, 700);
@@ -198,7 +201,12 @@ export class MainScene extends Phaser.Scene {
                 action: this.input.keyboard.addKey(KeyCodes.FORWARD_SLASH),
             }
         ];
-
+        this.controlsList[0].action.on('down', (evt: any) => {
+            this.bluePlayer.onActionPressed();
+        });
+        this.controlsList[1].action.on('down', (evt: any) => {
+            this.redPlayer.onActionPressed();
+        });
     }
 
     removeTank(tank: Tank) {
@@ -207,13 +215,8 @@ export class MainScene extends Phaser.Scene {
         const position = { x: tank.x, y: tank.y };
         const { upgrades } = tank;
         tank.destroy();
-        let box: Item;
-        this.itemLayer.add(box = new Item(this));
-        box.initPhysics()
-            .init(position.x, position.y, upgrades);
-        const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
-        log(dir);
-        box.setVelocity(dir.x, dir.y);
+
+        this.spawnItem(position.x, position.y, upgrades, true);
     }
 
     handleCollisions(event: any) {
@@ -295,5 +298,19 @@ export class MainScene extends Phaser.Scene {
         this.isGameOver = true;
         const { height, width } = this.sys.game.canvas;
         this.add.text(width / 2 - 100, height / 2, `${winner} Wins!`, { fontSize: '64px', fill: '#fff' });
+    }
+
+    spawnItem = (x: number, y: number, upgrades: UpgradeObject, isScatter = false) => {
+
+        let box: Item;
+        this.itemLayer.add(box = new Item(this));
+        box.initPhysics()
+            .init(x, y, upgrades);
+        if (isScatter) {
+            const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+            box.setVelocity(dir.x, dir.y);
+
+        }
+        return box;
     }
 }
