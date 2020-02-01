@@ -8,6 +8,7 @@ Phaser 3 starter copied from cook-engine, with server side stripped away
 - [Getting started](#getting-started)
   - [Dev](#dev)
     - [Docs](#docs)
+    - [Important links](#important-links)
   - [Prod](#prod)
   - [How to read logs made with `log()`](#how-to-read-logs-made-with-log)
 - [Tech Stack](#tech-stack)
@@ -42,6 +43,13 @@ All meat starts with the `create()` and `update()` calls
 ### Docs
 
 https://photonstorm.github.io/phaser3-docs
+
+### Important links
+
+https://globalgamejam.org/2020/games/tank-beyond-repair-5
+https://github.com/vicksonzero/tank-beyond-repair
+https://globalgamejam.org/2020/jam-sites/hong-kong
+
 
 ## Prod
 
