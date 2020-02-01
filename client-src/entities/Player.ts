@@ -3,7 +3,7 @@ import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
-import { HpBar } from '../UI/HpBar';
+import { HpBar } from '../ui/HpBar';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');

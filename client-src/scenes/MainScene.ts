@@ -6,7 +6,7 @@ import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
-import { HpBar } from '../UI/HpBar';
+import { HpBar } from '../ui/HpBar';
 
 type Key = Phaser.Input.Keyboard.Key;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
