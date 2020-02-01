@@ -4,6 +4,7 @@ import "phaser";
 import { preload as _preload } from '../assets';
 import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../entities/Player';
+import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
 
 type Key = Phaser.Input.Keyboard.Key;
@@ -23,7 +24,9 @@ export class MainScene extends Phaser.Scene {
 
     bg: Phaser.GameObjects.TileSprite;
     bluePlayer: Player;
+    blueAi: Tank[];
     redPlayer: Player;
+    redAi: Tank[];
 
     get mainCamera() { return this.sys.cameras.main; }
 
@@ -52,6 +55,19 @@ export class MainScene extends Phaser.Scene {
         this.redPlayer.init(200, 200);
         this.redPlayer.initPhysics();
 
+        const createAi = (team: Team, x: number, y: number) => {
+            const ai = <Tank>this.add.existing(new Tank(this, team));
+            ai.init(x, y);
+            ai.initPhysics();
+            return ai
+        }
+        this.blueAi = [200, 400, 600].map((y) => {
+            return createAi(Team.BLUE, 300, y);
+        })
+        this.redAi = [200, 400, 600].map((y) => {
+            return createAi(Team.RED, 1000, y);
+        })
+
         this.setUpKeyboard();
     }
 
@@ -67,6 +83,14 @@ export class MainScene extends Phaser.Scene {
         }
         updatePlayer(this.bluePlayer, this.controlsList[0])
         updatePlayer(this.redPlayer, this.controlsList[1])
+        
+        const updateAi = (tank: Tank, team: Team) => {
+            // AI decision logic
+            team === Team.BLUE ?
+            tank.setVelocityX(1): tank.setVelocityX(-1);
+        }
+        this.blueAi.forEach((ai) => updateAi(ai, Team.BLUE))
+        this.redAi.forEach((ai) => updateAi(ai, Team.RED))
     }
 
     setUpKeyboard() {
