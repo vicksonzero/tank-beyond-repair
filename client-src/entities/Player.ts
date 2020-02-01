@@ -211,6 +211,7 @@ export class Player extends MatterContainer {
         }
     }
 
+    // try to highlight an item
     onTouchingItemStart(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
         // log('onTouchingItemStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
         // a and b are bodies, but no TS definition...
@@ -218,19 +219,23 @@ export class Player extends MatterContainer {
         if (myBody.label !== 'hand') return;
         // console.log('onTouchingItemStart do');
 
-        // prefer item over tank
-        if (this.pointerTarget) {
-            if (this.pointerTarget.name === 'tank' && !this.holdingItem) {
+        // if not holding item, prefer item over tank
+        if (!this.holdingItem && this.pointerTarget) { // if already aiming at something
+            if (this.pointerTarget.name === 'item') {
+                // ignore the exchange if already looking at item
+                return;
+            } else {
+                // give up target only if is tank
                 const tank = this.pointerTarget as Tank;
                 tank.off(Tank.TANK_DIE, this.onTargetDie);
 
                 tank.bodySprite.setTint(0xFFFFFF);
                 tank.uiContainer.setVisible(false);
-            } else {
-                return;
+                // give up tank and continue to look for item
             }
         }
-
+        // if i am looking for an item
+        // highlight the item 
         const item = itemBody.gameObject as Item;
         this.pointerTarget = item;
         item.on(Item.ITEM_DIE, this.onTargetDie);
@@ -252,9 +257,11 @@ export class Player extends MatterContainer {
         item.itemSprite.setTint(0xFFFFFF);
     }
 
-    onTargetDie = () => {
+    onTargetDie = (target: GameObject) => {
+        if (this.pointerTarget !== target) return;
         this.pointerTarget = null;
         this.tank = null;
+        this.repairSprite.visible = false;
     }
 
     onTouchingTankStart(myBody: any, tankBody: any, activeContacts: any) {
@@ -263,9 +270,26 @@ export class Player extends MatterContainer {
 
         if (!myBody.isSensor) return;
         if (myBody.label !== 'hand') return;
-        if (this.pointerTarget) return;
 
         // console.log('onTouchingTankStart do');
+
+        // if holding an item
+        if (this.holdingItem) {
+            // prefer tank over item
+            if (this.pointerTarget?.name === 'tank') { // if already pointing at tank
+                // we got what we want. exit.
+                return;
+            } else if (this.pointerTarget?.name === 'item') {
+                // give up item
+                const item = this.pointerTarget as Item;
+                item.off(Item.ITEM_DIE, this.onTargetDie);
+
+                item.itemSprite.setTint(0xFFFFFF);
+                // give up item and continue to look for tank
+            }
+        } else if (this.pointerTarget) {
+            return;
+        }
 
         const tank = tankBody.gameObject as Tank;
         this.pointerTarget = tank;
@@ -284,6 +308,7 @@ export class Player extends MatterContainer {
         if (myBody.label !== 'hand') return;
 
         const tank = tankBody.gameObject as Tank;
+        if (!tank) return;
         if (this.pointerTarget !== tank) return;
         // console.log('onTouchingTankEnd do', new Error());
 

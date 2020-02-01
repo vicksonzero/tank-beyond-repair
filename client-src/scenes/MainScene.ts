@@ -4,6 +4,7 @@ import {
     BASE_LINE_WIDTH,
     WORLD_WIDTH,
     WORLD_HEIGHT,
+    BULLET_SPEED,
 } from '../constants'
 
 import * as Debug from 'debug';
@@ -255,8 +256,8 @@ export class MainScene extends Phaser.Scene {
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.initPhysics()
                         .init(tank.x, tank.y, tank.getDamage(), tank.getRange())
-                        .setVelocityX(xDiff / distance)
-                        .setVelocityY(yDiff / distance);
+                        .setVelocityX(xDiff / distance * BULLET_SPEED)
+                        .setVelocityY(yDiff / distance * BULLET_SPEED);
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
@@ -307,6 +308,10 @@ export class MainScene extends Phaser.Scene {
     removeTank(tank: Tank) {
         this.blueAi = this.blueAi.filter(t => t !== tank);
         this.redAi = this.redAi.filter(t => t !== tank);
+
+        if (this.bluePlayer.tank === tank) this.bluePlayer.tank = null;
+        if (this.redPlayer.tank === tank) this.redPlayer.tank = null;
+
         const position = { x: tank.x, y: tank.y };
         const { upgrades } = tank;
         tank.destroy();

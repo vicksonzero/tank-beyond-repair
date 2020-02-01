@@ -89,7 +89,7 @@ export class Tank extends MatterContainer {
         this.barrelSprite.setAngle(this.team === Team.BLUE ? 90 : -90);
 
         this.on('destroy', () => {
-            this.emit(Tank.TANK_DIE);
+            this.emit(Tank.TANK_DIE, this);
         });
     }
     init(x: number, y: number): this {
@@ -186,8 +186,8 @@ export class Tank extends MatterContainer {
         this.rangeMarker.clear();
         this.rangeMarker.lineStyle(2, 0xFFFFFF, 0.8);
         this.rangeMarker.strokeCircle(0, 0, this.range);
-        this.rangeMarker.lineStyle(2, 0xAAAAAA, 0.8);
-        this.rangeMarker.strokeCircle(0, 0, this.range - 2);
+        this.rangeMarker.lineStyle(8, 0xFFFFFF, 0.2);
+        this.rangeMarker.strokeCircle(0, 0, this.range - 6);
 
         return this;
     }
