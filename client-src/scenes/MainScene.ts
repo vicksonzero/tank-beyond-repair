@@ -16,6 +16,7 @@ import { HpBar } from '../ui/HpBar';
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
 
+const Vector2 = Phaser.Math.Vector2;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
 
 const log = Debug('tank-beyond-repair:MainScene:log');
@@ -205,9 +206,11 @@ export class MainScene extends Phaser.Scene {
         tank.destroy();
         let box: Item;
         this.itemLayer.add(box = new Item(this));
-        box.initPhysics();
-        box.init(position.x, position.y);
-
+        box.initPhysics()
+            .init(position.x, position.y);
+        const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+        log(dir);
+        box.setVelocity(dir.x, dir.y);
     }
 
     handleCollisions(event: any) {
