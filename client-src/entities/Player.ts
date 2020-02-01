@@ -212,11 +212,11 @@ export class Player extends MatterContainer {
     }
 
     onTouchingItemStart(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
-        log('onTouchingItemStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
+        // log('onTouchingItemStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
         // a and b are bodies, but no TS definition...
         if (!itemBody.isSensor) return;
         if (myBody.label !== 'hand') return;
-        console.log('onTouchingItemStart do');
+        // console.log('onTouchingItemStart do');
 
         // prefer item over tank
         if (this.pointerTarget) {

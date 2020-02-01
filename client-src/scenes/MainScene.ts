@@ -404,7 +404,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     private checkPairBodyLabels_(bodyA: any, bodyB: any) {
-        console.log(bodyA?.label, bodyB?.label);
+        // console.log(bodyA?.label, bodyB?.label);
         return (
             nameA: string, nameB: string,
             matchFoundCallback: (a: any, b: any) => void
