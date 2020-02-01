@@ -164,7 +164,7 @@ export class Tank extends MatterContainer {
             switch (key) {
                 case 'range': value = 10; break;
                 case 'damage': value = 1; break;
-                case 'attackSpeed': value = -50; break;
+                case 'attackSpeed': value = -70; break;
                 case 'maxHP': value = 5; break;
                 case 'movementSpeed': value = 0.1; break;
                 default: break;
@@ -174,6 +174,8 @@ export class Tank extends MatterContainer {
         // always heal at least 1
         const healAmount = Math.max(upgrades.maxHP * 5, 1);
         this.hp = Math.min(this.hp + healAmount, this.maxHP);
+
+        this.attackSpeed = Math.max(20, this.attackSpeed); // cap at a point
 
         this.refreshUpgradeGraphics();
     }

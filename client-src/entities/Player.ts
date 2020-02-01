@@ -72,7 +72,11 @@ export class Player extends MatterContainer {
                 key: `repair`,
             }, false),
         ]);
-        this.repairSprite.visible = false
+        this.repairSprite.visible = false;
+
+        this.on('destroy', () => {
+            if (this.undoTintEvent) this.undoTintEvent.destroy();
+        });
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
@@ -241,6 +245,7 @@ export class Player extends MatterContainer {
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
         item.itemSprite.setTint(0xAAAAAA);
+        item.itemText.setVisible(true);
     }
 
     onTouchingItemEnd(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
@@ -255,6 +260,7 @@ export class Player extends MatterContainer {
         this.pointerTarget = null;
 
         item.itemSprite.setTint(0xFFFFFF);
+        item.itemText.setVisible(false);
     }
 
     onTargetDie = (target: GameObject) => {
@@ -285,6 +291,7 @@ export class Player extends MatterContainer {
                 item.off(Item.ITEM_DIE, this.onTargetDie);
 
                 item.itemSprite.setTint(0xFFFFFF);
+                item.itemText.setVisible(false);
                 // give up item and continue to look for tank
             }
         } else if (this.pointerTarget) {
@@ -329,6 +336,7 @@ export class Player extends MatterContainer {
 
     takeDamage(amount: number): this {
         this.hp -= amount;
+        this.hp = Math.max(0, this.hp);
 
         this.undoTintEvent = this.scene.time.addEvent({
             delay: 200, loop: false, callback: () => {
@@ -336,17 +344,6 @@ export class Player extends MatterContainer {
             }
         });
 
-        if (this.hp <= 0) {
-            if (this.undoTintEvent) this.undoTintEvent.destroy();
-            // this.gm.makeExplosion3(this.x, this.y);
-            // this.gm.gameIsOver = true;
-            this.visible = false;
-            this
-                .setCollisionCategory(0)
-                ;
-            // .setPosition(-1000, -1000);
-            this.scene.cameras.main.shake(100, 0.005, false);
-        }
         return this;
     }
 }

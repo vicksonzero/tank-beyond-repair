@@ -16,7 +16,7 @@ import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
 import { Item } from '../entities/Item';
 // import { GameObjects } from 'phaser';
-import { IMatterContactPoints } from '../utils/utils';
+import { IMatterContactPoints, capitalize } from '../utils/utils';
 import { Bullet } from '../entities/Bullet';
 import { HpBar } from '../ui/HpBar';
 import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
@@ -213,6 +213,9 @@ export class MainScene extends Phaser.Scene {
             player.tank?.repair();
             player.moveInDirection(xx, yy);
             player.updateAim();
+            if (player.hp <= 0) {
+                this.setGameOver(player.team === Team.BLUE ? Team.RED : Team.BLUE);
+            }
         }
         updatePlayer(this.bluePlayer, this.controlsList[0])
         updatePlayer(this.redPlayer, this.controlsList[1])
@@ -459,7 +462,7 @@ export class MainScene extends Phaser.Scene {
         this.add.text(
             width / 2,
             height / 2,
-            `${winner} Wins!`,
+            `${capitalize(winner)} Wins!`,
             {
                 fontSize: '64px',
                 fill: isBlue ? '#0000FF' : '#FF0000',

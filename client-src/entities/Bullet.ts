@@ -15,12 +15,10 @@ export class Bullet extends MatterContainer {
     originalY: number;
 
     constructor(scene: Phaser.Scene, team: Team) {
-        const circle = new Phaser.Geom.Circle(0, 0, 5);
         super(scene, 0, 0, []);
         this.team = team;
         const color = this.team === Team.BLUE ? 0x3333EE : 0xEE3333;
         const graphics = this.scene.add.graphics({ fillStyle: { color } });
-        graphics.fillCircleShape(circle);
         this.add(graphics);
         this.sprite = graphics;
         this
@@ -34,6 +32,7 @@ export class Bullet extends MatterContainer {
             .setY(y)
         this.damage = damage;
         this.range = range + 20; // add 20 for buffer
+        this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage + 2));
         return this;
     }
 

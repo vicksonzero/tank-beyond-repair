@@ -50,6 +50,7 @@ export class Item extends MatterContainer {
 
         ]);
         this.itemText.setOrigin(0.5, 1);
+        this.itemText.setVisible(false);
 
         this.on('destroy', () => {
             this.emit(Item.ITEM_DIE, this);
