@@ -73,17 +73,29 @@ export class MainScene extends Phaser.Scene {
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
         this.bg.setAlpha(0.7);
-
+        const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4
         const leftBaseLine = new Phaser.Geom.Line(
             BASE_LINE_WIDTH,
             0,
             BASE_LINE_WIDTH,
             WORLD_HEIGHT
         );
+        const leftQuarterLine = new Phaser.Geom.Line(
+            BASE_LINE_WIDTH + quarterWidth,
+            0,
+            BASE_LINE_WIDTH + quarterWidth,
+            WORLD_HEIGHT
+        );
         const rightBaseLine = new Phaser.Geom.Line(
             WORLD_WIDTH - BASE_LINE_WIDTH,
             0,
             WORLD_WIDTH - BASE_LINE_WIDTH,
+            WORLD_HEIGHT
+        );
+        const rightQuarterLine = new Phaser.Geom.Line(
+            WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth,
+            0,
+            WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth,
             WORLD_HEIGHT
         );
         const centerLine = new Phaser.Geom.Line(
@@ -94,8 +106,10 @@ export class MainScene extends Phaser.Scene {
         );
         // in Scene.update()
         this.add.graphics().lineStyle(1, 0x0000FF, 1).strokeLineShape(leftBaseLine);
-        this.add.graphics().lineStyle(1, 0xFF0000, 1).strokeLineShape(rightBaseLine);
+        this.add.graphics().lineStyle(1, 0xDCDCDC, 1).strokeLineShape(leftQuarterLine);
         this.add.graphics().lineStyle(1, 0xFFFFFF, 0.5).strokeLineShape(centerLine);
+        this.add.graphics().lineStyle(1, 0xDCDCDC, 1).strokeLineShape(rightQuarterLine);
+        this.add.graphics().lineStyle(1, 0xFF0000, 1).strokeLineShape(rightBaseLine);
 
         const controlTexts = [];
         const controlGraphic = this.add.graphics()
@@ -207,14 +221,15 @@ export class MainScene extends Phaser.Scene {
         const updatePlayer = (player: Player, controlsList: Controls) => {
             let xx = 0;
             let yy = 0;
+            const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4
             const isExceedHalf = player.team === Team.BLUE ? 
-                (x: number) => x > WORLD_WIDTH / 2 : (x: number) => x < WORLD_WIDTH / 2
+                (x: number) => x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth : (x: number) => x < BASE_LINE_WIDTH + quarterWidth
             if (controlsList.up.isDown) { yy -= 3; }
             if (controlsList.down.isDown) { yy += 3; }
             if (controlsList.left.isDown ) { 
                 if (isExceedHalf(player.x)) {
                     // Push player backward
-                    xx += 3;
+                    xx += 30;
                 } else {
                     xx -= 3; 
                 }
@@ -222,7 +237,7 @@ export class MainScene extends Phaser.Scene {
             if (controlsList.right.isDown ) { 
                 if (isExceedHalf(player.x)) {
                     // Push player backward
-                    xx -= 3;
+                    xx -= 30;
                 } else {
                     xx += 3; 
                 }
