@@ -5,6 +5,7 @@ import {
     WORLD_WIDTH,
     WORLD_HEIGHT,
     BULLET_SPEED,
+    ITEM_LIFESPAM,
 } from '../constants'
 
 import * as Debug from 'debug';
@@ -526,6 +527,8 @@ export class MainScene extends Phaser.Scene {
 
         let box: Item;
         this.itemLayer.add(box = new Item(this));
+        // Will not holding timer reference have memory leak?
+        this.time.addEvent({ delay: ITEM_LIFESPAM, callback: () => {box.destroy()}, loop: false });
         box.initPhysics()
             .init(x, y, upgrades)
             .setUpgrades(upgrades);
