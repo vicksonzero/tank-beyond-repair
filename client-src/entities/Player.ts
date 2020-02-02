@@ -158,13 +158,16 @@ export class Player extends MatterContainer {
         });
     }
 
-    onActionPressed() {
+    onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
         if (!this.pointerTarget) {
             if (this.holdingItem) {
+                // drop item on floor
                 const rotation = this.bodySprite.rotation;
                 const xx = Math.cos(rotation) * 30;
                 const yy = Math.sin(rotation) * 30;
                 const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades);
+
+                sfx_pickup.play();
 
                 if (item) {
                     const myOldUpgrade = this.holdingItem.upgrades;
@@ -179,6 +182,7 @@ export class Player extends MatterContainer {
             if (this.holdingItem) {
                 const myOldUpgrade = { ...this.holdingItem.upgrades };
 
+                sfx_pickup.play();
                 this.holdingItem.upgrades = { ...item.upgrades };
                 const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
                 this.holdingItemText.setText(upgradeText);
@@ -196,6 +200,7 @@ export class Player extends MatterContainer {
                     frame: 'crateMetal',
                 }));
 
+                sfx_pickup.play();
                 this.holdingItem.upgrades = { ...item.upgrades };
                 const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
 
@@ -211,6 +216,7 @@ export class Player extends MatterContainer {
 
                 tank.setUpgrade(this.holdingItem.upgrades);
 
+                sfx_upgrade.play();
                 this.holdingItem.destroy();
                 this.holdingItem = null;
             }

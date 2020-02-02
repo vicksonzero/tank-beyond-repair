@@ -9,7 +9,7 @@ import {
 
 import * as Debug from 'debug';
 import "phaser";
-import { preload as _preload } from '../assets';
+import { preload as _preload, setUpAudio } from '../assets';
 // import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
@@ -22,6 +22,7 @@ import { HpBar } from '../ui/HpBar';
 import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
 import { Time } from 'phaser';
 
+type BaseSound = Phaser.Sound.BaseSound;
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
 
@@ -54,6 +55,14 @@ export class MainScene extends Phaser.Scene {
     redAi: Tank[];
     bullets: Bullet[];
 
+    sfx_shoot: BaseSound;
+    sfx_hit: BaseSound;
+    sfx_navigate: BaseSound;
+    sfx_point: BaseSound;
+    sfx_open: BaseSound;
+    sfx_bgm: BaseSound;
+
+
     get mainCamera() { return this.sys.cameras.main; }
 
     constructor() {
@@ -68,6 +77,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     create(): void {
+        setUpAudio.call(this);
         log('create');
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
@@ -169,8 +179,15 @@ export class MainScene extends Phaser.Scene {
                 return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
             }));
         };
-        this.spawnTimer = this.time.addEvent({ startAt: SPAWN_DELAY, delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true });
+        this.spawnTimer = this.time.addEvent({ startAt: SPAWN_DELAY, delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true, });
 
+        this.time.addEvent({
+            delay: SPAWN_DELAY,
+            callback: () => {
+                this.sfx_bgm.play();
+            },
+            loop: false,
+        });
         let countDownValue = SPAWN_DELAY / 1000;
         const countDownText = this.add.text(
             WORLD_WIDTH / 2,
@@ -263,6 +280,7 @@ export class MainScene extends Phaser.Scene {
                         .init(tank.x, tank.y, tank.getDamage(), tank.getRange())
                         .setVelocityX(xDiff / distance * BULLET_SPEED)
                         .setVelocityY(yDiff / distance * BULLET_SPEED);
+                    this.sfx_shoot.play();
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
@@ -306,10 +324,10 @@ export class MainScene extends Phaser.Scene {
             }
         ];
         this.controlsList[0].action.on('down', (evt: any) => {
-            this.bluePlayer.onActionPressed();
+            this.bluePlayer.onActionPressed(this.sfx_point, this.sfx_open);
         });
         this.controlsList[1].action.on('down', (evt: any) => {
-            this.redPlayer.onActionPressed();
+            this.redPlayer.onActionPressed(this.sfx_point, this.sfx_open);
         });
         this.cheats.spawnUpgrades.on('down', (evt: any) => {
             const upgrades = {
@@ -336,6 +354,7 @@ export class MainScene extends Phaser.Scene {
         const position = { x: tank.x, y: tank.y };
         const { upgrades } = tank;
         tank.destroy();
+        this.sfx_hit.play();
 
         const keys = Object.keys(upgrades);
         const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);

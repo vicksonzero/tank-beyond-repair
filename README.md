@@ -12,6 +12,7 @@ Phaser 3 starter copied from cook-engine, with server side stripped away
   - [Prod](#prod)
   - [How to read logs made with `log()`](#how-to-read-logs-made-with-log)
 - [Tech Stack](#tech-stack)
+- [Credits](#credits)
 - [License](#license)
 
 # How To Play
@@ -77,6 +78,20 @@ Built content will be put in `master`
 - [x] phaser 3 (For Graphics and some game rules)
 - [x] matter.js (From Phaser3, For Physics Engine)
 - [x] debug.js (for logging with tags)
+
+
+# Credits
+
+- Programming
+  - Dickson Chui (https://github.com/vicksonzero)
+  - William Chong (https://github.com/williamchong007)
+  - Sunday Ku (https://github.com/199911)
+- Graphics
+  - Kenney.nl (Once again!)
+- Sound
+  - `Music: Eric Skiff - Song Name - Resistor Anthems - Available at http://EricSkiff.com/music (CC-BY 4.0)`
+  - https://freesound.org/people/LittleRobotSoundFactory/packs/16681/ (CC-BY 3.0)
+  - https://freesound.org/people/Raclure/sounds/458867/ (CC0, but did not make it into the final game...)
 
 # License
 
