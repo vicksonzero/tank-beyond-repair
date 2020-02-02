@@ -207,10 +207,26 @@ export class MainScene extends Phaser.Scene {
         const updatePlayer = (player: Player, controlsList: Controls) => {
             let xx = 0;
             let yy = 0;
+            const isExceedHalf = player.team === Team.BLUE ? 
+                (x: number) => x > WORLD_WIDTH / 2 : (x: number) => x < WORLD_WIDTH / 2
             if (controlsList.up.isDown) { yy -= 3; }
             if (controlsList.down.isDown) { yy += 3; }
-            if (controlsList.left.isDown) { xx -= 3; }
-            if (controlsList.right.isDown) { xx += 3; }
+            if (controlsList.left.isDown ) { 
+                if (isExceedHalf(player.x)) {
+                    // Push player backward
+                    xx += 3;
+                } else {
+                    xx -= 3; 
+                }
+            }
+            if (controlsList.right.isDown ) { 
+                if (isExceedHalf(player.x)) {
+                    // Push player backward
+                    xx -= 3;
+                } else {
+                    xx += 3; 
+                }
+            }
             player.tank?.repair();
             player.moveInDirection(xx, yy);
             player.updateAim();
