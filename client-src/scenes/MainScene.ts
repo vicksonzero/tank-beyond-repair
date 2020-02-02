@@ -25,6 +25,7 @@ import { Time } from 'phaser';
 type BaseSound = Phaser.Sound.BaseSound;
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
+type Image = Phaser.GameObjects.Image;
 
 const Vector2 = Phaser.Math.Vector2;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
@@ -48,6 +49,9 @@ export class MainScene extends Phaser.Scene {
     tankLayer: Container;
     playerLayer: Container;
     effectsLayer: Container;
+    uiLayer: Container;
+
+    btn_mute: Image;
 
     bluePlayer: Player;
     blueAi: Tank[];
@@ -158,6 +162,7 @@ export class MainScene extends Phaser.Scene {
         this.tankLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
         this.effectsLayer = this.add.container(0, 0);
+        this.uiLayer = this.add.container(0, 0);
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
@@ -231,6 +236,7 @@ export class MainScene extends Phaser.Scene {
         this.matter.world.on('collisionstart', (event: any) => this.handleCollisions(event));
         this.matter.world.on('collisionend', (event: any) => this.handleCollisionsEnd(event));
 
+        this.setUpGUI();
         this.setUpKeyboard();
     }
 
@@ -372,6 +378,18 @@ export class MainScene extends Phaser.Scene {
             const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
             upgrades[randomUpgradeKey] += 1;
             this.spawnItem(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, upgrades, true);
+        });
+    }
+
+    setUpGUI() {
+        this.uiLayer.add([
+            this.btn_mute = this.add.image(WORLD_WIDTH - 64, 64, 'btn_mute_dark'),
+        ]);
+
+        this.btn_mute.setInteractive();
+        this.btn_mute.on('pointerup', () => {
+            this.sound.mute = !this.sound.mute;
+            this.btn_mute.setTexture(`btn_mute_${this.sound.mute ? 'dark' : 'light'}`);
         });
     }
 

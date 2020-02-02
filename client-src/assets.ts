@@ -11,6 +11,8 @@ export function preload(this: Phaser.Scene) {
     this.load.image('manBlue_hold', './assets/sprites/topdown-shooter/PNG/manBlue_hold.png');
     this.load.image('manRed_hold', './assets/sprites/topdown-shooter/PNG/manRed_hold.png');
     this.load.image('repair', './assets/sprites/kenney_emotespack/PNG/Vector/Style 8/emote_heart.png');
+    this.load.image('btn_mute_dark', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight15.png');
+    this.load.image('btn_mute_light', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight17.png');
 
     this.load.audio('bgm', './assets/sfx/04 All of Us.mp3');
     this.load.audio('point', './assets/sfx/270304__littlerobotsoundfactory__collect-point-00.wav');
@@ -35,7 +37,7 @@ export function setUpAnimations(this: Phaser.Scene) {
 export function setUpAudio(this: MainScene) {
     this.sfx_bgm = this.sound.add('bgm', {
         mute: false,
-        volume: 1,
+        volume: 0.7,
         rate: 1,
         detune: 0,
         seek: 0,
@@ -53,7 +55,7 @@ export function setUpAudio(this: MainScene) {
     });
     this.sfx_hit = this.sound.add('hit', {
         mute: false,
-        volume: 1,
+        volume: 0.7,
         rate: 1,
         detune: 0,
         seek: 0,
@@ -62,7 +64,7 @@ export function setUpAudio(this: MainScene) {
     });
     this.sfx_navigate = this.sound.add('navigate', {
         mute: false,
-        volume: 1,
+        volume: 0.8,
         rate: 1,
         detune: 0,
         seek: 0,
@@ -71,7 +73,7 @@ export function setUpAudio(this: MainScene) {
     });
     this.sfx_point = this.sound.add('point', {
         mute: false,
-        volume: 1,
+        volume: 0.8,
         rate: 1,
         detune: 0,
         seek: 0,
