@@ -31,8 +31,8 @@ module.exports = {
         ],
     },
     devServer: {
-        contentBase: path.resolve(__dirname, '.'),
-        publicPath: '/client-dist/',
+        contentBase: path.resolve(__dirname, '.'), // serves files not built from webpack
+        publicPath: '/client-dist/', // webpack builds files into RAM, and serves in this path (overrides actual folders)
         host: '127.0.0.1',
         port: 8080,
         open: true,
