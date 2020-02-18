@@ -245,24 +245,24 @@ export class MainScene extends Phaser.Scene {
             let xx = 0;
             let yy = 0;
             const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4
-            const isExceedHalf = player.team === Team.BLUE ? 
+            const isExceedHalf = player.team === Team.BLUE ?
                 (x: number) => x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth : (x: number) => x < BASE_LINE_WIDTH + quarterWidth
             if (controlsList.up.isDown) { yy -= 3; }
             if (controlsList.down.isDown) { yy += 3; }
-            if (controlsList.left.isDown ) { 
+            if (controlsList.left.isDown) {
                 if (isExceedHalf(player.x)) {
                     // Push player backward
                     xx += 30;
                 } else {
-                    xx -= 3; 
+                    xx -= 3;
                 }
             }
-            if (controlsList.right.isDown ) { 
+            if (controlsList.right.isDown) {
                 if (isExceedHalf(player.x)) {
                     // Push player backward
                     xx -= 30;
                 } else {
-                    xx += 3; 
+                    xx += 3;
                 }
             }
             player.tank?.repair();
@@ -546,7 +546,8 @@ export class MainScene extends Phaser.Scene {
         this.itemLayer.add(box = new Item(this));
         box.initPhysics()
             .init(x, y, upgrades)
-            .setUpgrades(upgrades);
+            .setUpgrades(upgrades)
+            .initDeathTimer();
         if (isScatter) {
             const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
             box.setVelocity(dir.x, dir.y);

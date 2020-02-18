@@ -187,7 +187,7 @@ export class Player extends MatterContainer {
                 const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
                 this.holdingItemText.setText(upgradeText);
 
-                item.setUpgrades(myOldUpgrade);
+                item.setUpgrades(myOldUpgrade).refreshDeathTimer();
             } else {
                 const rotation = this.bodySprite.rotation;
                 const xx = Math.cos(rotation) * 30;
