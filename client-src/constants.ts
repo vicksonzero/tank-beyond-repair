@@ -6,3 +6,4 @@ export const BASE_LINE_WIDTH = 100;
 export const BULLET_SPEED = 2;
 export const ITEM_LIFESPAN = 10 * 1000;
 export const ITEM_LIFESPAN_WARNING = 7 * 1000;
+export const AUDIO_START_MUTED = true;

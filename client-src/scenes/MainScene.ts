@@ -244,27 +244,25 @@ export class MainScene extends Phaser.Scene {
         const updatePlayer = (player: Player, controlsList: Controls) => {
             let xx = 0;
             let yy = 0;
-            const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4
-            const isExceedHalf = player.team === Team.BLUE ?
-                (x: number) => x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth : (x: number) => x < BASE_LINE_WIDTH + quarterWidth
+
             if (controlsList.up.isDown) { yy -= 3; }
             if (controlsList.down.isDown) { yy += 3; }
-            if (controlsList.left.isDown) {
-                if (isExceedHalf(player.x)) {
-                    // Push player backward
-                    xx += 30;
-                } else {
-                    xx -= 3;
+            if (controlsList.left.isDown) { xx -= 3; }
+            if (controlsList.right.isDown) { xx += 3; }
+
+            const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4;
+
+            if (player.team === Team.BLUE) {
+                if (player.x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth) {
+                    player.x = WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth;
+                }
+            } else {
+                if (player.x < BASE_LINE_WIDTH + quarterWidth) {
+                    player.x = BASE_LINE_WIDTH + quarterWidth;
                 }
             }
-            if (controlsList.right.isDown) {
-                if (isExceedHalf(player.x)) {
-                    // Push player backward
-                    xx -= 30;
-                } else {
-                    xx += 3;
-                }
-            }
+
+
             player.tank?.repair();
             player.moveInDirection(xx, yy);
             player.updateAim();
@@ -383,7 +381,7 @@ export class MainScene extends Phaser.Scene {
 
     setUpGUI() {
         this.uiLayer.add([
-            this.btn_mute = this.add.image(WORLD_WIDTH - 64, 64, 'btn_mute_dark'),
+            this.btn_mute = this.add.image(WORLD_WIDTH - 64, 64, `btn_mute_${!this.sound.mute ? 'dark' : 'light'}`),
         ]);
 
         this.btn_mute.setInteractive();

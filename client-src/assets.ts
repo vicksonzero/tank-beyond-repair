@@ -1,4 +1,5 @@
 import { MainScene } from "./scenes/MainScene";
+import { AUDIO_START_MUTED } from "./constants";
 
 export function preload(this: Phaser.Scene) {
     // this.load.json('sheetMap', url);
@@ -90,5 +91,5 @@ export function setUpAudio(this: MainScene) {
         delay: 0
     });
 
-
+    this.sound.mute = AUDIO_START_MUTED;
 }
