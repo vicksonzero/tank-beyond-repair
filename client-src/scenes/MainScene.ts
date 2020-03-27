@@ -1,26 +1,19 @@
-import {
-    SPAWN_DELAY,
-    SPAWN_INTERVAL,
-    BASE_LINE_WIDTH,
-    WORLD_WIDTH,
-    WORLD_HEIGHT,
-    BULLET_SPEED,
-} from '../constants'
-
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload, setUpAudio } from '../assets';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
+import { Bullet } from '../entities/Bullet';
+import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
-import { Item } from '../entities/Item';
-// import { GameObjects } from 'phaser';
-import { IMatterContactPoints, capitalize } from '../utils/utils';
-import { Bullet } from '../entities/Bullet';
-import { HpBar } from '../ui/HpBar';
 import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
-import { Time } from 'phaser';
+import { PhysicsSystem } from '../PhysicsSystem';
+import { HpBar } from '../ui/HpBar';
+// import { GameObjects } from 'phaser';
+import { capitalize, IMatterContactPoints } from '../utils/utils';
+
 
 type BaseSound = Phaser.Sound.BaseSound;
 type Key = Phaser.Input.Keyboard.Key;
@@ -45,6 +38,7 @@ export class MainScene extends Phaser.Scene {
     spawnTimer: Phaser.Time.TimerEvent;
     bg: Phaser.GameObjects.TileSprite;
 
+    backgroundUILayer: Container;
     itemLayer: Container;
     tankLayer: Container;
     playerLayer: Container;
@@ -83,81 +77,13 @@ export class MainScene extends Phaser.Scene {
     create(): void {
         setUpAudio.call(this);
         log('create');
+        this.getPhysicsSystem().init();
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
         this.bg.setAlpha(0.7);
-        const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4
-        const leftBaseLine = new Phaser.Geom.Line(
-            BASE_LINE_WIDTH,
-            0,
-            BASE_LINE_WIDTH,
-            WORLD_HEIGHT
-        );
-        const leftQuarterLine = new Phaser.Geom.Line(
-            BASE_LINE_WIDTH + quarterWidth,
-            0,
-            BASE_LINE_WIDTH + quarterWidth,
-            WORLD_HEIGHT
-        );
-        const rightBaseLine = new Phaser.Geom.Line(
-            WORLD_WIDTH - BASE_LINE_WIDTH,
-            0,
-            WORLD_WIDTH - BASE_LINE_WIDTH,
-            WORLD_HEIGHT
-        );
-        const rightQuarterLine = new Phaser.Geom.Line(
-            WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth,
-            0,
-            WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth,
-            WORLD_HEIGHT
-        );
-        const centerLine = new Phaser.Geom.Line(
-            WORLD_WIDTH / 2,
-            0,
-            WORLD_WIDTH / 2,
-            WORLD_HEIGHT
-        );
-        // in Scene.update()
-        this.add.graphics().lineStyle(1, 0x0000FF, 1).strokeLineShape(leftBaseLine);
-        this.add.graphics().lineStyle(1, 0xDCDCDC, 1).strokeLineShape(leftQuarterLine);
-        this.add.graphics().lineStyle(1, 0xFFFFFF, 0.5).strokeLineShape(centerLine);
-        this.add.graphics().lineStyle(1, 0xDCDCDC, 1).strokeLineShape(rightQuarterLine);
-        this.add.graphics().lineStyle(1, 0xFF0000, 1).strokeLineShape(rightBaseLine);
 
-        const controlTexts = [];
-        const controlGraphic = this.add.graphics()
-        controlGraphic.lineStyle(1, 0xFFFFFF, 1);
-        const creatButton = (offsetX: number, offsetY: number, letters: string[]) => {
-            let i = 0;
-            controlGraphic.strokeRoundedRect(offsetX + 64, offsetY + 32, 32, 32, 6);
-            controlTexts.push(this.add.text(
-                offsetX + 64 + 32 / 2,
-                offsetY + 32 + 32 / 2,
-                letters[i++],
-                {
-                    fontSize: '16px',
-                    fill: '#FFF',
-                    align: "center",
-                },
-            ).setOrigin(0.5));
-            [32, 64, 96, 160].map((x) => {
-                controlGraphic.strokeRoundedRect(offsetX + x, offsetY + 64, 32, 32, 6);
-                controlTexts.push(this.add.text(
-                    offsetX + x + 32 / 2,
-                    offsetY + 64 + 32 / 2,
-                    letters[i++],
-                    {
-                        fontSize: '16px',
-                        fill: '#FFF',
-                        align: "center",
-                    },
-                ).setOrigin(0.5));
-            });
-        };
-        creatButton(150, 0, ['W', 'A', 'S', 'D', 'C']);
-        creatButton(WORLD_WIDTH - 350, WORLD_HEIGHT - 150, ['↑', '←', '↓', '→', '/']);
-
+        this.backgroundUILayer = this.add.container(0, 0);
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
@@ -189,16 +115,25 @@ export class MainScene extends Phaser.Scene {
 
         this.blueAi = [];
         this.redAi = [];
-        const spawnCallback = () => {
-            if (this.isGameOver) return;
-            this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
-                return createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
-            }));
-            this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
-                return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
-            }));
-        };
-        this.spawnTimer = this.time.addEvent({ startAt: SPAWN_DELAY, delay: SPAWN_INTERVAL, callback: spawnCallback, loop: true, });
+
+        if (!DEBUG_DISABLE_SPAWNING) {
+            const spawnCallback = () => {
+                if (this.isGameOver) return;
+                this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
+                    return createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
+                }));
+                this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
+                    return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
+                }));
+            };
+
+            this.spawnTimer = this.time.addEvent({
+                startAt: SPAWN_DELAY,
+                delay: SPAWN_INTERVAL,
+                callback: spawnCallback,
+                loop: true,
+            });
+        }
 
         this.time.addEvent({
             delay: SPAWN_DELAY,
@@ -207,6 +142,7 @@ export class MainScene extends Phaser.Scene {
             },
             loop: false,
         });
+
         let countDownValue = SPAWN_DELAY / 1000;
         const countDownText = this.add.text(
             WORLD_WIDTH / 2,
@@ -223,32 +159,42 @@ export class MainScene extends Phaser.Scene {
             callback: () => {
                 countDownValue -= 1;
                 countDownText.setText(countDownValue.toString())
-                if (countDownValue <= 0) countDownText.setVisible(false)
+                if (countDownValue <= 0) { countDownText.setVisible(false); }
             },
             repeat: SPAWN_DELAY / 1000,
         })
 
         this.bullets = [];
 
-        this.matter.world
-            .setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
-            ;
-        this.matter.world.on('collisionstart', (event: any) => this.handleCollisions(event));
-        this.matter.world.on('collisionend', (event: any) => this.handleCollisionsEnd(event));
+        // this.matter.world
+        //     .setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
+        //     ;
+        // this.matter.world.on('collisionstart', (event: any) => this.handleCollisions(event));
+        // this.matter.world.on('collisionend', (event: any) => this.handleCollisionsEnd(event));
 
         this.setUpGUI();
         this.setUpKeyboard();
     }
 
     update(time: number, dt: number) {
+        log(`update ${time}`);
+
+        // TODO: move these into physics system
+        this.bluePlayer.writePhysics();
+        this.redPlayer.writePhysics();
+        (this.registry.get('physicsSystem') as PhysicsSystem).update(time);
+        this.bluePlayer.readPhysics();
+        this.redPlayer.readPhysics();
+        // TODO: END move these into physics system
+
         const updatePlayer = (player: Player, controlsList: Controls) => {
             let xx = 0;
             let yy = 0;
 
-            if (controlsList.up.isDown) { yy -= 3; }
-            if (controlsList.down.isDown) { yy += 3; }
-            if (controlsList.left.isDown) { xx -= 3; }
-            if (controlsList.right.isDown) { xx += 3; }
+            if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
+            if (controlsList.down.isDown) { yy += PLAYER_MOVE_SPEED; }
+            if (controlsList.left.isDown) { xx -= PLAYER_MOVE_SPEED; }
+            if (controlsList.right.isDown) { xx += PLAYER_MOVE_SPEED; }
 
             const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4;
 
@@ -380,6 +326,94 @@ export class MainScene extends Phaser.Scene {
     }
 
     setUpGUI() {
+        const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4
+        const leftBaseLine = new Phaser.Geom.Line(
+            BASE_LINE_WIDTH,
+            0,
+            BASE_LINE_WIDTH,
+            WORLD_HEIGHT
+        );
+        const leftQuarterLine = new Phaser.Geom.Line(
+            BASE_LINE_WIDTH + quarterWidth,
+            0,
+            BASE_LINE_WIDTH + quarterWidth,
+            WORLD_HEIGHT
+        );
+        const rightBaseLine = new Phaser.Geom.Line(
+            WORLD_WIDTH - BASE_LINE_WIDTH,
+            0,
+            WORLD_WIDTH - BASE_LINE_WIDTH,
+            WORLD_HEIGHT
+        );
+        const rightQuarterLine = new Phaser.Geom.Line(
+            WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth,
+            0,
+            WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth,
+            WORLD_HEIGHT
+        );
+        const centerLine = new Phaser.Geom.Line(
+            WORLD_WIDTH / 2,
+            0,
+            WORLD_WIDTH / 2,
+            WORLD_HEIGHT
+        );
+
+        this.backgroundUILayer.add(this.add.graphics()
+            .lineStyle(1, 0x0000FF, 1)
+            .strokeLineShape(leftBaseLine)
+        );
+        this.backgroundUILayer.add(this.add.graphics()
+            .lineStyle(1, 0xDCDCDC, 1)
+            .strokeLineShape(leftQuarterLine)
+        );
+        this.backgroundUILayer.add(this.add.graphics()
+            .lineStyle(1, 0xFFFFFF, 0.5)
+            .strokeLineShape(centerLine)
+        );
+        this.backgroundUILayer.add(this.add.graphics()
+            .lineStyle(1, 0xDCDCDC, 1)
+            .strokeLineShape(rightQuarterLine)
+        );
+        this.backgroundUILayer.add(this.add.graphics()
+            .lineStyle(1, 0xFF0000, 1)
+            .strokeLineShape(rightBaseLine)
+        );
+
+        const controlTexts: Phaser.GameObjects.Text[] = [];
+        const controlGraphic = this.add.graphics()
+        controlGraphic.lineStyle(1, 0xFFFFFF, 1);
+        const creatButton = (offsetX: number, offsetY: number, letters: string[]) => {
+            let i = 0;
+            controlGraphic.strokeRoundedRect(offsetX + 64, offsetY + 32, 32, 32, 6);
+            controlTexts.push(this.add.text(
+                offsetX + 64 + 32 / 2,
+                offsetY + 32 + 32 / 2,
+                letters[i++],
+                {
+                    fontSize: '16px',
+                    fill: '#FFF',
+                    align: "center",
+                },
+            ).setOrigin(0.5));
+            [32, 64, 96, 160].map((x) => {
+                controlGraphic.strokeRoundedRect(offsetX + x, offsetY + 64, 32, 32, 6);
+                controlTexts.push(this.add.text(
+                    offsetX + x + 32 / 2,
+                    offsetY + 64 + 32 / 2,
+                    letters[i++],
+                    {
+                        fontSize: '16px',
+                        fill: '#FFF',
+                        align: "center",
+                    },
+                ).setOrigin(0.5));
+            });
+        };
+        creatButton(150, 0, ['W', 'A', 'S', 'D', 'C']);
+        creatButton(WORLD_WIDTH - 350, WORLD_HEIGHT - 150, ['↑', '←', '↓', '→', '/']);
+        this.backgroundUILayer.add(controlGraphic);
+        this.backgroundUILayer.add(controlTexts);
+
         this.uiLayer.add([
             this.btn_mute = this.add.image(WORLD_WIDTH - 64, 64, `btn_mute_${!this.sound.mute ? 'dark' : 'light'}`),
         ]);
@@ -552,5 +586,9 @@ export class MainScene extends Phaser.Scene {
 
         }
         return box;
+    }
+
+    getPhysicsSystem() {
+        return (this.registry.get('physicsSystem') as PhysicsSystem);
     }
 }

@@ -1,11 +1,14 @@
-import MatterContainer from './MatterContainer';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef } from 'box2d.ts';
 import * as Debug from 'debug';
-import { collisionCategory } from './collisionCategory';
-import { capitalize, IMatterContactPoints, makeUpgradeString } from '../utils/utils';
-import { Team } from './Team';
-import { Item } from './Item';
+import { METER_TO_PIXEL, PIXEL_TO_METER } from '../constants';
+import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
+import { capitalize, IMatterContactPoints, makeUpgradeString } from '../utils/utils';
+import { collisionCategory } from './collisionCategory';
+import { Item } from './Item';
+import MatterContainer from './MatterContainer';
 import { Tank } from './Tank';
+import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
 
 const log = Debug('tank-beyond-repair:Player:log');
@@ -32,7 +35,7 @@ export class Player extends MatterContainer {
     armLength = 30;
     armRadius = 20;
 
-    playerHandSensor: MatterJS.Body;
+    playerHandSensor: b2FixtureDef;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -46,6 +49,8 @@ export class Player extends MatterContainer {
 
     holdingItem: HoldingItem;
     holdingItemText: Text;
+
+    b2Body: b2Body;
 
     spawnItem: (x: number, y: number, upgrades: UpgradeObject) => Item; // to be filled in by MainScene
 
@@ -96,33 +101,75 @@ export class Player extends MatterContainer {
 
     initPhysics(): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
-        const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
+        const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
 
-        const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
+        // see node_modules\box2d.ts\Box2D\Collision\Shapes for more shapes
+        const circleShape = new b2CircleShape();
+        circleShape.m_p.Set(0, 0); // position, relative to body position
+        circleShape.m_radius = 20 * PIXEL_TO_METER; // radius, in meters
 
-        const circleBody = MatterMatter.Bodies.circle(0, 0, 20, { isSensor: false, label: 'body' });
+        const fixtureDef = new b2FixtureDef();
+        fixtureDef.shape = circleShape;
+        fixtureDef.density = 1;
+        fixtureDef.filter.categoryBits = hostCollision;
+        fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
+        fixtureDef.userData = {
+            fixtureLabel: 'body',
+            player: this,
+        };
 
-        this.scene.matter.add.gameObject(this, circleBody);
+        const bodyDef: b2BodyDef = new b2BodyDef();
+        bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
+        // bodyDef.position.Set(0, 0); // in meters
+        bodyDef.angle = 0; // in radians
+        bodyDef.linearDamping = 0; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.fixedRotation = true;
 
-        this.playerHandSensor = this.scene.matter.add.circle(this.armLength, 0, this.armRadius, { isSensor: true, label: 'hand' });
 
-        (<any>this.playerHandSensor).player = this;
-        (<any>this.playerHandSensor).collisionFilter.category = hostCollision;
-        (<any>this.playerHandSensor).collisionFilter.mask = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollison;
+        const handCircleShape = new b2CircleShape();
+        handCircleShape.m_p.Set(this.armLength * PIXEL_TO_METER, 0); // position, relative to body position,  in meters
+        handCircleShape.m_radius = this.armRadius * PIXEL_TO_METER; // in meters
 
-        MatterMatter.Body.setPosition(circleBody, {
+        const handsFixtureDef = new b2FixtureDef();
+        handsFixtureDef.shape = handCircleShape;
+        handsFixtureDef.density = 1;
+        handsFixtureDef.shape = circleShape;
+        handsFixtureDef.isSensor = true;
+        handsFixtureDef.filter.categoryBits = hostCollision;
+        handsFixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
+        fixtureDef.userData = {
+            fixtureLabel: 'hand',
+            player: this,
+        };
+
+        this.playerHandSensor = handsFixtureDef;
+
+        this.b2Body = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(bodyDef);
+        this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+        this.b2Body.CreateFixture(handsFixtureDef);
+
+        this.b2Body.SetPosition({
             x: this.x,
             y: this.y,
         });
 
-        this
-            .setMass(1)
-            .setFrictionAir(0)
-            .setFixedRotation()
-            .setCollisionCategory(hostCollision)
-            .setCollidesWith(collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollison)
-            ;
+        //     .setFixedRotation()
+        //     .setCollisionCategory(hostCollision)
+        //     .setCollidesWith(collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollison)
+        //     ;
         return this;
+    }
+
+    writePhysics() {
+        this.b2Body.SetPosition({
+            x: this.x * PIXEL_TO_METER,
+            y: this.y * PIXEL_TO_METER,
+        });
+    }
+    readPhysics() {
+        const pos = this.b2Body.GetPosition();
+        this.x = pos.x * METER_TO_PIXEL;
+        this.y = pos.y * METER_TO_PIXEL;
     }
 
     updateHpBar() {
@@ -130,12 +177,14 @@ export class Player extends MatterContainer {
     }
 
     moveInDirection(dirX: number, dirY: number) {
-        this.setVelocity(dirX, dirY);
-
-        type Body = any;
+        this.b2Body.SetLinearVelocity({
+            x: dirX * PIXEL_TO_METER,
+            y: dirY * PIXEL_TO_METER,
+        });
 
         if (dirX !== 0 || dirY !== 0) {
-            const rotation = Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x);
+            const velo = this.b2Body.GetLinearVelocity();
+            const rotation = Math.atan2(velo.y, velo.x);
             const xx = Math.cos(rotation) * this.armLength;
             const yy = Math.sin(rotation) * this.armLength;
 
@@ -149,13 +198,9 @@ export class Player extends MatterContainer {
 
     updateAim() {
         const rotation = this.bodySprite.rotation;
-        const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
         const xx = Math.cos(rotation) * this.armLength;
         const yy = Math.sin(rotation) * this.armLength;
-        MatterMatter.Body.setPosition(this.playerHandSensor, {
-            x: this.x + xx,
-            y: this.y + yy,
-        });
+        (this.playerHandSensor.shape as b2CircleShape).m_p.Set(xx * PIXEL_TO_METER, yy * PIXEL_TO_METER);
     }
 
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
