@@ -1,4 +1,4 @@
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef } from 'box2d.ts';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef } from '@flyover/box2d';
 import * as Debug from 'debug';
 import { METER_TO_PIXEL, PIXEL_TO_METER } from '../constants';
 import { MainScene } from '../scenes/MainScene';
@@ -103,7 +103,7 @@ export class Player extends MatterContainer {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
         const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
 
-        // see node_modules\box2d.ts\Box2D\Collision\Shapes for more shapes
+        // see node_modules/@flyover/box2d/Box2D/Collision/Shapes for more shapes
         const circleShape = new b2CircleShape();
         circleShape.m_p.Set(0, 0); // position, relative to body position
         circleShape.m_radius = 20 * PIXEL_TO_METER; // radius, in meters

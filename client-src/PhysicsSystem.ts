@@ -1,5 +1,5 @@
 
-import { b2World, XY } from "box2d.ts";
+import { b2World, XY } from "@flyover/box2d";
 import * as Debug from 'debug';
 import { PHYSICS_FRAME_SIZE } from "./constants";
 
