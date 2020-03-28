@@ -83,7 +83,7 @@ export class PhysicsSystem {
                     color = 0x999999;
                 }
                 else {
-                    color = 0xf29999;
+                    color = 0xe6b2b2; // 0xf29999;
                 }
 
                 const alpha = isSensor ? 0 : 0.5;

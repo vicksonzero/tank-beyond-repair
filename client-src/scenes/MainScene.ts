@@ -186,10 +186,10 @@ export class MainScene extends Phaser.Scene {
         // TODO: move these into physics system
         this.bluePlayer.writePhysics();
         this.redPlayer.writePhysics();
+        if (DEBUG_PHYSICS) { this.getPhysicsSystem().debugDraw(this.physicsDebugLayer); }
         this.getPhysicsSystem().update(time);
         this.bluePlayer.readPhysics();
         this.redPlayer.readPhysics();
-        if (DEBUG_PHYSICS) { this.getPhysicsSystem().debugDraw(this.physicsDebugLayer); }
         // TODO: END move these into physics system
 
         const updatePlayer = (player: Player, controlsList: Controls) => {

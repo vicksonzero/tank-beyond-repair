@@ -1,4 +1,4 @@
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2DistanceJointDef, b2RevoluteJoint, b2RevoluteJointDef } from '@flyover/box2d';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2DistanceJointDef, b2RevoluteJoint, b2RevoluteJointDef, b2Fixture } from '@flyover/box2d';
 import * as Debug from 'debug';
 import { METER_TO_PIXEL, PIXEL_TO_METER } from '../constants';
 import { MainScene } from '../scenes/MainScene';
@@ -33,7 +33,7 @@ export class Player extends MatterContainer {
     tank: Tank;
 
     armLength = 30;
-    armRadius = 10;
+    armRadius = 20;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
@@ -50,7 +50,7 @@ export class Player extends MatterContainer {
     holdingItemText: Text;
 
     b2Body: b2Body;
-    playerHandSensor: b2Body;
+    playerHandSensor: b2Fixture;
 
     spawnItem: (x: number, y: number, upgrades: UpgradeObject) => Item; // to be filled in by MainScene
 
@@ -91,7 +91,6 @@ export class Player extends MatterContainer {
     init(x: number, y: number): this {
         this.setPosition(x, y);
         this.b2Body.SetPositionXY(x * PIXEL_TO_METER, y * PIXEL_TO_METER);
-        this.playerHandSensor.SetPositionXY((x + this.armLength) * PIXEL_TO_METER, y * PIXEL_TO_METER);
         this.hp = 50;
 
         this.maxHP = 50;
@@ -140,7 +139,6 @@ export class Player extends MatterContainer {
 
 
 
-
         const handCircleShape = new b2CircleShape();
         handCircleShape.m_p.Set(0, 0); // position, relative to body position,  in meters
         handCircleShape.m_radius = this.armRadius * PIXEL_TO_METER; // in meters
@@ -155,29 +153,11 @@ export class Player extends MatterContainer {
             fixtureLabel: 'hand',
             player: this,
         };
+        this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
 
-        const handsBodyDef: b2BodyDef = new b2BodyDef();
-        handsBodyDef.type = b2BodyType.b2_dynamicBody; // can move around
-        handsBodyDef.position.Set( // in meters
-            (this.x + this.armLength) * PIXEL_TO_METER,
-            (this.y + 0) * PIXEL_TO_METER
-        );
-        handsBodyDef.angle = 0; // in radians
-        handsBodyDef.linearDamping = 0; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
-        handsBodyDef.fixedRotation = true;
+        // this.playerHandSensor = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(handsBodyDef);
+        // this.playerHandSensor.CreateFixture(handsFixtureDef); // a body can have multiple fixtures
 
-        this.playerHandSensor = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(handsBodyDef);
-        this.playerHandSensor.CreateFixture(handsFixtureDef); // a body can have multiple fixtures
-
-
-        const jointDef = new b2RevoluteJointDef();
-        jointDef.bodyA = this.b2Body;
-        jointDef.bodyB = this.playerHandSensor;
-        jointDef.localAnchorA.Set(this.armLength * PIXEL_TO_METER, 0);
-        jointDef.localAnchorB.Set(0, 0);
-
-
-        (this.scene as MainScene).getPhysicsSystem().world.CreateJoint(jointDef);
 
         return this;
     }
@@ -235,6 +215,11 @@ export class Player extends MatterContainer {
         //     },
         //     circleShape.m_radius
         // );
+
+        (this.playerHandSensor.m_shape as b2CircleShape).m_p.Set(
+            xx * PIXEL_TO_METER,
+            yy * PIXEL_TO_METER
+        );
     }
 
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
