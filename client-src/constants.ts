@@ -8,6 +8,7 @@ export const ITEM_LIFESPAN = 10 * 1000; // ms
 export const ITEM_LIFESPAN_WARNING = 7 * 1000; // ms
 
 export const DEBUG_DISABLE_SPAWNING = true;
+export const DEBUG_PHYSICS = true;
 
 export const AUDIO_START_MUTED = true; // bool
 export const PHYSICS_FRAME_SIZE = 16; // ms

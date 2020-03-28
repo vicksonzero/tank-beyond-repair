@@ -38,14 +38,14 @@ export class Bullet extends MatterContainer {
 
     initPhysics(): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE_BULLET : collisionCategory.RED_BULLET;
-        const enemyCollison = this.team === Team.BLUE ? collisionCategory.RED : collisionCategory.BLUE;
+        const enemyCollision = this.team === Team.BLUE ? collisionCategory.RED : collisionCategory.BLUE;
         this.scene.matter.add.gameObject(this, (<any>this.scene.matter.bodies).circle(0, 0, 5, { isSensor: true, label: 'bullet' }));
         this
             .setMass(1)
             .setFrictionAir(0)
             .setFixedRotation()
             .setCollisionCategory(hostCollision)
-            .setCollidesWith(collisionCategory.WORLD | enemyCollison)
+            .setCollidesWith(collisionCategory.WORLD | enemyCollision)
             ;
         return this;
     }

@@ -1,7 +1,7 @@
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload, setUpAudio } from '../assets';
-import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH, DEBUG_PHYSICS } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
@@ -18,6 +18,7 @@ import { capitalize, IMatterContactPoints } from '../utils/utils';
 type BaseSound = Phaser.Sound.BaseSound;
 type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
+type Graphics = Phaser.GameObjects.Graphics;
 type Image = Phaser.GameObjects.Image;
 
 const Vector2 = Phaser.Math.Vector2;
@@ -44,6 +45,7 @@ export class MainScene extends Phaser.Scene {
     playerLayer: Container;
     effectsLayer: Container;
     uiLayer: Container;
+    physicsDebugLayer: Graphics;
 
     btn_mute: Image;
 
@@ -89,6 +91,8 @@ export class MainScene extends Phaser.Scene {
         this.playerLayer = this.add.container(0, 0);
         this.effectsLayer = this.add.container(0, 0);
         this.uiLayer = this.add.container(0, 0);
+        this.physicsDebugLayer = this.add.graphics({ lineStyle: { color: 0x000000, width: 1, alpha: 1 } });
+        this.uiLayer.add(this.physicsDebugLayer);
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
@@ -177,14 +181,15 @@ export class MainScene extends Phaser.Scene {
     }
 
     update(time: number, dt: number) {
-        log(`update ${time}`);
+        // log(`update ${time}`);
 
         // TODO: move these into physics system
         this.bluePlayer.writePhysics();
         this.redPlayer.writePhysics();
-        (this.registry.get('physicsSystem') as PhysicsSystem).update(time);
+        this.getPhysicsSystem().update(time);
         this.bluePlayer.readPhysics();
         this.redPlayer.readPhysics();
+        if (DEBUG_PHYSICS) { this.getPhysicsSystem().debugDraw(this.physicsDebugLayer); }
         // TODO: END move these into physics system
 
         const updatePlayer = (player: Player, controlsList: Controls) => {
