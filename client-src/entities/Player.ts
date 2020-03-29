@@ -122,7 +122,7 @@ export class Player extends Phaser.GameObjects.Container {
         fixtureDef.filter.categoryBits = hostCollision;
         fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         fixtureDef.userData = {
-            fixtureLabel: 'body',
+            fixtureLabel: 'player-body',
         };
 
         const bodyDef: b2BodyDef = new b2BodyDef();

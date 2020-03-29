@@ -98,7 +98,7 @@ export class Item extends MatterContainer {
     initPhysics(physicsFinishedCallback: () => void): this {
         // see node_modules/@flyover/box2d/Box2D/Collision/Shapes for more shapes
         const polygonShape = new b2PolygonShape();
-        polygonShape.SetAsBox(32 * PIXEL_TO_METER, 32 * PIXEL_TO_METER); //a 4x2 rectangle
+        polygonShape.SetAsBox(16 * PIXEL_TO_METER, 16 * PIXEL_TO_METER); //a 4x2 rectangle
 
         const fixtureDef = new b2FixtureDef();
         fixtureDef.shape = polygonShape;
@@ -117,7 +117,7 @@ export class Item extends MatterContainer {
             this.y * PIXEL_TO_METER,
         ); // in meters
         bodyDef.angle = 0; // in radians
-        bodyDef.linearDamping = 0.1; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.linearDamping = 0.005; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
         bodyDef.allowSleep = false;
         bodyDef.userData = {

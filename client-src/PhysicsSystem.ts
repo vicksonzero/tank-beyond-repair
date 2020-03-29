@@ -15,9 +15,6 @@ export class PhysicsSystem {
 
     world: b2World = null;
     gravity: XY = { x: 0, y: 0 };
-    frameSize = PHYSICS_FRAME_SIZE; // ms
-
-    lastUpdate = -1;
     scheduledCreateBodyList: CreateBodyCallback[] = [];
     scheduledDestroyBodyList: b2Body[] = [];
 
@@ -71,40 +68,22 @@ export class PhysicsSystem {
         verbose('writeStateIntoGame\n' + verboseLogs.join('\n'));
     }
 
-    update(gameTime: number, graphics?: Phaser.GameObjects.Graphics) {
-        this.destroyScheduledBodies();
+    update(timeStep: number, graphics?: Phaser.GameObjects.Graphics) {
+        this.destroyScheduledBodies('before Step');
         this.readStateFromGame();
         if (graphics) { this.debugDraw(graphics); }
         verbose('Begin updateToFrame');
-        this.updateToFrame(gameTime);
+        this.updateOneFrame(timeStep);
+        this.destroyScheduledBodies('after Step');
         verbose('End updateToFrame');
         this.createScheduledBodies();
         this.writeStateIntoGame();
     }
 
-    updateToFrame(gameTime: number) {
+    updateOneFrame(timeStep: number) {
         const velocityIterations = 10;   //how strongly to correct velocity
         const positionIterations = 10;   //how strongly to correct position
-        const lastGameTime = this.lastUpdate;
-        // log(`update (from ${lastGameTime} to ${gameTime})`);
-
-        if (this.lastUpdate === -1) {
-            this.lastUpdate = gameTime;
-
-            const timeStep = 1000 / this.frameSize; // seconds
-            this.world.Step(timeStep, velocityIterations, positionIterations);
-        } else {
-            let i = 0;
-            while (this.lastUpdate + this.frameSize < gameTime && i < PHYSICS_MAX_FRAME_CATCHUP) {
-                i++;
-
-                const timeStep = 1000 / this.frameSize; // seconds
-                this.world.Step(timeStep, velocityIterations, positionIterations);
-                this.lastUpdate += this.frameSize;
-            }
-
-            verbose(`physics update: ${i} ticks at ${gameTime.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
-        }
+        this.world.Step(timeStep, velocityIterations, positionIterations);
     }
 
     scheduleCreateBody(callback: CreateBodyCallback) {
@@ -126,10 +105,10 @@ export class PhysicsSystem {
         this.scheduledDestroyBodyList.push(body);
     }
 
-    destroyScheduledBodies() {
+    destroyScheduledBodies(debugString: string) {
         const len = this.scheduledCreateBodyList.length;
         if (len > 0) {
-            log(`destroyScheduledBodies: ${len} callbacks`);
+            log(`destroyScheduledBodies(${debugString}): ${len} callbacks`);
         }
         this.scheduledDestroyBodyList.forEach((body) => {
             this.world.DestroyBody(body);
@@ -196,6 +175,23 @@ export class PhysicsSystem {
                         {
                             const polygonShape = shape as b2PolygonShape;
                             const vertices = polygonShape.m_vertices;
+                            graphics.beginPath();
+                            vertices.forEach((v, i) => {
+                                if (i === 0) {
+                                    graphics.moveTo(
+                                        (pos.x + v.x) * METER_TO_PIXEL,
+                                        (pos.y + v.y) * METER_TO_PIXEL
+                                    );
+                                } else {
+                                    graphics.lineTo(
+                                        (pos.x + v.x) * METER_TO_PIXEL,
+                                        (pos.y + v.y) * METER_TO_PIXEL
+                                    );
+                                }
+                            });
+                            graphics.closePath();
+                            graphics.strokePath();
+                            graphics.fillPath();
                         } break;
                 }
             }

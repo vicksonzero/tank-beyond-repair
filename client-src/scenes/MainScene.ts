@@ -1,7 +1,7 @@
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload, setUpAudio } from '../assets';
-import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH, DEBUG_PHYSICS, PIXEL_TO_METER, TANK_SPEED } from '../constants';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH, DEBUG_PHYSICS, PIXEL_TO_METER, TANK_SPEED, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
@@ -63,6 +63,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     sfx_open: BaseSound;
     sfx_bgm: BaseSound;
 
+    frameSize = PHYSICS_FRAME_SIZE; // ms
+    lastUpdate = -1;
 
     get mainCamera() { return this.sys.cameras.main; }
 
@@ -182,8 +184,33 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     update(time: number, dt: number) {
         log(`update ${time}`);
 
+        const lastGameTime = this.lastUpdate;
+        // log(`update (from ${lastGameTime} to ${gameTime})`);
+
+        if (this.lastUpdate === -1) {
+            this.lastUpdate = time;
+
+            const timeStep = 1000 / this.frameSize; // seconds
+            this.fixedUpdate(timeStep);
+        } else {
+            let i = 0;
+            while (this.lastUpdate + this.frameSize < time && i < PHYSICS_MAX_FRAME_CATCHUP) {
+                i++;
+
+                const timeStep = 1000 / this.frameSize; // seconds
+                this.fixedUpdate(timeStep);
+                this.lastUpdate += this.frameSize;
+            }
+
+            log(`update: ${i} fixedUpdate-ticks at ${time.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
+        }
+    }
+
+    fixedUpdate(timeStep: number) {
+        log(`fixedUpdate start`);
+
         this.getPhysicsSystem().update(
-            time,
+            timeStep,
             (DEBUG_PHYSICS ? this.physicsDebugLayer : null)
         );
 
@@ -294,8 +321,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.removeBullet(bullet);
             }
         };
-        this.bullets.forEach((bullet) => updateBullet(bullet))
-        log(`update complete`);
+        this.bullets.forEach((bullet) => updateBullet(bullet));
+        log(`fixedUpdate complete`);
     }
 
     setUpKeyboard() {
@@ -603,10 +630,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         ) => {
             if (gameObjectA?.name === nameA && gameObjectB?.name === nameB) {
                 matchFoundCallback(fixtureA, fixtureB);
+            } else if (gameObjectB?.name === nameA && gameObjectA?.name === nameB) {
+                matchFoundCallback(fixtureB, fixtureA);
             }
-            // else if (gameObjectB?.name === nameA && gameObjectA?.name === nameB) {
-            //     matchFoundCallback(fixtureB, fixtureA);
-            // }
         }
     }
 
@@ -663,7 +689,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         box.initPhysics(() => {
             if (isScatter) {
                 const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
-                dir.scale(PIXEL_TO_METER);
+                dir.scale(0.04 * PIXEL_TO_METER);
                 box.b2Body.SetLinearVelocity(dir);
             }
         });
