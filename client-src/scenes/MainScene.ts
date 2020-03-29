@@ -1,7 +1,7 @@
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload, setUpAudio } from '../assets';
-import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH, DEBUG_PHYSICS } from '../constants';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH, DEBUG_PHYSICS, PIXEL_TO_METER, TANK_SPEED } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
@@ -186,10 +186,17 @@ export class MainScene extends Phaser.Scene {
         // TODO: move these into physics system
         this.bluePlayer.writePhysics();
         this.redPlayer.writePhysics();
+        this.blueAi.forEach((ai) => ai.writePhysics());
+        this.redAi.forEach((ai) => ai.writePhysics());
+        this.bullets.forEach((bullet) => bullet.writePhysics());
         if (DEBUG_PHYSICS) { this.getPhysicsSystem().debugDraw(this.physicsDebugLayer); }
+        this.getPhysicsSystem().destroyScheduledBodies();
         this.getPhysicsSystem().update(time);
         this.bluePlayer.readPhysics();
         this.redPlayer.readPhysics();
+        this.blueAi.forEach((ai) => ai.readPhysics());
+        this.redAi.forEach((ai) => ai.readPhysics());
+        this.bullets.forEach((bullet) => bullet.readPhysics());
         // TODO: END move these into physics system
 
         const updatePlayer = (player: Player, controlsList: Controls) => {
@@ -235,7 +242,7 @@ export class MainScene extends Phaser.Scene {
         }
         const updateAi = (tank: Tank) => {
             // AI decision logic
-            const direction = tank.team === Team.BLUE ? 1 : -1;
+            const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
             const enemy = (tank.team === Team.BLUE ? [this.redPlayer, ...this.redAi]
                 : [this.bluePlayer, ...this.blueAi]);
 
@@ -263,16 +270,25 @@ export class MainScene extends Phaser.Scene {
                     tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
                     bullet.initPhysics()
-                        .init(tank.x, tank.y, tank.getDamage(), tank.getRange())
-                        .setVelocityX(xDiff / distance * BULLET_SPEED)
-                        .setVelocityY(yDiff / distance * BULLET_SPEED);
+                        .init(tank.x, tank.y, tank.getDamage(), tank.getRange());
+                    bullet.b2Body.SetLinearVelocity({
+                        x: (xDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
+                        y: (yDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
+                    });
+                    bullet.b2Body.SetAwake(true);
                     this.sfx_shoot.play();
                     this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
-                tank.setVelocityX(0);
+                // tank.b2Body.SetLinearVelocity({
+                //     x: 0 * PIXEL_TO_METER,
+                //     y: tank.b2Body.GetLinearVelocity().y,
+                // });
             } else {
-                tank.setVelocityX(direction);
+                tank.b2Body.SetLinearVelocity({
+                    x: direction * PIXEL_TO_METER,
+                    y: tank.b2Body.GetLinearVelocity().y,
+                });
             }
             if (detectGameOver(tank)) {
                 this.setGameOver(tank.team);
@@ -448,6 +464,7 @@ export class MainScene extends Phaser.Scene {
         this.spawnItem(position.x, position.y, upgrades, true);
     }
     removeBullet(bullet: Bullet) {
+        log('removeBullet');
         this.bullets = this.bullets.filter(b => b !== bullet);
         bullet.destroy();
     }

@@ -1,7 +1,7 @@
 
-import { b2World, XY, b2ShapeType, b2CircleShape, b2PolygonShape, b2BodyType, b2JointType, b2DistanceJoint } from "@flyover/box2d";
+import { b2World, XY, b2ShapeType, b2CircleShape, b2PolygonShape, b2BodyType, b2JointType, b2DistanceJoint, b2Body } from "@flyover/box2d";
 import * as Debug from 'debug';
-import { PHYSICS_FRAME_SIZE, METER_TO_PIXEL } from "./constants";
+import { PHYSICS_FRAME_SIZE, METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING } from "./constants";
 
 
 const log = Debug('tank-beyond-repair:PhysicsSystem:log ');
@@ -15,6 +15,7 @@ export class PhysicsSystem {
     frameSize = PHYSICS_FRAME_SIZE; // ms
 
     lastUpdate = -1;
+    scheduledDestroyBodyList: b2Body[] = [];
 
     constructor() {
 
@@ -22,6 +23,7 @@ export class PhysicsSystem {
 
     init() {
         this.world = new b2World(this.gravity);
+        this.world.SetAllowSleeping(PHYSICS_ALLOW_SLEEPING);
     }
 
     update(gameTime: number) {
@@ -47,6 +49,17 @@ export class PhysicsSystem {
 
             // log(`physics update: ${i} ticks (from ${lastGameTime} to ${gameTime}; ${this.lastUpdate} left)`);
         }
+    }
+
+    destroyScheduledBodies() {
+        this.scheduledDestroyBodyList.forEach((body) => {
+            this.world.DestroyBody(body);
+        });
+        this.scheduledDestroyBodyList = [];
+    }
+
+    scheduleDestroyBody(body: b2Body) {
+        this.scheduledDestroyBodyList.push(body);
     }
 
     debugDraw(graphics: Phaser.GameObjects.Graphics) {

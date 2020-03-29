@@ -5,6 +5,9 @@ import { capitalize } from '../utils/utils';
 import { Team } from './Team';
 import { HpBar } from '../ui/HpBar';
 import { UpgradeObject, UpgradeType } from './Upgrade';
+import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
+import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef } from '@flyover/box2d';
+import { MainScene } from '../scenes/MainScene';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -12,7 +15,7 @@ type Graphics = Phaser.GameObjects.Graphics;
 type Text = Phaser.GameObjects.Text;
 type Container = Phaser.GameObjects.Container;
 
-export class Tank extends MatterContainer {
+export class Tank extends Phaser.GameObjects.Container {
 
     static TANK_DIE = 'item-die';
     bodyRadius = 20;
@@ -43,7 +46,7 @@ export class Tank extends MatterContainer {
     detailsText: Text;
     rangeMarker: Graphics;
 
-
+    b2Body: b2Body;
 
     // onHitPart?: (parent: any, part: Part, contactPoints: { vertex: { x: number, y: number } }[]) => void;
 
@@ -98,6 +101,10 @@ export class Tank extends MatterContainer {
             .setX(x)
             .setY(y)
             ;
+        this.b2Body.SetPositionXY(
+            x * PIXEL_TO_METER,
+            y * PIXEL_TO_METER
+        );
         this.range = 250;
         this.hp = 5;
         this.maxHP = 5;
@@ -120,15 +127,62 @@ export class Tank extends MatterContainer {
 
     initPhysics(): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
-        const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
-        this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: this.bodyRadius }, label: 'tank-body' });
-        this
-            .setMass(1)
-            .setFrictionAir(0.5)
-            .setFixedRotation()
-            .setCollisionCategory(hostCollision)
-            .setCollidesWith(collisionCategory.WORLD | bulletCollison | collisionCategory.RED | collisionCategory.BLUE)
-            ;
+        const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
+
+
+        // see node_modules/@flyover/box2d/Box2D/Collision/Shapes for more shapes
+        const circleShape = new b2CircleShape();
+        circleShape.m_p.Set(0, 0); // position, relative to body position
+        circleShape.m_radius = this.bodyRadius * PIXEL_TO_METER; // radius, in meters
+
+        const fixtureDef = new b2FixtureDef();
+        fixtureDef.shape = circleShape;
+        fixtureDef.density = 1;
+        fixtureDef.filter.categoryBits = hostCollision;
+        fixtureDef.filter.maskBits = collisionCategory.WORLD | bulletCollision | collisionCategory.RED | collisionCategory.BLUE;
+        fixtureDef.userData = {
+            fixtureLabel: 'body',
+            player: this,
+        };
+
+        const bodyDef: b2BodyDef = new b2BodyDef();
+        bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
+        bodyDef.position.Set(
+            this.x * PIXEL_TO_METER,
+            this.y * PIXEL_TO_METER,
+        ); // in meters
+        bodyDef.angle = 0; // in radians
+        bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.fixedRotation = true;
+
+        this.b2Body = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(bodyDef);
+        this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+
+
+        // this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: this.bodyRadius }, label: 'tank-body' });
+        // this
+        //     .setMass(1)
+        //     .setFrictionAir(0.5)
+        //     .setFixedRotation()
+        //     .setCollisionCategory(hostCollision)
+        //     .setCollidesWith(collisionCategory.WORLD | bulletCollision | collisionCategory.RED | collisionCategory.BLUE)
+        //     ;
+        return this;
+    }
+
+    writePhysics(): this {
+        this.b2Body.SetPosition({
+            x: this.x * PIXEL_TO_METER,
+            y: this.y * PIXEL_TO_METER,
+        });
+        return this;
+    }
+
+    readPhysics(): this {
+        const pos = this.b2Body.GetPosition();
+        this.x = pos.x * METER_TO_PIXEL;
+        this.y = pos.y * METER_TO_PIXEL;
+        // this.debugText.setText(`${this.x.toFixed(2)}, ${this.y.toFixed(2)}`);
         return this;
     }
 
@@ -221,9 +275,8 @@ export class Tank extends MatterContainer {
         // this.gm.makeExplosion3(this.x, this.y);
         // this.gm.gameIsOver = true;
         this.visible = false;
-        this
-            .setCollisionCategory(0)
-            ;
+        this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
+        ;
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
         super.destroy();

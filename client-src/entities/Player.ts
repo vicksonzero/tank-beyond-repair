@@ -24,7 +24,7 @@ interface HoldingItem extends Container {
     upgrades?: UpgradeObject;
 }
 
-export class Player extends MatterContainer {
+export class Player extends Phaser.GameObjects.Container {
 
     team: Team;
     hp: number;
@@ -131,7 +131,7 @@ export class Player extends MatterContainer {
             this.y * PIXEL_TO_METER,
         ); // in meters
         bodyDef.angle = 0; // in radians
-        bodyDef.linearDamping = 0; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
 
         this.b2Body = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(bodyDef);
@@ -162,17 +162,19 @@ export class Player extends MatterContainer {
         return this;
     }
 
-    writePhysics() {
+    writePhysics(): this {
         this.b2Body.SetPosition({
             x: this.x * PIXEL_TO_METER,
             y: this.y * PIXEL_TO_METER,
         });
+        return this;
     }
-    readPhysics() {
+    readPhysics(): this {
         const pos = this.b2Body.GetPosition();
         this.x = pos.x * METER_TO_PIXEL;
         this.y = pos.y * METER_TO_PIXEL;
         this.debugText.setText(`${this.x.toFixed(2)}, ${this.y.toFixed(2)}`);
+        return this;
     }
 
     updateHpBar() {
@@ -180,12 +182,11 @@ export class Player extends MatterContainer {
     }
 
     moveInDirection(dirX: number, dirY: number) {
-        this.b2Body.SetLinearVelocity({
-            x: dirX * PIXEL_TO_METER,
-            y: dirY * PIXEL_TO_METER,
-        });
-
         if (dirX !== 0 || dirY !== 0) {
+            this.b2Body.SetLinearVelocity({
+                x: dirX * PIXEL_TO_METER,
+                y: dirY * PIXEL_TO_METER,
+            });
             const velocity = this.b2Body.GetLinearVelocity();
             const rotation = Math.atan2(velocity.y, velocity.x);
             const xx = Math.cos(rotation) * this.armLength;
