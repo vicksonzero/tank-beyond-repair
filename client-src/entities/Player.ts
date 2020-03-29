@@ -121,7 +121,6 @@ export class Player extends Phaser.GameObjects.Container {
         fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         fixtureDef.userData = {
             fixtureLabel: 'body',
-            player: this,
         };
 
         const bodyDef: b2BodyDef = new b2BodyDef();
@@ -136,7 +135,11 @@ export class Player extends Phaser.GameObjects.Container {
 
         this.b2Body = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(bodyDef);
         this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
-
+        this.b2Body.m_userData = {
+            ...this.b2Body.m_userData,
+            label: 'player',
+            gameObject: this,
+        };
 
 
         const handCircleShape = new b2CircleShape();
@@ -151,7 +154,6 @@ export class Player extends Phaser.GameObjects.Container {
         handsFixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         handsFixtureDef.userData = {
             fixtureLabel: 'hand',
-            player: this,
         };
         this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
 
@@ -159,21 +161,6 @@ export class Player extends Phaser.GameObjects.Container {
         // this.playerHandSensor.CreateFixture(handsFixtureDef); // a body can have multiple fixtures
 
 
-        return this;
-    }
-
-    writePhysics(): this {
-        this.b2Body.SetPosition({
-            x: this.x * PIXEL_TO_METER,
-            y: this.y * PIXEL_TO_METER,
-        });
-        return this;
-    }
-    readPhysics(): this {
-        const pos = this.b2Body.GetPosition();
-        this.x = pos.x * METER_TO_PIXEL;
-        this.y = pos.y * METER_TO_PIXEL;
-        this.debugText.setText(`${this.x.toFixed(2)}, ${this.y.toFixed(2)}`);
         return this;
     }
 

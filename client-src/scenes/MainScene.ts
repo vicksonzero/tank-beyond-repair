@@ -183,25 +183,16 @@ export class MainScene extends Phaser.Scene {
     update(time: number, dt: number) {
         // log(`update ${time}`);
 
-        // TODO: move these into physics system
-        this.bluePlayer.writePhysics();
-        this.redPlayer.writePhysics();
-        this.blueAi.forEach((ai) => ai.writePhysics());
-        this.redAi.forEach((ai) => ai.writePhysics());
-        this.bullets.forEach((bullet) => bullet.writePhysics());
-        if (DEBUG_PHYSICS) { this.getPhysicsSystem().debugDraw(this.physicsDebugLayer); }
-        this.getPhysicsSystem().destroyScheduledBodies();
-        this.getPhysicsSystem().update(time);
-        this.bluePlayer.readPhysics();
-        this.redPlayer.readPhysics();
-        this.blueAi.forEach((ai) => ai.readPhysics());
-        this.redAi.forEach((ai) => ai.readPhysics());
-        this.bullets.forEach((bullet) => bullet.readPhysics());
-        // TODO: END move these into physics system
+        this.getPhysicsSystem().update(
+            time,
+            (DEBUG_PHYSICS ? this.physicsDebugLayer : null)
+        );
 
         const updatePlayer = (player: Player, controlsList: Controls) => {
             let xx = 0;
             let yy = 0;
+            
+            player.debugText.setText(`${player.x.toFixed(2)}, ${player.y.toFixed(2)}`);
 
             if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
             if (controlsList.down.isDown) { yy += PLAYER_MOVE_SPEED; }

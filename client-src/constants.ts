@@ -14,9 +14,11 @@ export const ITEM_LIFESPAN_WARNING = 7 * 1000; // ms
 export const DEBUG_DISABLE_SPAWNING = false; // default false
 export const DEBUG_PHYSICS = false; // default false
 
-export const AUDIO_START_MUTED = true; // bool
+// physics
 export const PHYSICS_FRAME_SIZE = 16; // ms
 export const PHYSICS_ALLOW_SLEEPING = false; // default false
+export const PHYSICS_MAX_FRAME_CATCHUP = 10; // times, default 10 times (10*16 = 160ms)
 export const METER_TO_PIXEL = 20; // pixel per meter
 export const PIXEL_TO_METER = 1 / METER_TO_PIXEL; // meter per pixel
 
+export const AUDIO_START_MUTED = true; // bool

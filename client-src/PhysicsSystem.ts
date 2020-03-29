@@ -1,9 +1,10 @@
 
 import { b2World, XY, b2ShapeType, b2CircleShape, b2PolygonShape, b2BodyType, b2JointType, b2DistanceJoint, b2Body } from "@flyover/box2d";
 import * as Debug from 'debug';
-import { PHYSICS_FRAME_SIZE, METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING } from "./constants";
+import { PHYSICS_FRAME_SIZE, METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER } from "./constants";
 
 
+const verbose = Debug('tank-beyond-repair:PhysicsSystem:verbose ');
 const log = Debug('tank-beyond-repair:PhysicsSystem:log ');
 // const warn = Debug('tank-beyond-repair:PhysicsSystem:warn');
 // warn.log = console.warn.bind(console);
@@ -26,7 +27,54 @@ export class PhysicsSystem {
         this.world.SetAllowSleeping(PHYSICS_ALLOW_SLEEPING);
     }
 
-    update(gameTime: number) {
+    readStateFromGame() {
+        const verboseLogs: string[] = [];
+        for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
+            const userData = body.GetUserData(); // TODO: make an interface for user data
+            const gameObject: Phaser.GameObjects.Components.Transform = userData.gameObject || null;
+            const label = userData.label || '(no label)';
+            const name = (gameObject as any).name || '(no name)';
+
+            if (!gameObject) { continue; }
+            verboseLogs.push(`Body ${label} ${name}`);
+
+            body.SetPosition({
+                x: gameObject.x * PIXEL_TO_METER,
+                y: gameObject.y * PIXEL_TO_METER,
+            });
+            body.SetAngle(gameObject.rotation);
+        }
+        verbose('readStateFromGame', verboseLogs.join('\n'));
+    }
+
+    writeStateIntoGame() {
+        const verboseLogs: string[] = [];
+        for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
+            const userData = body.GetUserData();
+            const gameObject: Phaser.GameObjects.Components.Transform = userData.gameObject || null;
+            const label = userData.label || '(no label)';
+            const name = (gameObject as any).name || '(no name)';
+
+            if (!gameObject) { continue; }
+            verboseLogs.push(`Body ${label} ${name}`);
+
+            const pos = body.GetPosition();
+            const rot = body.GetAngle(); // radians
+            gameObject.x = pos.x * METER_TO_PIXEL;
+            gameObject.y = pos.y * METER_TO_PIXEL;
+            gameObject.setRotation(rot);
+        }
+        verbose('writeStateIntoGame', verboseLogs.join('\n'));
+    }
+    update(gameTime: number, graphics?: Phaser.GameObjects.Graphics) {
+        this.readStateFromGame();
+        if (graphics) { this.debugDraw(graphics); }
+        this.destroyScheduledBodies();
+        this.doMultipleTicks(gameTime);
+        this.writeStateIntoGame();
+    }
+
+    doMultipleTicks(gameTime: number) {
         const velocityIterations = 10;   //how strongly to correct velocity
         const positionIterations = 10;   //how strongly to correct position
         const lastGameTime = this.lastUpdate;
@@ -39,7 +87,7 @@ export class PhysicsSystem {
             this.world.Step(timeStep, velocityIterations, positionIterations);
         } else {
             let i = 0;
-            while (this.lastUpdate + this.frameSize < gameTime) {
+            while (this.lastUpdate + this.frameSize < gameTime && i < PHYSICS_MAX_FRAME_CATCHUP) {
                 i++;
 
                 const timeStep = 1000 / this.frameSize; // seconds
