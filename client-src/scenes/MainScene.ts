@@ -13,6 +13,7 @@ import { PhysicsSystem } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
 // import { GameObjects } from 'phaser';
 import { capitalize, IMatterContactPoints } from '../utils/utils';
+import { b2ContactListener, b2Contact, b2Shape, b2ParticleSystem, b2ParticleBodyContact, b2ParticleContact, b2Manifold, b2ContactImpulse, b2BodyType, b2Body, b2Fixture, b2WorldManifold } from '@flyover/box2d';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -30,7 +31,7 @@ const log = Debug('tank-beyond-repair:MainScene:log');
 
 export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key };
 
-export class MainScene extends Phaser.Scene {
+export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     controlsList: Controls[];
     cheats: { spawnUpgrades: Key };
@@ -79,7 +80,7 @@ export class MainScene extends Phaser.Scene {
     create(): void {
         setUpAudio.call(this);
         log('create');
-        this.getPhysicsSystem().init();
+        this.getPhysicsSystem().init(this as b2ContactListener);
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
@@ -97,23 +98,26 @@ export class MainScene extends Phaser.Scene {
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
         this.bluePlayer.spawnItem = this.spawnItem;
-        this.bluePlayer.initPhysics()
+        this.bluePlayer
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
             .init(100, 100);
+        this.bluePlayer.initPhysics();
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
         this.redPlayer.spawnItem = this.spawnItem;
-        this.redPlayer.initPhysics()
+        this.redPlayer
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
             .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
             .faceLeft();
+        this.redPlayer.initPhysics();
 
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
-            ai.initPhysics()
+            ai
                 .initHpBar(new HpBar(this, 0, -25, 30, 4))
                 .init(x, y);
+            ai.initPhysics();
             return ai;
         };
 
@@ -170,18 +174,13 @@ export class MainScene extends Phaser.Scene {
 
         this.bullets = [];
 
-        // this.matter.world
-        //     .setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
-        //     ;
-        // this.matter.world.on('collisionstart', (event: any) => this.handleCollisions(event));
-        // this.matter.world.on('collisionend', (event: any) => this.handleCollisionsEnd(event));
-
         this.setUpGUI();
         this.setUpKeyboard();
+        log('create complete');
     }
 
     update(time: number, dt: number) {
-        // log(`update ${time}`);
+        log(`update ${time}`);
 
         this.getPhysicsSystem().update(
             time,
@@ -191,7 +190,7 @@ export class MainScene extends Phaser.Scene {
         const updatePlayer = (player: Player, controlsList: Controls) => {
             let xx = 0;
             let yy = 0;
-            
+
             player.debugText.setText(`${player.x.toFixed(2)}, ${player.y.toFixed(2)}`);
 
             if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
@@ -254,21 +253,22 @@ export class MainScene extends Phaser.Scene {
             const { target, distance } = findTankWithClosestDistance(tank, enemy)
             if (target && distance <= tank.range) {
                 // stop and attack
-                const fireBullet = (tank: Tank, target: Tank | Player) => {
+                const fireBullet = async (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
                     const xDiff = target.x - tank.x;
                     const yDiff = target.y - tank.y;
                     tank.setFiring({ x: xDiff, y: yDiff });
                     const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-                    bullet.initPhysics()
-                        .init(tank.x, tank.y, tank.getDamage(), tank.getRange());
+                    bullet.init(tank.x, tank.y, tank.getDamage(), tank.getRange());
+                    this.sfx_shoot.play();
+                    this.bullets.push(bullet);
+
+                    await bullet.initPhysics();
                     bullet.b2Body.SetLinearVelocity({
                         x: (xDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
                         y: (yDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
                     });
                     bullet.b2Body.SetAwake(true);
-                    this.sfx_shoot.play();
-                    this.bullets.push(bullet);
                 }
                 fireBullet(tank, target);
                 // tank.b2Body.SetLinearVelocity({
@@ -294,6 +294,7 @@ export class MainScene extends Phaser.Scene {
             }
         };
         this.bullets.forEach((bullet) => updateBullet(bullet))
+        log(`update complete`);
     }
 
     setUpKeyboard() {
@@ -459,102 +460,127 @@ export class MainScene extends Phaser.Scene {
         this.bullets = this.bullets.filter(b => b !== bullet);
         bullet.destroy();
     }
-    handleCollisions(event: any) {
-        //  Loop through all of the collision pairs
-        const { pairs } = event;
-        // console.log('handleCollisions', pairs.slice());
-        pairs.forEach((pair: any) => {
-            const bodyA: any = pair.bodyA;
-            const bodyB: any = pair.bodyB;
-            const activeContacts: any = pair.activeContacts;
-            const checkPairGameObjectName = this.checkPairGameObjectName_(bodyA, bodyB);
-            const checkPairBodyLabels = this.checkPairBodyLabels_(bodyA, bodyB);
 
-            checkPairBodyLabels('hand', 'tank-body', (a: any, b: any) => {
-                (<Player>a.player).onTouchingTankStart(a, b, activeContacts as IMatterContactPoints);
+
+    public BeginContact(pContact: b2Contact<b2Shape, b2Shape>): void {
+        for (let contact = pContact; contact; contact = contact.GetNext()) {
+            const fixtureA = contact.GetFixtureA();
+            const fixtureB = contact.GetFixtureB();
+
+            const bodyDataA = fixtureA.GetBody()?.GetUserData();
+            const bodyDataB = fixtureB.GetBody()?.GetUserData();
+            log(`BeginContact ${bodyDataA} vs ${bodyDataB}`);
+
+
+            const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
+            const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
+
+            checkPairFixtureLabels('hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact);
             });
-            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
-            checkPairBodyLabels('hand', 'item-body', (a: any, b: any) => {
-                (<Player>a.player).onTouchingItemStart(a, b, activeContacts as IMatterContactPoints);
+            checkPairFixtureLabels('hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact);
             });
-            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
-            checkPairGameObjectName('tank', 'bullet', (tank: any, bullet: any) => {
-                tank.gameObject.takeDamage(bullet.gameObject.damage);
-                if (tank.gameObject.hp <= 0) {
-                    this.removeTank(tank.gameObject);
+            checkPairGameObjectName('tank', 'bullet', (tankFixture: b2Fixture, bulletFixture: b2Fixture) => {
+                const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
+                const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
+                tank.takeDamage(bullet.damage);
+                if (tank.hp <= 0) {
+                    this.removeTank(tank);
                 }
-                this.removeBullet(bullet.gameObject);
+                this.removeBullet(bullet);
             });
-            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
-            checkPairGameObjectName('player', 'bullet', (player: any, bullet: any) => {
-                player.gameObject.takeDamage(bullet.gameObject.damage);
-                player.gameObject.updateHpBar();
-                this.removeBullet(bullet.gameObject);
+            checkPairGameObjectName('player', 'bullet', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
+                const player: Player = playerFixture.GetBody()?.GetUserData()?.gameObject as Player;
+                const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
+                player.takeDamage(bullet.damage);
+                player.updateHpBar();
+                this.removeBullet(bullet);
             });
-            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
-            // checkPairGameObjectName('player_bullet', 'enemy', (a: any, b: any) => {
+            // checkPairGameObjectName('player_bullet', 'enemy', (a: b2Fixture, b: b2Fixture) => {
             //     // (<PlayerBullet>a.gameObject).onHitEnemy(b.gameObject, activeContacts as IMatterContactPoints);
             // });
-            // if (!(bodyA.gameObject && bodyB.gameObject)) return;
-        });
+        }
     }
+    public EndContact(pContact: b2Contact<b2Shape, b2Shape>): void {
+        for (let contact = pContact; contact; contact = contact.GetNext()) {
+            const fixtureA = contact.GetFixtureA();
+            const fixtureB = contact.GetFixtureB();
 
-    handleCollisionsEnd(event: any) {
-        //  Loop through all of the collision pairs
-        const { pairs } = event;
-        // console.log('handleCollisionsEnd', pairs.slice());
+            const bodyDataA = fixtureA.GetBody()?.GetUserData();
+            const bodyDataB = fixtureB.GetBody()?.GetUserData();
+            log(`BeginContact ${bodyDataA} vs ${bodyDataB}`);
 
-        pairs.forEach((pair: any) => {
-            const bodyA: any = pair.bodyA;
-            const bodyB: any = pair.bodyB;
-            const activeContacts: any = pair.activeContacts;
-            const checkPairGameObjectName = this.checkPairGameObjectName_(bodyA, bodyB);
-            const checkPairBodyLabels = this.checkPairBodyLabels_(bodyA, bodyB);
 
-            checkPairBodyLabels('hand', 'tank-body', (a: any, b: any) => {
-                (<Player>a.player).onTouchingTankEnd(a, b, activeContacts as IMatterContactPoints);
+            const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
+            const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
+
+            checkPairFixtureLabels('hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact);
             });
-            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
-            checkPairBodyLabels('hand', 'item-body', (a: any, b: any) => {
-                (<Player>a.player).onTouchingItemEnd(a, b, activeContacts as IMatterContactPoints);
+            checkPairFixtureLabels('hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact);
             });
-            if (!pair.isSensor && !(bodyA.gameObject && bodyB.gameObject)) return; // run every turn to not process dead objects
 
 
-            // checkPairGameObjectName('player_bullet', 'enemy', (a: any, b: any) => {
+            // checkPairGameObjectName('player_bullet', 'enemy', (a: b2Fixture, b: b2Fixture) => {
             //     // (<PlayerBullet>a.gameObject).onHitEnemy(b.gameObject, activeContacts as IMatterContactPoints);
             // });
-            // if (!(bodyA.gameObject && bodyB.gameObject)) return;
-        });
+        }
     }
-    private checkPairGameObjectName_(bodyA: any, bodyB: any) {
+
+    public BeginContactFixtureParticle(system: b2ParticleSystem, contact: b2ParticleBodyContact): void {
+        // do nothing
+    }
+    public EndContactFixtureParticle(system: b2ParticleSystem, contact: b2ParticleBodyContact): void {
+        // do nothing
+    }
+    public BeginContactParticleParticle(system: b2ParticleSystem, contact: b2ParticleContact): void {
+        // do nothing
+    }
+    public EndContactParticleParticle(system: b2ParticleSystem, contact: b2ParticleContact): void {
+        // do nothing
+    }
+    public PreSolve(contact: b2Contact<b2Shape, b2Shape>, oldManifold: b2Manifold): void {
+        // do nothing
+    }
+    public PostSolve(contact: b2Contact<b2Shape, b2Shape>, impulse: b2ContactImpulse): void {
+        // do nothing
+    }
+
+    private checkPairGameObjectName_(fixtureA: b2Fixture, fixtureB: b2Fixture) {
+        const gameObjectA = fixtureA?.GetBody()?.GetUserData()?.gameObject;
+        const gameObjectB = fixtureB?.GetBody()?.GetUserData()?.gameObject;
+
         return (
             nameA: string, nameB: string,
-            matchFoundCallback: (a: any, b: any) => void
+            matchFoundCallback: (a: b2Fixture, b: b2Fixture) => void
         ) => {
-            if (bodyA?.gameObject?.name === nameA && bodyB?.gameObject?.name === nameB) {
-                matchFoundCallback(bodyA, bodyB);
-            } else if (bodyB?.gameObject?.name === nameA && bodyA?.gameObject?.name === nameB) {
-                matchFoundCallback(bodyB, bodyA);
+            if (gameObjectA?.name === nameA && gameObjectB?.name === nameB) {
+                matchFoundCallback(fixtureA, fixtureB);
+            } else if (gameObjectB?.name === nameA && gameObjectA?.name === nameB) {
+                matchFoundCallback(fixtureB, fixtureA);
             }
         }
     }
 
-    private checkPairBodyLabels_(bodyA: any, bodyB: any) {
-        // console.log(bodyA?.label, bodyB?.label);
+    private checkPairFixtureLabels_(fixtureA: b2Fixture, fixtureB: b2Fixture) {
+        const fixtureDataA = fixtureA.GetUserData();
+        const fixtureDataB = fixtureB.GetUserData();
+
         return (
             nameA: string, nameB: string,
-            matchFoundCallback: (a: any, b: any) => void
+            matchFoundCallback: (a: b2Fixture, b: b2Fixture) => void
         ) => {
-            if (bodyA?.label === nameA && bodyB?.label === nameB) {
-                matchFoundCallback(bodyA, bodyB);
-            } else if (bodyB?.label === nameA && bodyA?.label === nameB) {
-                matchFoundCallback(bodyB, bodyA);
+            if (fixtureDataA?.fixtureLabel === nameA && fixtureDataB?.fixtureLabel === nameB) {
+                matchFoundCallback(fixtureA, fixtureB);
+            } else if (fixtureDataB?.fixtureLabel === nameA && fixtureDataA?.fixtureLabel === nameB) {
+                matchFoundCallback(fixtureB, fixtureA);
             }
         }
     }
@@ -586,18 +612,19 @@ export class MainScene extends Phaser.Scene {
     }
 
     spawnItem = (x: number, y: number, upgrades: UpgradeObject, isScatter = false) => {
-
         let box: Item;
         this.itemLayer.add(box = new Item(this));
-        box.initPhysics()
+        box
             .init(x, y, upgrades)
             .setUpgrades(upgrades)
             .initDeathTimer();
-        if (isScatter) {
-            const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
-            box.setVelocity(dir.x, dir.y);
 
-        }
+        box.initPhysics().then(() => {
+            if (isScatter) {
+                const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+                box.b2Body.SetLinearVelocity(dir);
+            }
+        });
         return box;
     }
 

@@ -12,7 +12,7 @@ export const ITEM_LIFESPAN = 10 * 1000; // ms
 export const ITEM_LIFESPAN_WARNING = 7 * 1000; // ms
 
 export const DEBUG_DISABLE_SPAWNING = false; // default false
-export const DEBUG_PHYSICS = false; // default false
+export const DEBUG_PHYSICS = true; // default false, draws the physics bodies and constraints
 
 // physics
 export const PHYSICS_FRAME_SIZE = 16; // ms

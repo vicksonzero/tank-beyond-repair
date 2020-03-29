@@ -1,5 +1,5 @@
 
-import { b2World, XY, b2ShapeType, b2CircleShape, b2PolygonShape, b2BodyType, b2JointType, b2DistanceJoint, b2Body } from "@flyover/box2d";
+import { b2World, XY, b2ShapeType, b2CircleShape, b2PolygonShape, b2BodyType, b2JointType, b2DistanceJoint, b2Body, b2ContactListener } from "@flyover/box2d";
 import * as Debug from 'debug';
 import { PHYSICS_FRAME_SIZE, METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER } from "./constants";
 
@@ -9,6 +9,9 @@ const log = Debug('tank-beyond-repair:PhysicsSystem:log ');
 // const warn = Debug('tank-beyond-repair:PhysicsSystem:warn');
 // warn.log = console.warn.bind(console);
 
+export type CreateBodyCallback = (world: b2World) => void;
+export type DestroyBodyCallback = (world: b2World) => void;
+
 export class PhysicsSystem {
 
     world: b2World = null;
@@ -16,15 +19,17 @@ export class PhysicsSystem {
     frameSize = PHYSICS_FRAME_SIZE; // ms
 
     lastUpdate = -1;
-    scheduledDestroyBodyList: b2Body[] = [];
+    scheduledCreateBodyList: CreateBodyCallback[] = [];
+    scheduledDestroyBodyList: DestroyBodyCallback[] = [];
 
     constructor() {
 
     }
 
-    init() {
+    init(contactListener: b2ContactListener) {
         this.world = new b2World(this.gravity);
         this.world.SetAllowSleeping(PHYSICS_ALLOW_SLEEPING);
+        this.world.SetContactListener(contactListener);
     }
 
     readStateFromGame() {
@@ -66,15 +71,19 @@ export class PhysicsSystem {
         }
         verbose('writeStateIntoGame', verboseLogs.join('\n'));
     }
+
     update(gameTime: number, graphics?: Phaser.GameObjects.Graphics) {
+        this.destroyScheduledBodies();
         this.readStateFromGame();
         if (graphics) { this.debugDraw(graphics); }
-        this.destroyScheduledBodies();
-        this.doMultipleTicks(gameTime);
+
+        this.updateToFrame(gameTime);
+
+        this.createScheduledBodies();
         this.writeStateIntoGame();
     }
 
-    doMultipleTicks(gameTime: number) {
+    updateToFrame(gameTime: number) {
         const velocityIterations = 10;   //how strongly to correct velocity
         const positionIterations = 10;   //how strongly to correct position
         const lastGameTime = this.lastUpdate;
@@ -99,15 +108,45 @@ export class PhysicsSystem {
         }
     }
 
-    destroyScheduledBodies() {
-        this.scheduledDestroyBodyList.forEach((body) => {
-            this.world.DestroyBody(body);
+    waitForCreatePhase() {
+        const p = new Promise((resolve: (world: b2World) => void) => {
+            const callback = (world: b2World) => {
+                debugger;
+                resolve(world);
+            }
+            log('waitForCreatePhase');
+            this.scheduledCreateBodyList.push(callback);
         });
-        this.scheduledDestroyBodyList = [];
+        return p;
     }
 
-    scheduleDestroyBody(body: b2Body) {
-        this.scheduledDestroyBodyList.push(body);
+    createScheduledBodies() {
+        const len = this.scheduledCreateBodyList.length;
+        if (len > 0) {
+            log(`createScheduledBodies: ${len} callbacks`);
+        }
+        this.scheduledCreateBodyList.forEach((callback) => {
+            callback(this.world);
+        });
+        this.scheduledCreateBodyList = [];
+    }
+
+    waitForDestroyPhase() {
+        const p = new Promise((resolve: (world: b2World) => void) => {
+            this.scheduledDestroyBodyList.push(resolve);
+        });
+        return p;
+    }
+
+    destroyScheduledBodies() {
+        const len = this.scheduledDestroyBodyList.length;
+        if (len > 0) {
+            log(`destroyScheduledBodies: ${len} callbacks`);
+        }
+        this.scheduledDestroyBodyList.forEach((callback) => {
+            callback(this.world);
+        });
+        this.scheduledDestroyBodyList = [];
     }
 
     debugDraw(graphics: Phaser.GameObjects.Graphics) {

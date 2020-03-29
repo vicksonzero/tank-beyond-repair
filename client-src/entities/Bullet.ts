@@ -4,7 +4,7 @@ import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
 import { Tank } from './Tank';
-import { b2Body, b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType } from '@flyover/box2d';
+import { b2Body, b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType, b2World } from '@flyover/box2d';
 import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
 import { MainScene } from '../scenes/MainScene';
 
@@ -42,17 +42,13 @@ export class Bullet extends Phaser.GameObjects.Container {
             .setX(x)
             .setY(y)
             ;
-        this.b2Body.SetPositionXY(
-            x * PIXEL_TO_METER,
-            y * PIXEL_TO_METER
-        );
         this.damage = damage;
         this.range = range + 20; // add 20 for buffer
         this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage + 2));
         return this;
     }
 
-    initPhysics(): this {
+    async initPhysics() {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE_BULLET : collisionCategory.RED_BULLET;
         const enemyCollision = this.team === Team.BLUE ? collisionCategory.RED : collisionCategory.BLUE;
 
@@ -83,19 +79,24 @@ export class Bullet extends Phaser.GameObjects.Container {
         bodyDef.linearDamping = 0; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
         bodyDef.allowSleep = false;
-
-        this.b2Body = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(bodyDef);
-        this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
-        this.b2Body.m_userData = {
-            ...this.b2Body.m_userData,
-            label: 'player',
+        bodyDef.userData = {
+            label: 'bullet',
             gameObject: this,
         };
 
-        this.on('destroy', () => {
-            (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
-        })
-        return this;
+
+
+        return (this.scene as MainScene).getPhysicsSystem().waitForCreatePhase()
+            .then((world: b2World) => {
+                this.b2Body = world.CreateBody(bodyDef);
+                this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+                this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
+
+                this.on('destroy', async () => {
+                    const world = await (this.scene as MainScene).getPhysicsSystem().waitForDestroyPhase();
+                    world.DestroyBody(this.b2Body);
+                });
+            });
     }
 
     isOutOfRange() {

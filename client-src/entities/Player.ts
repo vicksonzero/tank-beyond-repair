@@ -1,4 +1,4 @@
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2DistanceJointDef, b2RevoluteJoint, b2RevoluteJointDef, b2Fixture } from '@flyover/box2d';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2DistanceJointDef, b2RevoluteJoint, b2RevoluteJointDef, b2Fixture, b2WorldManifold, b2Contact, b2Shape, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
 import { METER_TO_PIXEL, PIXEL_TO_METER } from '../constants';
 import { MainScene } from '../scenes/MainScene';
@@ -90,7 +90,6 @@ export class Player extends Phaser.GameObjects.Container {
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
-        this.b2Body.SetPositionXY(x * PIXEL_TO_METER, y * PIXEL_TO_METER);
         this.hp = 50;
 
         this.maxHP = 50;
@@ -105,7 +104,7 @@ export class Player extends Phaser.GameObjects.Container {
         return this;
     }
 
-    initPhysics(): this {
+    async initPhysics() {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
         const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
 
@@ -132,11 +131,7 @@ export class Player extends Phaser.GameObjects.Container {
         bodyDef.angle = 0; // in radians
         bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
-
-        this.b2Body = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(bodyDef);
-        this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
-        this.b2Body.m_userData = {
-            ...this.b2Body.m_userData,
+        bodyDef.userData = {
             label: 'player',
             gameObject: this,
         };
@@ -155,13 +150,21 @@ export class Player extends Phaser.GameObjects.Container {
         handsFixtureDef.userData = {
             fixtureLabel: 'hand',
         };
-        this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
-
-        // this.playerHandSensor = (this.scene as MainScene).getPhysicsSystem().world.CreateBody(handsBodyDef);
-        // this.playerHandSensor.CreateFixture(handsFixtureDef); // a body can have multiple fixtures
 
 
-        return this;
+        return (this.scene as MainScene).getPhysicsSystem().waitForCreatePhase()
+            .then((world) => {
+                log('initPhysics CreateBody');
+                this.b2Body = world.CreateBody(bodyDef);
+                this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+                this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
+                this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
+
+                this.on('destroy', async () => {
+                    const world = await (this.scene as MainScene).getPhysicsSystem().waitForDestroyPhase();
+                    world.DestroyBody(this.b2Body);
+                });
+            });
     }
 
     updateHpBar() {
@@ -276,12 +279,11 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     // try to highlight an item
-    onTouchingItemStart(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
-        // log('onTouchingItemStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-        // a and b are bodies, but no TS definition...
-        if (!itemBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
-        // console.log('onTouchingItemStart do');
+    onTouchingItemStart(handFixture: b2Fixture, itemFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
+        // const worldManifold = new b2WorldManifold();
+        // contact.GetWorldManifold(worldManifold);
+        // const activeContacts = worldManifold.points;
+        // log('onTouchingItemStart', handFixture.isSensor, handFixture.label, this.pointerTarget?.name);
 
         // if not holding item, prefer item over tank
         if (!this.holdingItem && this.pointerTarget) { // if already aiming at something
@@ -300,7 +302,7 @@ export class Player extends Phaser.GameObjects.Container {
         }
         // if i am looking for an item
         // highlight the item 
-        const item = itemBody.gameObject as Item;
+        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
         this.pointerTarget = item;
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
@@ -308,11 +310,8 @@ export class Player extends Phaser.GameObjects.Container {
         item.itemText.setVisible(true);
     }
 
-    onTouchingItemEnd(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
-        if (!myBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
-
-        const item = itemBody.gameObject as Item;
+    onTouchingItemEnd(handFixture: b2Fixture, itemFixture: b2Fixture, activeContacts: b2Contact<b2Shape, b2Shape>) {
+        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
         if (!item) return;
         if (this.pointerTarget !== item) return;
 
@@ -330,12 +329,11 @@ export class Player extends Phaser.GameObjects.Container {
         this.repairSprite.visible = false;
     }
 
-    onTouchingTankStart(myBody: any, tankBody: any, activeContacts: any) {
-        // a and b are bodies, but no TS definition...
+    onTouchingTankStart(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
+        // const worldManifold = new b2WorldManifold();
+        // contact.GetWorldManifold(worldManifold);
+        // const activeContacts = worldManifold.points;
         // log('onTouchingTankStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-
-        if (!myBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
 
         // console.log('onTouchingTankStart do');
 
@@ -358,7 +356,7 @@ export class Player extends Phaser.GameObjects.Container {
             return;
         }
 
-        const tank = tankBody.gameObject as Tank;
+        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
         this.pointerTarget = tank;
         tank.on(Tank.TANK_DIE, this.onTargetDie);
 
@@ -369,12 +367,13 @@ export class Player extends Phaser.GameObjects.Container {
         tank.uiContainer.setVisible(true);
     }
 
-    onTouchingTankEnd(myBody: any, tankBody: any, activeContacts: IMatterContactPoints) {
+    onTouchingTankEnd(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
+        // const worldManifold = new b2WorldManifold();
+        // contact.GetWorldManifold(worldManifold);
+        // const activeContacts = worldManifold.points;
         // log('onTouchingTankEnd', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-        if (!myBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
 
-        const tank = tankBody.gameObject as Tank;
+        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
         if (!tank) return;
         if (this.pointerTarget !== tank) return;
         // console.log('onTouchingTankEnd do', new Error());
