@@ -10,6 +10,7 @@ import MatterContainer from './MatterContainer';
 import { Tank } from './Tank';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
+import { getUniqueID } from '../utils/UniqueID';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -26,6 +27,7 @@ interface HoldingItem extends Container {
 
 export class Player extends Phaser.GameObjects.Container {
 
+    uniqueID: number;
     team: Team;
     hp: number;
     maxHP: number;
@@ -61,6 +63,7 @@ export class Player extends Phaser.GameObjects.Container {
 
     constructor(scene: Phaser.Scene, team: Team) {
         super(scene, 0, 0, []);
+        this.uniqueID = getUniqueID();
         this.team = team;
         this
             .setName('player')
@@ -104,7 +107,7 @@ export class Player extends Phaser.GameObjects.Container {
         return this;
     }
 
-    async initPhysics() {
+    initPhysics(physicsFinishedCallback: () => void): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
         const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
 
@@ -132,7 +135,7 @@ export class Player extends Phaser.GameObjects.Container {
         bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
         bodyDef.userData = {
-            label: 'player',
+            label: 'player-body',
             gameObject: this,
         };
 
@@ -148,23 +151,24 @@ export class Player extends Phaser.GameObjects.Container {
         handsFixtureDef.filter.categoryBits = hostCollision;
         handsFixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         handsFixtureDef.userData = {
-            fixtureLabel: 'hand',
+            fixtureLabel: 'player-hand',
         };
 
 
-        return (this.scene as MainScene).getPhysicsSystem().waitForCreatePhase()
-            .then((world) => {
-                log('initPhysics CreateBody');
-                this.b2Body = world.CreateBody(bodyDef);
-                this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
-                this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
-                this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
+        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+            this.b2Body = world.CreateBody(bodyDef);
+            this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+            this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
+            this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
-                this.on('destroy', async () => {
-                    const world = await (this.scene as MainScene).getPhysicsSystem().waitForDestroyPhase();
-                    world.DestroyBody(this.b2Body);
-                });
+            this.on('destroy', () => {
+                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.b2Body.m_userData.gameObject = null;
             });
+            physicsFinishedCallback();
+        });
+
+        return this;
     }
 
     updateHpBar() {

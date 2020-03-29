@@ -10,6 +10,7 @@ import {
 } from '../constants';
 import { b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType, b2Body, b2PolygonShape, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
+import { getUniqueID } from '../utils/UniqueID';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
@@ -25,6 +26,7 @@ export class Item extends MatterContainer {
     static ITEM_DIE = 'item-die';
     itemSprite: Image;
     itemText: Text;
+    uniqueID: number;
 
     upgrades: UpgradeObject;
 
@@ -35,6 +37,7 @@ export class Item extends MatterContainer {
 
     constructor(scene: Phaser.Scene) {
         super(scene, 0, 0, []);
+        this.uniqueID = getUniqueID();
         this
             .setName('item')
             ;
@@ -92,7 +95,7 @@ export class Item extends MatterContainer {
         return this;
     }
 
-    async initPhysics() {
+    initPhysics(physicsFinishedCallback: () => void): this {
         // see node_modules/@flyover/box2d/Box2D/Collision/Shapes for more shapes
         const polygonShape = new b2PolygonShape();
         polygonShape.SetAsBox(32 * PIXEL_TO_METER, 32 * PIXEL_TO_METER); //a 4x2 rectangle
@@ -114,7 +117,7 @@ export class Item extends MatterContainer {
             this.y * PIXEL_TO_METER,
         ); // in meters
         bodyDef.angle = 0; // in radians
-        bodyDef.linearDamping = 0.2; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.linearDamping = 0.1; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
         bodyDef.allowSleep = false;
         bodyDef.userData = {
@@ -122,18 +125,19 @@ export class Item extends MatterContainer {
             gameObject: this,
         };
 
-        return (this.scene as MainScene).getPhysicsSystem().waitForCreatePhase()
-            .then((world: b2World) => {
-                this.b2Body = world.CreateBody(bodyDef);
-                this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
-                this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
+        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+            this.b2Body = world.CreateBody(bodyDef);
+            this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+            this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
-                this.on('destroy', async () => {
-                    const world = await (this.scene as MainScene).getPhysicsSystem().waitForDestroyPhase();
-                    world.DestroyBody(this.b2Body);
-                });
-
+            this.on('destroy', () => {
+                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.b2Body.m_userData.gameObject = null;
             });
+            physicsFinishedCallback();
+        });
+
+        return this;
     }
 
     initDeathTimer(): this {

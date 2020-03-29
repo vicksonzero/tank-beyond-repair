@@ -9,6 +9,7 @@ import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
 import { MainScene } from '../scenes/MainScene';
 
 import * as Debug from 'debug';
+import { getUniqueID } from '../utils/UniqueID';
 
 const log = Debug('tank-beyond-repair:Bullet:log');
 // const warn = Debug('tank-beyond-repair:MainScene:warn');
@@ -16,6 +17,7 @@ const log = Debug('tank-beyond-repair:Bullet:log');
 
 export class Bullet extends Phaser.GameObjects.Container {
 
+    uniqueID: number;
     team: Team;
     damage: number;
     range: number;
@@ -27,6 +29,7 @@ export class Bullet extends Phaser.GameObjects.Container {
 
     constructor(scene: Phaser.Scene, team: Team) {
         super(scene, 0, 0, []);
+        this.uniqueID = getUniqueID();
         this.team = team;
         const color = this.team === Team.BLUE ? 0x3333EE : 0xEE3333;
         const graphics = this.scene.add.graphics({ fillStyle: { color } });
@@ -48,7 +51,7 @@ export class Bullet extends Phaser.GameObjects.Container {
         return this;
     }
 
-    async initPhysics() {
+    initPhysics(physicsFinishedCallback: () => void): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE_BULLET : collisionCategory.RED_BULLET;
         const enemyCollision = this.team === Team.BLUE ? collisionCategory.RED : collisionCategory.BLUE;
 
@@ -84,19 +87,19 @@ export class Bullet extends Phaser.GameObjects.Container {
             gameObject: this,
         };
 
+        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+            this.b2Body = world.CreateBody(bodyDef);
+            this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+            this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
-
-        return (this.scene as MainScene).getPhysicsSystem().waitForCreatePhase()
-            .then((world: b2World) => {
-                this.b2Body = world.CreateBody(bodyDef);
-                this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
-                this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
-
-                this.on('destroy', async () => {
-                    const world = await (this.scene as MainScene).getPhysicsSystem().waitForDestroyPhase();
-                    world.DestroyBody(this.b2Body);
-                });
+            this.on('destroy', () => {
+                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.b2Body.m_userData.gameObject = null;
             });
+            physicsFinishedCallback();
+        });
+
+        return this;
     }
 
     isOutOfRange() {

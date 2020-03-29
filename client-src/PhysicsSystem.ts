@@ -10,7 +10,6 @@ const log = Debug('tank-beyond-repair:PhysicsSystem:log ');
 // warn.log = console.warn.bind(console);
 
 export type CreateBodyCallback = (world: b2World) => void;
-export type DestroyBodyCallback = (world: b2World) => void;
 
 export class PhysicsSystem {
 
@@ -20,7 +19,7 @@ export class PhysicsSystem {
 
     lastUpdate = -1;
     scheduledCreateBodyList: CreateBodyCallback[] = [];
-    scheduledDestroyBodyList: DestroyBodyCallback[] = [];
+    scheduledDestroyBodyList: b2Body[] = [];
 
     constructor() {
 
@@ -49,7 +48,7 @@ export class PhysicsSystem {
             });
             body.SetAngle(gameObject.rotation);
         }
-        verbose('readStateFromGame', verboseLogs.join('\n'));
+        verbose('readStateFromGame\n' + verboseLogs.join('\n'));
     }
 
     writeStateIntoGame() {
@@ -57,11 +56,11 @@ export class PhysicsSystem {
         for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
             const userData = body.GetUserData();
             const gameObject: Phaser.GameObjects.Components.Transform = userData.gameObject || null;
-            const label = userData.label || '(no label)';
-            const name = (gameObject as any).name || '(no name)';
+            const label = userData?.label || '(no label)';
+            const name = (gameObject as any)?.name || '(no name)';
 
             if (!gameObject) { continue; }
-            verboseLogs.push(`Body ${label} ${name}`);
+            verboseLogs.push(`${name}'s body ${label}`);
 
             const pos = body.GetPosition();
             const rot = body.GetAngle(); // radians
@@ -69,16 +68,16 @@ export class PhysicsSystem {
             gameObject.y = pos.y * METER_TO_PIXEL;
             gameObject.setRotation(rot);
         }
-        verbose('writeStateIntoGame', verboseLogs.join('\n'));
+        verbose('writeStateIntoGame\n' + verboseLogs.join('\n'));
     }
 
     update(gameTime: number, graphics?: Phaser.GameObjects.Graphics) {
         this.destroyScheduledBodies();
         this.readStateFromGame();
         if (graphics) { this.debugDraw(graphics); }
-
+        verbose('Begin updateToFrame');
         this.updateToFrame(gameTime);
-
+        verbose('End updateToFrame');
         this.createScheduledBodies();
         this.writeStateIntoGame();
     }
@@ -104,20 +103,12 @@ export class PhysicsSystem {
                 this.lastUpdate += this.frameSize;
             }
 
-            // log(`physics update: ${i} ticks (from ${lastGameTime} to ${gameTime}; ${this.lastUpdate} left)`);
+            verbose(`physics update: ${i} ticks at ${gameTime.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
         }
     }
 
-    waitForCreatePhase() {
-        const p = new Promise((resolve: (world: b2World) => void) => {
-            const callback = (world: b2World) => {
-                debugger;
-                resolve(world);
-            }
-            log('waitForCreatePhase');
-            this.scheduledCreateBodyList.push(callback);
-        });
-        return p;
+    scheduleCreateBody(callback: CreateBodyCallback) {
+        this.scheduledCreateBodyList.push(callback);
     }
 
     createScheduledBodies() {
@@ -131,20 +122,17 @@ export class PhysicsSystem {
         this.scheduledCreateBodyList = [];
     }
 
-    waitForDestroyPhase() {
-        const p = new Promise((resolve: (world: b2World) => void) => {
-            this.scheduledDestroyBodyList.push(resolve);
-        });
-        return p;
+    scheduleDestroyBody(body: b2Body) {
+        this.scheduledDestroyBodyList.push(body);
     }
 
     destroyScheduledBodies() {
-        const len = this.scheduledDestroyBodyList.length;
+        const len = this.scheduledCreateBodyList.length;
         if (len > 0) {
             log(`destroyScheduledBodies: ${len} callbacks`);
         }
-        this.scheduledDestroyBodyList.forEach((callback) => {
-            callback(this.world);
+        this.scheduledDestroyBodyList.forEach((body) => {
+            this.world.DestroyBody(body);
         });
         this.scheduledDestroyBodyList = [];
     }

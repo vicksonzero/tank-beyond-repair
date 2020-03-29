@@ -8,6 +8,7 @@ import { UpgradeObject, UpgradeType } from './Upgrade';
 import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
 import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
+import { getUniqueID } from '../utils/UniqueID';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -20,6 +21,7 @@ export class Tank extends Phaser.GameObjects.Container {
     static TANK_DIE = 'item-die';
     bodyRadius = 20;
     team: Team;
+    uniqueID: number;
 
     hp: number;
 
@@ -54,6 +56,7 @@ export class Tank extends Phaser.GameObjects.Container {
 
     constructor(scene: Phaser.Scene, team: Team) {
         super(scene, 0, 0, []);
+        this.uniqueID = getUniqueID();
         this
             .setName('tank')
             ;
@@ -121,7 +124,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.hpBar.updateHPBar(this.hp, this.maxHP, (this.maxHP - 5) * 2);
     }
 
-    async initPhysics() {
+    initPhysics(physicsFinishedCallback: () => void): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
         const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
 
@@ -154,20 +157,18 @@ export class Tank extends Phaser.GameObjects.Container {
             gameObject: this,
         };
 
+        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+            this.b2Body = world.CreateBody(bodyDef);
+            this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+            this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
-
-        return (this.scene as MainScene).getPhysicsSystem().waitForCreatePhase()
-            .then((world: b2World) => {
-                this.b2Body = world.CreateBody(bodyDef);
-                this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
-                this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
-
-                this.on('destroy', async () => {
-                    const world = await (this.scene as MainScene).getPhysicsSystem().waitForDestroyPhase();
-                    world.DestroyBody(this.b2Body);
-                });
-
+            this.on('destroy', () => {
+                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.b2Body.m_userData.gameObject = null;
             });
+            physicsFinishedCallback();
+        });
+        return this;
     }
 
     getDamage() {
@@ -254,13 +255,13 @@ export class Tank extends Phaser.GameObjects.Container {
         this.updateHpBar();
         this.refreshUpgradeGraphics();
     }
-    async destroy() {
+    destroy() {
         if (this.undoTintEvent) this.undoTintEvent.destroy();
         // this.gm.makeExplosion3(this.x, this.y);
         // this.gm.gameIsOver = true;
         this.visible = false;
-        this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
-
+        // this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
+        ;
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
         super.destroy();

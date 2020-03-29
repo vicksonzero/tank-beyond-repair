@@ -101,7 +101,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.bluePlayer
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
             .init(100, 100);
-        this.bluePlayer.initPhysics();
+        this.bluePlayer.initPhysics(() => { });
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
         this.redPlayer.spawnItem = this.spawnItem;
@@ -109,7 +109,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
             .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
             .faceLeft();
-        this.redPlayer.initPhysics();
+        this.redPlayer.initPhysics(() => { });
 
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
@@ -117,7 +117,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             ai
                 .initHpBar(new HpBar(this, 0, -25, 30, 4))
                 .init(x, y);
-            ai.initPhysics();
+            ai.initPhysics(() => { });
             return ai;
         };
 
@@ -263,12 +263,13 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                     this.sfx_shoot.play();
                     this.bullets.push(bullet);
 
-                    await bullet.initPhysics();
-                    bullet.b2Body.SetLinearVelocity({
-                        x: (xDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
-                        y: (yDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
+                    bullet.initPhysics(() => {
+                        bullet.b2Body.SetLinearVelocity({
+                            x: (xDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
+                            y: (yDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
+                        });
+                        bullet.b2Body.SetAwake(true);
                     });
-                    bullet.b2Body.SetAwake(true);
                 }
                 fireBullet(tank, target);
                 // tank.b2Body.SetLinearVelocity({
@@ -467,23 +468,43 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
+            const fixtureDataA = contact.GetFixtureA()?.GetUserData();
+            const fixtureDataB = contact.GetFixtureB()?.GetUserData();
+
             const bodyDataA = fixtureA.GetBody()?.GetUserData();
             const bodyDataB = fixtureB.GetBody()?.GetUserData();
-            log(`BeginContact ${bodyDataA} vs ${bodyDataB}`);
 
+            const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
+            const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
+            log(`BeginContact ` +
+                `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
+                ` vs ` +
+                `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
+            );
 
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
 
-            checkPairFixtureLabels('hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+            checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+                log('do contact 1');
                 (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact);
             });
+            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+                log('gone 1');
+                continue;
+            }
 
-            checkPairFixtureLabels('hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+            checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+                log('do contact 2');
                 (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact);
             });
+            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+                log('gone 2');
+                continue;
+            }
 
             checkPairGameObjectName('tank', 'bullet', (tankFixture: b2Fixture, bulletFixture: b2Fixture) => {
+                log('do contact 3');
                 const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
                 const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
                 tank.takeDamage(bullet.damage);
@@ -492,14 +513,23 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 }
                 this.removeBullet(bullet);
             });
+            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+                log('gone 3');
+                continue;
+            }
 
-            checkPairGameObjectName('player', 'bullet', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
+            checkPairFixtureLabels('player-body', 'bullet', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
+                log('do contact 4');
                 const player: Player = playerFixture.GetBody()?.GetUserData()?.gameObject as Player;
                 const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
                 player.takeDamage(bullet.damage);
                 player.updateHpBar();
                 this.removeBullet(bullet);
             });
+            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+                log('gone 4');
+                continue;
+            }
 
             // checkPairGameObjectName('player_bullet', 'enemy', (a: b2Fixture, b: b2Fixture) => {
             //     // (<PlayerBullet>a.gameObject).onHitEnemy(b.gameObject, activeContacts as IMatterContactPoints);
@@ -511,19 +541,29 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
+            const fixtureDataA = contact.GetFixtureA()?.GetUserData();
+            const fixtureDataB = contact.GetFixtureB()?.GetUserData();
+
             const bodyDataA = fixtureA.GetBody()?.GetUserData();
             const bodyDataB = fixtureB.GetBody()?.GetUserData();
-            log(`BeginContact ${bodyDataA} vs ${bodyDataB}`);
+
+            const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
+            const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
+            log(`EndContact ` +
+                `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
+                ` vs ` +
+                `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
+            );
 
 
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
 
-            checkPairFixtureLabels('hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+            checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
                 (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact);
             });
 
-            checkPairFixtureLabels('hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+            checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
                 (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact);
             });
 
@@ -563,9 +603,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         ) => {
             if (gameObjectA?.name === nameA && gameObjectB?.name === nameB) {
                 matchFoundCallback(fixtureA, fixtureB);
-            } else if (gameObjectB?.name === nameA && gameObjectA?.name === nameB) {
-                matchFoundCallback(fixtureB, fixtureA);
             }
+            // else if (gameObjectB?.name === nameA && gameObjectA?.name === nameB) {
+            //     matchFoundCallback(fixtureB, fixtureA);
+            // }
         }
     }
 
@@ -619,9 +660,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             .setUpgrades(upgrades)
             .initDeathTimer();
 
-        box.initPhysics().then(() => {
+        box.initPhysics(() => {
             if (isScatter) {
                 const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+                dir.scale(PIXEL_TO_METER);
                 box.b2Body.SetLinearVelocity(dir);
             }
         });
