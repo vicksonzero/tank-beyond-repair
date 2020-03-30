@@ -261,7 +261,7 @@ export class Tank extends Phaser.GameObjects.Container {
         // this.gm.gameIsOver = true;
         this.visible = false;
         // this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
-        ;
+        
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
         super.destroy();
