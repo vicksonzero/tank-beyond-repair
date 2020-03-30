@@ -211,7 +211,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         this.getPhysicsSystem().update(
             timeStep,
-            (DEBUG_PHYSICS ? this.physicsDebugLayer : null)
+            (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
         );
 
         const updatePlayer = (player: Player, controlsList: Controls) => {
@@ -265,7 +265,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
             const findTankWithClosestDistance = (myTank: Tank, enemy: (Player | Tank)[]) => {
                 let minDist = Infinity;
-                let target: (Player | Tank) = null;
+                let target: (Player | Tank | null) = null;
                 enemy.forEach((enemyTank) => {
                     const distance = Phaser.Math.Distance.Between(
                         myTank.x, myTank.y, enemyTank.x, enemyTank.y
@@ -278,10 +278,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 return { target, distance: minDist }
             }
             const { target, distance } = findTankWithClosestDistance(tank, enemy)
-            if (target && distance <= tank.range) {
+            if (target !== null && distance <= tank.range) {
                 // stop and attack
                 const fireBullet = async (tank: Tank, target: Tank | Player) => {
                     if (!tank.canFire()) return;
+                    if (!target) return;
                     const xDiff = target.x - tank.x;
                     const yDiff = target.y - tank.y;
                     tank.setFiring({ x: xDiff, y: yDiff });
@@ -298,7 +299,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                         bullet.b2Body.SetAwake(true);
                     });
                 }
-                fireBullet(tank, target);
+                fireBullet(tank, target!);
                 // tank.b2Body.SetLinearVelocity({
                 //     x: 0 * PIXEL_TO_METER,
                 //     y: tank.b2Body.GetLinearVelocity().y,
@@ -491,7 +492,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
 
     public BeginContact(pContact: b2Contact<b2Shape, b2Shape>): void {
-        for (let contact = pContact; contact; contact = contact.GetNext()) {
+        for (let contact: b2Contact<b2Shape, b2Shape> | null = pContact; contact != null; contact = contact.GetNext()) {
+            if (!contact) { continue; } // satisfy eslint
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
@@ -514,7 +516,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
             checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
                 log('do contact 1');
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact);
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact!);
             });
             if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
                 log('gone 1');
@@ -523,7 +525,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
             checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
                 log('do contact 2');
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact);
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact!);
             });
             if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
                 log('gone 2');
@@ -564,7 +566,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         }
     }
     public EndContact(pContact: b2Contact<b2Shape, b2Shape>): void {
-        for (let contact = pContact; contact; contact = contact.GetNext()) {
+        for (let contact: b2Contact<b2Shape, b2Shape> | null = pContact; contact != null; contact = contact.GetNext()) {
+            if (!contact) { continue; } // satisfy eslint
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
@@ -587,11 +590,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
 
             checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact);
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact!);
             });
 
             checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact);
+                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact!);
             });
 
 

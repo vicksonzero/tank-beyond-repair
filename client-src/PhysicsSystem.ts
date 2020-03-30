@@ -1,7 +1,7 @@
 
-import { b2World, XY, b2ShapeType, b2CircleShape, b2PolygonShape, b2BodyType, b2JointType, b2DistanceJoint, b2Body, b2ContactListener } from "@flyover/box2d";
+import { b2Body, b2BodyType, b2CircleShape, b2ContactListener, b2JointType, b2PolygonShape, b2ShapeType, b2World, XY } from "@flyover/box2d";
 import * as Debug from 'debug';
-import { PHYSICS_FRAME_SIZE, METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER } from "./constants";
+import { METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING, PIXEL_TO_METER } from "./constants";
 
 
 const verbose = Debug('tank-beyond-repair:PhysicsSystem:verbose ');
@@ -13,17 +13,15 @@ export type CreateBodyCallback = (world: b2World) => void;
 
 export class PhysicsSystem {
 
-    world: b2World = null;
-    gravity: XY = { x: 0, y: 0 };
+    world: b2World;
     scheduledCreateBodyList: CreateBodyCallback[] = [];
     scheduledDestroyBodyList: b2Body[] = [];
 
-    constructor() {
-
+    constructor(public gravity: XY = { x: 0, y: 0 }) {
+        this.world = new b2World(gravity);
     }
 
     init(contactListener: b2ContactListener) {
-        this.world = new b2World(this.gravity);
         this.world.SetAllowSleeping(PHYSICS_ALLOW_SLEEPING);
         this.world.SetContactListener(contactListener);
     }

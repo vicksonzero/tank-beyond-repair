@@ -1,16 +1,15 @@
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2DistanceJointDef, b2RevoluteJoint, b2RevoluteJointDef, b2Fixture, b2WorldManifold, b2Contact, b2Shape, b2World } from '@flyover/box2d';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Contact, b2Fixture, b2FixtureDef, b2Shape, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
-import { METER_TO_PIXEL, PIXEL_TO_METER } from '../constants';
+import { PIXEL_TO_METER } from '../constants';
 import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
-import { capitalize, IMatterContactPoints, makeUpgradeString } from '../utils/utils';
+import { getUniqueID } from '../utils/UniqueID';
+import { capitalize, makeUpgradeString } from '../utils/utils';
 import { collisionCategory } from './collisionCategory';
 import { Item } from './Item';
-import MatterContainer from './MatterContainer';
 import { Tank } from './Tank';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
-import { getUniqueID } from '../utils/UniqueID';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -32,7 +31,7 @@ export class Player extends Phaser.GameObjects.Container {
     hp: number;
     maxHP: number;
     hpBar: HpBar;
-    tank: Tank;
+    tank: Tank | null;
 
     armLength = 30;
     armRadius = 20;
@@ -46,9 +45,9 @@ export class Player extends Phaser.GameObjects.Container {
     bodySprite: Image;
     repairSprite: Image;
 
-    pointerTarget: GameObject;
+    pointerTarget: GameObject | null;
 
-    holdingItem: HoldingItem;
+    holdingItem: HoldingItem | null;
     holdingItemText: Text;
 
     b2Body: b2Body;
@@ -224,12 +223,12 @@ export class Player extends Phaser.GameObjects.Container {
                 const rotation = this.bodySprite.rotation;
                 const xx = Math.cos(rotation) * 30;
                 const yy = Math.sin(rotation) * 30;
-                const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades);
+                const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
 
                 sfx_pickup.play();
 
                 if (item) {
-                    const myOldUpgrade = this.holdingItem.upgrades;
+                    const myOldUpgrade = this.holdingItem.upgrades!;
                     item.setUpgrades(myOldUpgrade);
                 }
                 this.holdingItem.destroy();
@@ -239,14 +238,16 @@ export class Player extends Phaser.GameObjects.Container {
             const item = this.pointerTarget as Item;
 
             if (this.holdingItem) {
-                const myOldUpgrade = { ...this.holdingItem.upgrades };
+                if (this.holdingItem.upgrades) {
+                    const myOldUpgrade = { ...this.holdingItem.upgrades };
 
-                sfx_pickup.play();
-                this.holdingItem.upgrades = { ...item.upgrades };
-                const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
-                this.holdingItemText.setText(upgradeText);
+                    sfx_pickup.play();
+                    this.holdingItem.upgrades = { ...item.upgrades };
+                    const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
+                    this.holdingItemText.setText(upgradeText);
 
-                item.setUpgrades(myOldUpgrade).refreshDeathTimer();
+                    item.setUpgrades(myOldUpgrade).refreshDeathTimer();
+                }
             } else {
                 const rotation = this.bodySprite.rotation;
                 const xx = Math.cos(rotation) * 30;
@@ -273,7 +274,7 @@ export class Player extends Phaser.GameObjects.Container {
             const tank = this.pointerTarget as Tank;
             if (this.holdingItem) {
 
-                tank.setUpgrade(this.holdingItem.upgrades);
+                if (this.holdingItem.upgrades) { tank.setUpgrade(this.holdingItem.upgrades); }
 
                 sfx_upgrade.play();
                 this.holdingItem.destroy();

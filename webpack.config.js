@@ -54,7 +54,8 @@ module.exports = {
                     // compress: {},
                     mangle: true, // Note `mangle.properties` is `false` by default.
                     // module: false,
-                    // output: null,
+                    sourceMap: true,
+                    output: { comments: false },
                     // toplevel: false,
                     // nameCache: null,
                     // ie8: false,
