@@ -31,7 +31,7 @@ P2: Arrows to move, `/` to do actions
 
 ```sh
 npm install
-npm run watch-webpack
+npm run dev
 ```
 
 It is a share-screen offline multiplayer game. we do all development work onto `master`, and it will be seen on gh-pages    
@@ -53,11 +53,12 @@ https://globalgamejam.org/2020/jam-sites/hong-kong
 ## Prod
 
 ```sh
+git checkout master
 npm install
 npm run build
 git add .
 git commit
-git push # into master
+git push
 ```
 
 Built content will be put in `master`
