@@ -1,7 +1,8 @@
+import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, b2ParticleBodyContact, b2ParticleContact, b2ParticleSystem, b2Shape } from '@flyover/box2d';
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload, setUpAudio } from '../assets';
-import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH, DEBUG_PHYSICS, PIXEL_TO_METER, TANK_SPEED, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP } from '../constants';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
@@ -12,8 +13,7 @@ import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
 import { PhysicsSystem } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
 // import { GameObjects } from 'phaser';
-import { capitalize, IMatterContactPoints } from '../utils/utils';
-import { b2ContactListener, b2Contact, b2Shape, b2ParticleSystem, b2ParticleBodyContact, b2ParticleContact, b2Manifold, b2ContactImpulse, b2BodyType, b2Body, b2Fixture, b2WorldManifold } from '@flyover/box2d';
+import { capitalize } from '../utils/utils';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -237,7 +237,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 }
             }
 
-
+            player.doCollision();
             player.tank?.repair();
             player.moveInDirection(xx, yy);
             player.updateAim();
@@ -514,23 +514,23 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
 
-            checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
-                log('do contact 1');
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact!);
-            });
-            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 1');
-                continue;
-            }
+            // checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+            //     log('do contact 1');
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact!);
+            // });
+            // if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+            //     log('gone 1');
+            //     continue;
+            // }
 
-            checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
-                log('do contact 2');
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact!);
-            });
-            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 2');
-                continue;
-            }
+            // checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+            //     log('do contact 2');
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact!);
+            // });
+            // if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+            //     log('gone 2');
+            //     continue;
+            // }
 
             checkPairGameObjectName('tank', 'bullet', (tankFixture: b2Fixture, bulletFixture: b2Fixture) => {
                 log('do contact 3');
@@ -589,13 +589,13 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
 
-            checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact!);
-            });
+            // checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact!);
+            // });
 
-            checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact!);
-            });
+            // checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact!);
+            // });
 
 
             // checkPairGameObjectName('player_bullet', 'enemy', (a: b2Fixture, b: b2Fixture) => {

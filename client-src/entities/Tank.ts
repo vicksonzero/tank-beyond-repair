@@ -18,7 +18,7 @@ type Container = Phaser.GameObjects.Container;
 
 export class Tank extends Phaser.GameObjects.Container {
 
-    static TANK_DIE = 'item-die';
+    static TANK_DIE = 'tank-die';
     bodyRadius = 20;
     team: Team;
     uniqueID: number;

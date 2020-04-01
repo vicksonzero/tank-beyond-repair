@@ -1,4 +1,4 @@
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Contact, b2Fixture, b2FixtureDef, b2Shape, b2World } from '@flyover/box2d';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Contact, b2Fixture, b2FixtureDef, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
 import { PIXEL_TO_METER } from '../constants';
 import { MainScene } from '../scenes/MainScene';
@@ -216,6 +216,63 @@ export class Player extends Phaser.GameObjects.Container {
         );
     }
 
+    doCollision() {
+        const world = (this.scene as MainScene).getPhysicsSystem().world;
+        let closestFixture: b2Fixture | null = null;
+        let closestContact: b2Contact | null = null;
+        let closestDistanceSq = Infinity;
+        for (let contactEdge = this.b2Body.GetContactList(); contactEdge; contactEdge = contactEdge.next) {
+            if (!['tank', 'item'].includes(contactEdge.other.GetUserData().label)) { continue; }
+
+            const contact = contactEdge.contact;
+            const sensorFixture = (contact.GetFixtureA().IsSensor()) ? contact.GetFixtureA() : contact.GetFixtureB();
+            const sensorShape = sensorFixture.GetShape();
+            const sensorBody = sensorFixture.GetBody();
+            const sensorPosition = sensorBody.GetWorldPoint((sensorShape as b2CircleShape).m_p, { x: 0, y: 0 });
+
+            const itemFixture = (!contact.GetFixtureA().IsSensor()) ? contact.GetFixtureA() : contact.GetFixtureB();
+            const itemBody = itemFixture.GetBody();
+            const itemPosition = itemBody.GetPosition();
+            const distanceSq = Phaser.Math.Distance.Squared(sensorPosition.x, sensorPosition.y, itemPosition.x, itemPosition.y);
+
+            if (distanceSq < closestDistanceSq) {
+                closestFixture = itemFixture;
+                closestDistanceSq = distanceSq;
+                closestContact = contact;
+            }
+        }
+        if (closestFixture) {
+            const bodyData = closestFixture.GetBody().GetUserData();
+            if (this.pointerTarget && this.pointerTarget !== bodyData.gameObject) {
+                if (this.pointerTarget.name === 'item') {
+                    const item = this.pointerTarget as Item;
+                    this.giveUpTargetingItem(item);
+                } else {
+                    const tank = this.pointerTarget as Tank;
+                    this.giveUpTargetingTank(tank);
+                }
+            }
+            const label = bodyData.label;
+            if (label === 'item') {
+                const item = bodyData.gameObject as Item;
+                this.startTargetingItem(item);
+            } else {
+                const tank = bodyData.gameObject as Tank;
+                this.startTargetingTank(tank);
+            }
+        } else {
+            if (this.pointerTarget) {
+                if (this.pointerTarget.name === 'item') {
+                    const item = this.pointerTarget as Item;
+                    this.giveUpTargetingItem(item);
+                } else {
+                    const tank = this.pointerTarget as Tank;
+                    this.giveUpTargetingTank(tank);
+                }
+            }
+        }
+    }
+
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
         if (!this.pointerTarget) {
             if (this.holdingItem) {
@@ -283,31 +340,7 @@ export class Player extends Phaser.GameObjects.Container {
         }
     }
 
-    // try to highlight an item
-    onTouchingItemStart(handFixture: b2Fixture, itemFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
-        // const worldManifold = new b2WorldManifold();
-        // contact.GetWorldManifold(worldManifold);
-        // const activeContacts = worldManifold.points;
-        // log('onTouchingItemStart', handFixture.isSensor, handFixture.label, this.pointerTarget?.name);
-
-        // if not holding item, prefer item over tank
-        if (!this.holdingItem && this.pointerTarget) { // if already aiming at something
-            if (this.pointerTarget.name === 'item') {
-                // ignore the exchange if already looking at item
-                return;
-            } else {
-                // give up target only if is tank
-                const tank = this.pointerTarget as Tank;
-                tank.off(Tank.TANK_DIE, this.onTargetDie);
-
-                tank.bodySprite.setTint(0xFFFFFF);
-                tank.uiContainer.setVisible(false);
-                // give up tank and continue to look for item
-            }
-        }
-        // if i am looking for an item
-        // highlight the item 
-        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
+    startTargetingItem(item: Item) {
         this.pointerTarget = item;
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
@@ -315,11 +348,7 @@ export class Player extends Phaser.GameObjects.Container {
         item.itemText.setVisible(true);
     }
 
-    onTouchingItemEnd(handFixture: b2Fixture, itemFixture: b2Fixture, activeContacts: b2Contact<b2Shape, b2Shape>) {
-        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
-        if (!item) return;
-        if (this.pointerTarget !== item) return;
-
+    giveUpTargetingItem(item: Item) {
         item.off(Item.ITEM_DIE, this.onTargetDie);
         this.pointerTarget = null;
 
@@ -327,41 +356,7 @@ export class Player extends Phaser.GameObjects.Container {
         item.itemText.setVisible(false);
     }
 
-    onTargetDie = (target: GameObject) => {
-        if (this.pointerTarget !== target) return;
-        this.pointerTarget = null;
-        this.tank = null;
-        this.repairSprite.visible = false;
-    }
-
-    onTouchingTankStart(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
-        // const worldManifold = new b2WorldManifold();
-        // contact.GetWorldManifold(worldManifold);
-        // const activeContacts = worldManifold.points;
-        // log('onTouchingTankStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-
-        // console.log('onTouchingTankStart do');
-
-        // if holding an item
-        if (this.holdingItem) {
-            // prefer tank over item
-            if (this.pointerTarget?.name === 'tank') { // if already pointing at tank
-                // we got what we want. exit.
-                return;
-            } else if (this.pointerTarget?.name === 'item') {
-                // give up item
-                const item = this.pointerTarget as Item;
-                item.off(Item.ITEM_DIE, this.onTargetDie);
-
-                item.itemSprite.setTint(0xFFFFFF);
-                item.itemText.setVisible(false);
-                // give up item and continue to look for tank
-            }
-        } else if (this.pointerTarget) {
-            return;
-        }
-
-        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
+    startTargetingTank(tank: Tank) {
         this.pointerTarget = tank;
         tank.on(Tank.TANK_DIE, this.onTargetDie);
 
@@ -372,21 +367,7 @@ export class Player extends Phaser.GameObjects.Container {
         tank.uiContainer.setVisible(true);
     }
 
-    onTouchingTankEnd(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
-        // const worldManifold = new b2WorldManifold();
-        // contact.GetWorldManifold(worldManifold);
-        // const activeContacts = worldManifold.points;
-        // log('onTouchingTankEnd', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-
-        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
-        if (!tank) return;
-        if (this.pointerTarget !== tank) return;
-        // console.log('onTouchingTankEnd do', new Error());
-
-        // const dist = Phaser.Math.Distance.Between(myBody.position.x, myBody.position.y, tankBody.position.x, tankBody.position.y);
-
-        // if (dist <= (this.armRadius + tank.bodyRadius)) return;
-
+    giveUpTargetingTank(tank: Tank) {
         tank.off(Tank.TANK_DIE, this.onTargetDie);
         this.pointerTarget = null;
 
@@ -396,6 +377,13 @@ export class Player extends Phaser.GameObjects.Container {
 
         tank.bodySprite.setTint(0xFFFFFF);
         tank.uiContainer.setVisible(false);
+    }
+
+    onTargetDie = (target: GameObject) => {
+        if (this.pointerTarget !== target) return;
+        this.pointerTarget = null;
+        this.tank = null;
+        this.repairSprite.visible = false;
     }
 
     takeDamage(amount: number): this {
