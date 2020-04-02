@@ -86,6 +86,7 @@ export class Player extends Phaser.GameObjects.Container {
             })
         ]);
         this.repairSprite.visible = false;
+        this.debugText.visible = false;
 
         this.on('destroy', () => {
             if (this.undoTintEvent) this.undoTintEvent.destroy();
