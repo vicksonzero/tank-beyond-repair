@@ -548,7 +548,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 continue;
             }
 
-            checkPairFixtureLabels('player-body', 'bullet', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
+            checkPairFixtureLabels('player-body', 'bullet-body', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
                 log('do contact 4');
                 const player: Player = playerFixture.GetBody()?.GetUserData()?.gameObject as Player;
                 const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;

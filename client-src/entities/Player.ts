@@ -398,9 +398,10 @@ export class Player extends Phaser.GameObjects.Container {
         this.hp -= amount;
         this.hp = Math.max(0, this.hp);
 
+        this.bodySprite.setTint(0xFF0000);
         this.undoTintEvent = this.scene.time.addEvent({
-            delay: 200, loop: false, callback: () => {
-                // some_sprite.setTint(0xAAAAAA);
+            delay: 100, loop: false, callback: () => {
+                this.bodySprite.setTint(0xFFFFFF);
             }
         });
 

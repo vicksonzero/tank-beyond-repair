@@ -70,7 +70,7 @@ export class Bullet extends Phaser.GameObjects.Container {
         fixtureDef.filter.categoryBits = hostCollision;
         fixtureDef.filter.maskBits = collisionCategory.WORLD | enemyCollision;
         fixtureDef.userData = {
-            fixtureLabel: 'body',
+            fixtureLabel: 'bullet-body',
         } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
