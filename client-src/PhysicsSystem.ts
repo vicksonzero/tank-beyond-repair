@@ -2,6 +2,7 @@
 import { b2Body, b2BodyType, b2CircleShape, b2ContactListener, b2JointType, b2PolygonShape, b2ShapeType, b2World, XY } from "@flyover/box2d";
 import * as Debug from 'debug';
 import { METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING, PIXEL_TO_METER } from "./constants";
+import { GameObjects } from "phaser";
 
 
 const verbose = Debug('tank-beyond-repair:PhysicsSystem:verbose ');
@@ -10,6 +11,15 @@ const log = Debug('tank-beyond-repair:PhysicsSystem:log ');
 // warn.log = console.warn.bind(console);
 
 export type CreateBodyCallback = (world: b2World) => void;
+
+export interface IBodyUserData {
+    label: string;
+    gameObject: GameObjects.Components.Transform;
+}
+
+export interface IFixtureUserData {
+    fixtureLabel: string;
+}
 
 export class PhysicsSystem {
 
@@ -29,8 +39,8 @@ export class PhysicsSystem {
     readStateFromGame() {
         const verboseLogs: string[] = [];
         for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
-            const userData = body.GetUserData(); // TODO: make an interface for user data
-            const gameObject: Phaser.GameObjects.Components.Transform = userData.gameObject || null;
+            const userData: IBodyUserData = body.GetUserData(); // TODO: make an interface for user data
+            const gameObject: GameObjects.Components.Transform = userData.gameObject || null;
             const label = userData.label || '(no label)';
             const name = (gameObject as any).name || '(no name)';
 
@@ -43,14 +53,14 @@ export class PhysicsSystem {
             });
             body.SetAngle(gameObject.rotation);
         }
-        verbose('readStateFromGame\n' + verboseLogs.join('\n'));
+        // verbose('readStateFromGame\n' + verboseLogs.join('\n'));
     }
 
     writeStateIntoGame() {
         const verboseLogs: string[] = [];
         for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
-            const userData = body.GetUserData();
-            const gameObject: Phaser.GameObjects.Components.Transform = userData.gameObject || null;
+            const userData: IBodyUserData = body.GetUserData();
+            const gameObject: GameObjects.Components.Transform = userData.gameObject || null;
             const label = userData?.label || '(no label)';
             const name = (gameObject as any)?.name || '(no name)';
 
@@ -63,17 +73,17 @@ export class PhysicsSystem {
             gameObject.y = pos.y * METER_TO_PIXEL;
             gameObject.setRotation(rot);
         }
-        verbose('writeStateIntoGame\n' + verboseLogs.join('\n'));
+        // verbose('writeStateIntoGame\n' + verboseLogs.join('\n'));
     }
 
     update(timeStep: number, graphics?: Phaser.GameObjects.Graphics) {
         this.destroyScheduledBodies('before Step');
         this.readStateFromGame();
         if (graphics) { this.debugDraw(graphics); }
-        verbose('Begin updateToFrame');
+        // verbose('Begin updateToFrame');
         this.updateOneFrame(timeStep);
         this.destroyScheduledBodies('after Step');
-        verbose('End updateToFrame');
+        // verbose('End updateToFrame');
         this.createScheduledBodies();
         this.writeStateIntoGame();
     }
@@ -131,7 +141,7 @@ export class PhysicsSystem {
                 const shape = fixture.GetShape();
                 const type = shape.GetType();
                 const isSensor = fixture.IsSensor();
-                const label = fixture.GetUserData().label;
+                const fixtureLabel = (fixture.GetUserData() as IFixtureUserData).fixtureLabel;
 
                 let color = 0xff8080;
 

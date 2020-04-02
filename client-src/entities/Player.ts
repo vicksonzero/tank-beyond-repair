@@ -10,6 +10,7 @@ import { Item } from './Item';
 import { Tank } from './Tank';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
+import { IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -122,7 +123,7 @@ export class Player extends Phaser.GameObjects.Container {
         fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         fixtureDef.userData = {
             fixtureLabel: 'player-body',
-        };
+        } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
         bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
@@ -151,7 +152,7 @@ export class Player extends Phaser.GameObjects.Container {
         handsFixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         handsFixtureDef.userData = {
             fixtureLabel: 'player-hand',
-        };
+        } as IFixtureUserData;
 
 
         (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
@@ -219,30 +220,36 @@ export class Player extends Phaser.GameObjects.Container {
     doCollision() {
         const world = (this.scene as MainScene).getPhysicsSystem().world;
         let closestFixture: b2Fixture | null = null;
-        let closestContact: b2Contact | null = null;
+        // let closestContact: b2Contact | null = null;
         let closestDistanceSq = Infinity;
         for (let contactEdge = this.b2Body.GetContactList(); contactEdge; contactEdge = contactEdge.next) {
-            if (!['tank', 'item'].includes(contactEdge.other.GetUserData().label)) { continue; }
 
             const contact = contactEdge.contact;
-            const sensorFixture = (contact.GetFixtureA().IsSensor()) ? contact.GetFixtureA() : contact.GetFixtureB();
-            const sensorShape = sensorFixture.GetShape();
-            const sensorBody = sensorFixture.GetBody();
-            const sensorPosition = sensorBody.GetWorldPoint((sensorShape as b2CircleShape).m_p, { x: 0, y: 0 });
+            const sensorFixture = ((contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel === 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
+            if (!['player-hand'].includes((sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel)) { continue; }
 
-            const itemFixture = (!contact.GetFixtureA().IsSensor()) ? contact.GetFixtureA() : contact.GetFixtureB();
+            const sensorBody = sensorFixture.GetBody();
+            const sensorPosition = sensorBody.GetWorldPoint((sensorFixture.GetShape() as b2CircleShape).m_p, { x: 0, y: 0 });
+
+            const itemFixture = ((contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel !== 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
             const itemBody = itemFixture.GetBody();
             const itemPosition = itemBody.GetPosition();
+
+            if (!['tank', 'item'].includes((contactEdge.other.GetUserData() as IBodyUserData).label)) { continue; }
+
+
             const distanceSq = Phaser.Math.Distance.Squared(sensorPosition.x, sensorPosition.y, itemPosition.x, itemPosition.y);
+            // log(`doCollision ${(sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel} gets ${(itemFixture.GetUserData() as IFixtureUserData).fixtureLabel}`);
 
             if (distanceSq < closestDistanceSq) {
                 closestFixture = itemFixture;
                 closestDistanceSq = distanceSq;
-                closestContact = contact;
+                // closestContact = contact;
             }
         }
         if (closestFixture) {
             const bodyData = closestFixture.GetBody().GetUserData();
+            // log(`doCollision closestFixture is ${bodyData.label}`);
             if (this.pointerTarget && this.pointerTarget !== bodyData.gameObject) {
                 if (this.pointerTarget.name === 'item') {
                     const item = this.pointerTarget as Item;
@@ -261,6 +268,7 @@ export class Player extends Phaser.GameObjects.Container {
                 this.startTargetingTank(tank);
             }
         } else {
+            // log(`doCollision no closestFixture found`);
             if (this.pointerTarget) {
                 if (this.pointerTarget.name === 'item') {
                     const item = this.pointerTarget as Item;

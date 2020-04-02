@@ -10,6 +10,7 @@ import { MainScene } from '../scenes/MainScene';
 
 import * as Debug from 'debug';
 import { getUniqueID } from '../utils/UniqueID';
+import { IFixtureUserData } from '../PhysicsSystem';
 
 const log = Debug('tank-beyond-repair:Bullet:log');
 // const warn = Debug('tank-beyond-repair:MainScene:warn');
@@ -70,7 +71,7 @@ export class Bullet extends Phaser.GameObjects.Container {
         fixtureDef.filter.maskBits = collisionCategory.WORLD | enemyCollision;
         fixtureDef.userData = {
             fixtureLabel: 'body',
-        };
+        } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
         bodyDef.type = b2BodyType.b2_dynamicBody; // can move around

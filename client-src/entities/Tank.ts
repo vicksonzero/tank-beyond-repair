@@ -9,6 +9,7 @@ import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
 import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
+import { IFixtureUserData } from '../PhysicsSystem';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -141,7 +142,7 @@ export class Tank extends Phaser.GameObjects.Container {
         fixtureDef.filter.maskBits = collisionCategory.WORLD | bulletCollision | collisionCategory.RED | collisionCategory.BLUE;
         fixtureDef.userData = {
             fixtureLabel: 'tank-body',
-        };
+        } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
         bodyDef.type = b2BodyType.b2_dynamicBody; // can move around

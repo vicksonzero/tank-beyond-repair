@@ -10,7 +10,7 @@ import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
 import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
-import { PhysicsSystem } from '../PhysicsSystem';
+import { PhysicsSystem, IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
 // import { GameObjects } from 'phaser';
 import { capitalize } from '../utils/utils';
@@ -25,6 +25,7 @@ type Image = Phaser.GameObjects.Image;
 const Vector2 = Phaser.Math.Vector2;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
 
+const verbose = Debug('tank-beyond-repair:MainScene:verbose');
 const log = Debug('tank-beyond-repair:MainScene:log');
 // const warn = Debug('tank-beyond-repair:MainScene:warn');
 // warn.log = console.warn.bind(console);
@@ -182,7 +183,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     update(time: number, dt: number) {
-        log(`update ${time}`);
+        // verbose(`update ${time}`);
 
         const lastGameTime = this.lastUpdate;
         // log(`update (from ${lastGameTime} to ${gameTime})`);
@@ -202,12 +203,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.lastUpdate += this.frameSize;
             }
 
-            log(`update: ${i} fixedUpdate-ticks at ${time.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
+            // verbose(`update: ${i} fixedUpdate-ticks at ${time.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
         }
     }
 
     fixedUpdate(timeStep: number) {
-        log(`fixedUpdate start`);
+        // verbose(`fixedUpdate start`);
 
         this.getPhysicsSystem().update(
             timeStep,
@@ -323,7 +324,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             }
         };
         this.bullets.forEach((bullet) => updateBullet(bullet));
-        log(`fixedUpdate complete`);
+        // verbose(`fixedUpdate complete`);
     }
 
     setUpKeyboard() {
@@ -497,11 +498,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
-            const fixtureDataA = contact.GetFixtureA()?.GetUserData();
-            const fixtureDataB = contact.GetFixtureB()?.GetUserData();
+            const fixtureDataA: IFixtureUserData = contact.GetFixtureA()?.GetUserData();
+            const fixtureDataB: IFixtureUserData = contact.GetFixtureB()?.GetUserData();
 
-            const bodyDataA = fixtureA.GetBody()?.GetUserData();
-            const bodyDataB = fixtureB.GetBody()?.GetUserData();
+            const bodyDataA: IBodyUserData = fixtureA.GetBody()?.GetUserData();
+            const bodyDataB: IBodyUserData = fixtureB.GetBody()?.GetUserData();
 
             const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
             const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
@@ -571,11 +572,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
-            const fixtureDataA = contact.GetFixtureA()?.GetUserData();
-            const fixtureDataB = contact.GetFixtureB()?.GetUserData();
+            const fixtureDataA: IFixtureUserData = contact.GetFixtureA()?.GetUserData();
+            const fixtureDataB: IFixtureUserData = contact.GetFixtureB()?.GetUserData();
 
-            const bodyDataA = fixtureA.GetBody()?.GetUserData();
-            const bodyDataB = fixtureB.GetBody()?.GetUserData();
+            const bodyDataA: IBodyUserData = fixtureA.GetBody()?.GetUserData();
+            const bodyDataB: IBodyUserData = fixtureB.GetBody()?.GetUserData();
 
             const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
             const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
@@ -640,8 +641,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     private checkPairFixtureLabels_(fixtureA: b2Fixture, fixtureB: b2Fixture) {
-        const fixtureDataA = fixtureA.GetUserData();
-        const fixtureDataB = fixtureB.GetUserData();
+        const fixtureDataA: IFixtureUserData = fixtureA.GetUserData();
+        const fixtureDataB: IFixtureUserData = fixtureB.GetUserData();
 
         return (
             nameA: string, nameB: string,

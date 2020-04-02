@@ -11,6 +11,7 @@ import {
 import { b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType, b2Body, b2PolygonShape, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
+import { IFixtureUserData } from '../PhysicsSystem';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
@@ -108,7 +109,7 @@ export class Item extends MatterContainer {
         fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.BLUE | collisionCategory.RED;
         fixtureDef.userData = {
             fixtureLabel: 'item-body',
-        };
+        } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
         bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
