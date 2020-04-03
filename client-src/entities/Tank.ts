@@ -119,6 +119,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.damage = 1;
         this.lastFired = 0;
         this.attackSpeed = 1000;
+        this.movementSpeed = 1;
         this.updateHpBar();
         this.refreshUpgradeGraphics();
         return this;
@@ -210,8 +211,8 @@ export class Tank extends Phaser.GameObjects.Container {
             let value = 0;
             let level = upgrades[key];
             switch (key) {
-                case 'range': value = 10; break;
-                case 'damage': value = 1; break;
+                case 'range': value = 15; break;
+                case 'damage': value = 0.15; break;
                 case 'attackSpeed': value = -70; break;
                 case 'maxHP': value = 5; break;
                 case 'movementSpeed': value = 0.1; break;
@@ -229,8 +230,9 @@ export class Tank extends Phaser.GameObjects.Container {
     }
 
     refreshUpgradeGraphics(): this {
-        const str = `HP: ${this.hp}/${this.maxHP}\n` +
-            `DMG: ${this.damage} x ${1000 / this.attackSpeed}\n` +
+        const str = `HP: ${this.hp.toFixed(2)}/${this.maxHP.toFixed(2)}\n` +
+            `DMG: ${this.damage.toFixed(2)} x ${(1000 / this.attackSpeed).toFixed(2)}\n` +
+            `Movement: ${this.movementSpeed.toFixed(2)}x\n` +
             ``;
         this.detailsText.setText(str);
 
@@ -241,6 +243,8 @@ export class Tank extends Phaser.GameObjects.Container {
         this.rangeMarker.strokeCircle(0, 0, this.range - 6);
 
         this.barrelSprite.setScale(1 + 0.2 * this.upgrades.damage, 1 + 0.2 * this.upgrades.range);
+
+        this.bodySprite.setScale(1, this.movementSpeed);
 
         return this;
     }

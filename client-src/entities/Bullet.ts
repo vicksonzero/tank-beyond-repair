@@ -48,7 +48,7 @@ export class Bullet extends GameObjects.Container {
             ;
         this.damage = damage;
         this.range = range + 20; // add 20 for buffer
-        this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage + 2));
+        this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage * 3 + 2));
         return this;
     }
 

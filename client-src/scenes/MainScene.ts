@@ -453,6 +453,20 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             //     continue;
             // }
 
+            checkPairGameObjectName('tank', 'item', (tankFixture: b2Fixture, itemFixture: b2Fixture) => {
+                // log('do contact 3');
+                const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
+                const item: Item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
+                if (item.upgrades) { tank.setUpgrade(item.upgrades); }
+
+                this.sfx_point.play();
+                item.destroy();
+            });
+            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+                // log('gone 3');
+                continue;
+            }
+
             checkPairGameObjectName('tank', 'bullet', (tankFixture: b2Fixture, bulletFixture: b2Fixture) => {
                 // log('do contact 3');
                 const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
@@ -613,7 +627,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         box.initPhysics(() => {
             if (isScatter) {
                 const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
-                dir.scale(0.04 * PIXEL_TO_METER);
+                dir.scale(0.02 * PIXEL_TO_METER);
                 box.b2Body.SetLinearVelocity(dir);
             }
         });
@@ -684,9 +698,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.distanceMatrix.distanceMatrix[tank.uniqueID].forEach((distance, entityID) => {
                 if (entityID === tank.uniqueID) { return; }
                 const entity = this.instancesByID[entityID];
-                if (entity == null) {
-                    if (this.distanceMatrix.distanceMatrix[entityID] === null) { return; }
-                }
+                if (entity == null) { return; }
+
                 const name = entity.name;
                 switch (name) {
                     case 'tank':
@@ -741,7 +754,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                     Math.cos(stepAngle),
                     Math.sin(stepAngle)
                 );
-                velocity.normalize().scale(TANK_SPEED * PIXEL_TO_METER);
+                velocity.normalize().scale(TANK_SPEED * tank.movementSpeed * PIXEL_TO_METER);
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.hpBar.setRotation(-rot);

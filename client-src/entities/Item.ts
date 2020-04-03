@@ -118,7 +118,7 @@ export class Item extends GameObjects.Container {
             this.y * PIXEL_TO_METER,
         ); // in meters
         bodyDef.angle = 0; // in radians
-        bodyDef.linearDamping = 0.005; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.linearDamping = 0.002; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
         bodyDef.allowSleep = false;
         bodyDef.userData = {
