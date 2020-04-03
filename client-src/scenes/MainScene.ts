@@ -232,108 +232,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
         );
 
-        const updatePlayer = (player: Player, controlsList: Controls) => {
-            let xx = 0;
-            let yy = 0;
-
-            player.debugText.setText(`${player.x.toFixed(2)}, ${player.y.toFixed(2)}`);
-
-            if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
-            if (controlsList.down.isDown) { yy += PLAYER_MOVE_SPEED; }
-            if (controlsList.left.isDown) { xx -= PLAYER_MOVE_SPEED; }
-            if (controlsList.right.isDown) { xx += PLAYER_MOVE_SPEED; }
-
-            const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4;
-
-            if (player.team === Team.BLUE) {
-                if (player.x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth) {
-                    player.x = WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth;
-                }
-            } else {
-                if (player.x < BASE_LINE_WIDTH + quarterWidth) {
-                    player.x = BASE_LINE_WIDTH + quarterWidth;
-                }
-            }
-
-            player.doCollision();
-            player.tank?.repair();
-            player.moveInDirection(xx, yy);
-            player.updateAim();
-            if (player.hp <= 0) {
-                this.setGameOver(player.team === Team.BLUE ? Team.RED : Team.BLUE);
-            }
-        }
-        updatePlayer(this.bluePlayer, this.controlsList[0])
-        updatePlayer(this.redPlayer, this.controlsList[1])
-
-        const detectGameOver = (tank: Tank) => {
-            const isBlue = tank.team === Team.BLUE;
-            if (tank.hp <= 0) return false;
-            if (isBlue) {
-                return tank.x > (WORLD_WIDTH - BASE_LINE_WIDTH);
-            } else {
-                return tank.x < BASE_LINE_WIDTH;
-            }
-        }
-        const updateAi = (tank: Tank) => {
-            // AI decision logic
-            const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
-            const enemy = (tank.team === Team.BLUE ? [this.redPlayer, ...this.redAi]
-                : [this.bluePlayer, ...this.blueAi]);
-
-            const findTankWithClosestDistance = (myTank: Tank, enemy: (Player | Tank)[]) => {
-                let minDist = Infinity;
-                let target: (Player | Tank | null) = null;
-                enemy.forEach((enemyTank) => {
-                    const distance = Phaser.Math.Distance.Between(
-                        myTank.x, myTank.y, enemyTank.x, enemyTank.y
-                    );
-                    if (distance < minDist) {
-                        target = enemyTank;
-                        minDist = distance;
-                    }
-                })
-                return { target, distance: minDist }
-            }
-            const { target, distance } = findTankWithClosestDistance(tank, enemy)
-            if (target !== null && distance <= tank.range) {
-                // stop and attack
-                const fireBullet = async (tank: Tank, target: Tank | Player) => {
-                    if (!tank.canFire()) return;
-                    if (!target) return;
-                    const xDiff = target.x - tank.x;
-                    const yDiff = target.y - tank.y;
-                    tank.setFiring({ x: xDiff, y: yDiff });
-                    const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-                    bullet.init(tank.x, tank.y, tank.getDamage(), tank.getRange());
-                    this.sfx_shoot.play();
-                    this.bullets.push(bullet);
-
-                    bullet.initPhysics(() => {
-                        bullet.b2Body.SetLinearVelocity({
-                            x: (xDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
-                            y: (yDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
-                        });
-                        bullet.b2Body.SetAwake(true);
-                    });
-                }
-                fireBullet(tank, target!);
-                // tank.b2Body.SetLinearVelocity({
-                //     x: 0 * PIXEL_TO_METER,
-                //     y: tank.b2Body.GetLinearVelocity().y,
-                // });
-            } else {
-                tank.b2Body.SetLinearVelocity({
-                    x: direction * PIXEL_TO_METER,
-                    y: tank.b2Body.GetLinearVelocity().y,
-                });
-            }
-            if (detectGameOver(tank)) {
-                this.setGameOver(tank.team);
-            }
-        }
-        this.blueAi.forEach((ai) => updateAi(ai))
-        this.redAi.forEach((ai) => updateAi(ai))
+        this.updatePlayers();
+        this.updateAi();
 
         const updateBullet = (bullet: Bullet) => {
             if (bullet.isOutOfRange()) {
@@ -715,6 +615,127 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             }
         });
         return box;
+    }
+
+    updatePlayers() {
+        const updatePlayer = (player: Player, controlsList: Controls) => {
+            let xx = 0;
+            let yy = 0;
+
+            player.debugText.setText(`${player.x.toFixed(2)}, ${player.y.toFixed(2)}`);
+
+            if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
+            if (controlsList.down.isDown) { yy += PLAYER_MOVE_SPEED; }
+            if (controlsList.left.isDown) { xx -= PLAYER_MOVE_SPEED; }
+            if (controlsList.right.isDown) { xx += PLAYER_MOVE_SPEED; }
+
+            const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4;
+
+            if (player.team === Team.BLUE) {
+                if (player.x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth) {
+                    player.x = WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth;
+                }
+            } else {
+                if (player.x < BASE_LINE_WIDTH + quarterWidth) {
+                    player.x = BASE_LINE_WIDTH + quarterWidth;
+                }
+            }
+
+            player.doCollision();
+            player.tank?.repair();
+            player.moveInDirection(xx, yy);
+            player.updateAim();
+            if (player.hp <= 0) {
+                this.setGameOver(player.team === Team.BLUE ? Team.RED : Team.BLUE);
+            }
+        };
+
+        updatePlayer(this.bluePlayer, this.controlsList[0]);
+        updatePlayer(this.redPlayer, this.controlsList[1]);
+    }
+
+    updateAi() {
+        const updateTank = (tank: Tank) => {
+            // AI decision logic
+            const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
+            const enemy = (tank.team === Team.BLUE ? [this.redPlayer, ...this.redAi]
+                : [this.bluePlayer, ...this.blueAi]);
+
+            const findTankWithClosestDistance = (myTank: Tank, enemy: (Player | Tank)[]) => {
+                let minDist = Infinity;
+                let target: (Player | Tank | null) = null;
+                enemy.forEach((enemyTank) => {
+                    const distance = Phaser.Math.Distance.Between(
+                        myTank.x, myTank.y, enemyTank.x, enemyTank.y
+                    );
+                    if (distance < minDist) {
+                        target = enemyTank;
+                        minDist = distance;
+                    }
+                });
+                return { target, distance: minDist };
+            };
+            const { target, distance } = findTankWithClosestDistance(tank, enemy);
+            if (target !== null && distance <= tank.range) {
+                // stop and attack
+                this.fireBullet(tank, target!, distance);
+                // tank.b2Body.SetLinearVelocity({
+                //     x: 0 * PIXEL_TO_METER,
+                //     y: tank.b2Body.GetLinearVelocity().y,
+                // });
+            } else {
+                tank.b2Body.SetLinearVelocity({
+                    x: direction * PIXEL_TO_METER,
+                    y: tank.b2Body.GetLinearVelocity().y,
+                });
+            }
+        }
+
+        this.blueAi.forEach((ai) => updateTank(ai));
+        this.redAi.forEach((ai) => updateTank(ai));
+
+
+        const detectGameOver = (tank: Tank) => {
+            const isBlue = tank.team === Team.BLUE;
+            if (tank.hp <= 0) return false;
+            if (isBlue) {
+                return tank.x > (WORLD_WIDTH - BASE_LINE_WIDTH);
+            } else {
+                return tank.x < BASE_LINE_WIDTH;
+            }
+        }
+        this.blueAi.forEach((ai) => {
+            if (detectGameOver(ai)) {
+                this.setGameOver(ai.team);
+            }
+        });
+        this.redAi.forEach((ai) => {
+            if (detectGameOver(ai)) {
+                this.setGameOver(ai.team);
+            }
+        });
+    }
+
+    fireBullet(tank: Tank, target: Tank | Player, distance: number) {
+        if (!tank.canFire()) return;
+        if (!target) return;
+        const xDiff = target.x - tank.x;
+        const yDiff = target.y - tank.y;
+        tank.setFiring({ x: xDiff, y: yDiff });
+        const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
+        bullet.init(tank.x, tank.y, tank.getDamage(), tank.getRange());
+        this.sfx_shoot.play();
+        this.bullets.push(bullet);
+
+        const dir = new Vector2(xDiff, yDiff);
+        dir.scale(1 / distance * BULLET_SPEED);
+        bullet.initPhysics(() => {
+            bullet.b2Body.SetLinearVelocity({
+                x: dir.x * PIXEL_TO_METER,
+                y: dir.y * PIXEL_TO_METER,
+            });
+            bullet.b2Body.SetAwake(true);
+        });
     }
 
     getPhysicsSystem() {
