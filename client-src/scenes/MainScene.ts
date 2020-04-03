@@ -2,7 +2,7 @@ import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, 
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload, setUpAudio } from '../assets';
-import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH, TANK_CHASE_ITEM_RANGE } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
@@ -14,6 +14,8 @@ import { PhysicsSystem, IFixtureUserData, IBodyUserData } from '../PhysicsSystem
 import { HpBar } from '../ui/HpBar';
 // import { GameObjects } from 'phaser';
 import { capitalize } from '../utils/utils';
+import { DistanceMatrix } from '../utils/DistanceMatrix';
+import { GameObjects } from 'phaser';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -52,10 +54,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     btn_mute: Image;
 
     bluePlayer: Player;
-    blueAi: Tank[];
     redPlayer: Player;
-    redAi: Tank[];
-    bullets: Bullet[];
+    readonly blueAi: Tank[] = [];
+    readonly redAi: Tank[] = [];
+    readonly bullets: Bullet[] = [];
+    readonly items: Item[] = [];
+    readonly instancesByID: { [id: number]: (GameObjects.Container) } = {};
 
     sfx_shoot: BaseSound;
     sfx_hit: BaseSound;
@@ -66,6 +70,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     frameSize = PHYSICS_FRAME_SIZE; // ms
     lastUpdate = -1;
+    distanceMatrix: DistanceMatrix;
 
     get mainCamera() { return this.sys.cameras.main; }
 
@@ -84,6 +89,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         setUpAudio.call(this);
         log('create');
         this.getPhysicsSystem().init(this as b2ContactListener);
+        this.distanceMatrix = new DistanceMatrix();
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
@@ -100,6 +106,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
+        this.instancesByID[this.bluePlayer.uniqueID] = this.bluePlayer;
         this.bluePlayer.spawnItem = this.spawnItem;
         this.bluePlayer
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
@@ -107,6 +114,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.bluePlayer.initPhysics(() => { });
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
+        this.instancesByID[this.redPlayer.uniqueID] = this.redPlayer;
         this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
@@ -121,21 +129,21 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 .initHpBar(new HpBar(this, 0, -25, 30, 4))
                 .init(x, y);
             ai.initPhysics(() => { });
+
+            const list = team === Team.BLUE ? this.blueAi : this.redAi;
+            this.addToList(ai, list);
             return ai;
         };
-
-        this.blueAi = [];
-        this.redAi = [];
 
         if (!DEBUG_DISABLE_SPAWNING) {
             const spawnCallback = () => {
                 if (this.isGameOver) return;
-                this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
-                    return createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
-                }));
-                this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
-                    return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
-                }));
+                [200, 400, 600].forEach((y) => {
+                    createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
+                });
+                [200, 400, 600].map((y) => {
+                    createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
+                });
             };
 
             this.spawnTimer = this.time.addEvent({
@@ -190,9 +198,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 if (countDownValue <= 0) { countDownText.setVisible(false); }
             },
             repeat: SPAWN_DELAY / 1000,
-        })
-
-        this.bullets = [];
+        });
 
         this.setUpGUI();
         this.setUpKeyboard();
@@ -231,7 +237,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             timeStep,
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
         );
-
+        this.distanceMatrix.init([this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items]);
         this.updatePlayers();
         this.updateAi();
 
@@ -386,9 +392,6 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     removeTank(tank: Tank) {
-        this.blueAi = this.blueAi.filter(t => t !== tank);
-        this.redAi = this.redAi.filter(t => t !== tank);
-
         if (this.bluePlayer.tank === tank) this.bluePlayer.tank = null;
         if (this.redPlayer.tank === tank) this.redPlayer.tank = null;
 
@@ -402,9 +405,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         upgrades[randomUpgradeKey] += 1;
         this.spawnItem(position.x, position.y, upgrades, true);
     }
+
     removeBullet(bullet: Bullet) {
-        log('removeBullet');
-        this.bullets = this.bullets.filter(b => b !== bullet);
+        // log('removeBullet');
         bullet.destroy();
     }
 
@@ -423,11 +426,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
             const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
             const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
-            log(`BeginContact ` +
-                `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
-                ` vs ` +
-                `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
-            );
+            // log(`BeginContact ` +
+            //     `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
+            //     ` vs ` +
+            //     `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
+            // );
 
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
@@ -451,7 +454,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             // }
 
             checkPairGameObjectName('tank', 'bullet', (tankFixture: b2Fixture, bulletFixture: b2Fixture) => {
-                log('do contact 3');
+                // log('do contact 3');
                 const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
                 const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
                 tank.takeDamage(bullet.damage);
@@ -461,12 +464,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.removeBullet(bullet);
             });
             if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 3');
+                // log('gone 3');
                 continue;
             }
 
             checkPairFixtureLabels('player-body', 'bullet-body', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
-                log('do contact 4');
+                // log('do contact 4');
                 const player: Player = playerFixture.GetBody()?.GetUserData()?.gameObject as Player;
                 const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
                 player.takeDamage(bullet.damage);
@@ -474,7 +477,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.removeBullet(bullet);
             });
             if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 4');
+                // log('gone 4');
                 continue;
             }
 
@@ -497,11 +500,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
             const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
             const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
-            log(`EndContact ` +
-                `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
-                ` vs ` +
-                `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
-            );
+            // log(`EndContact ` +
+            //     `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
+            //     ` vs ` +
+            //     `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
+            // );
 
 
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
@@ -578,10 +581,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         const isBlue = winner === Team.BLUE;
         if (isBlue) {
             this.redAi.forEach(ai => ai.destroy());
-            this.redAi = [];
+            this.redAi.length = 0;;
         } else {
             this.blueAi.forEach(ai => ai.destroy());
-            this.blueAi = [];
+            this.blueAi.length = 0;;
         }
         this.cameras.main.shake(1000, 0.04, false);
         this.isGameOver = true;
@@ -614,7 +617,18 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 box.b2Body.SetLinearVelocity(dir);
             }
         });
+
+        this.addToList(box, this.items);
         return box;
+    }
+
+    addToList(gameObject: (GameObjects.Container & { uniqueID: number }), list: (GameObjects.Container & { uniqueID: number })[]) {
+        list.push(gameObject);
+        this.instancesByID[gameObject.uniqueID] = gameObject;
+        gameObject.on('destroy', () => {
+            list.splice(list.indexOf(gameObject), 1);
+            delete this.instancesByID[gameObject.uniqueID];
+        });
     }
 
     updatePlayers() {
@@ -655,39 +669,81 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     updateAi() {
+
         const updateTank = (tank: Tank) => {
             // AI decision logic
-            const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
-            const enemy = (tank.team === Team.BLUE ? [this.redPlayer, ...this.redAi]
-                : [this.bluePlayer, ...this.blueAi]);
 
-            const findTankWithClosestDistance = (myTank: Tank, enemy: (Player | Tank)[]) => {
-                let minDist = Infinity;
-                let target: (Player | Tank | null) = null;
-                enemy.forEach((enemyTank) => {
-                    const distance = Phaser.Math.Distance.Between(
-                        myTank.x, myTank.y, enemyTank.x, enemyTank.y
-                    );
-                    if (distance < minDist) {
-                        target = enemyTank;
-                        minDist = distance;
-                    }
-                });
-                return { target, distance: minDist };
-            };
-            const { target, distance } = findTankWithClosestDistance(tank, enemy);
-            if (target !== null && distance <= tank.range) {
+            let closestTankID = -1;
+            let closestTankDistance = Infinity;
+            let closestTank: Tank | Player | null = null;
+            let closestItemID = -1;
+            let closestItemDistance = Infinity;
+            let closestItem: Item | null = null;
+
+            this.distanceMatrix.distanceMatrix[tank.uniqueID].forEach((distance, entityID) => {
+                if (entityID === tank.uniqueID) { return; }
+                const entity = this.instancesByID[entityID];
+                const name = entity.name;
+                switch (name) {
+                    case 'tank':
+                    case 'player':
+                        {
+                            if ((entity as (Tank | Player)).team === tank.team) { return; }
+                            if (closestTankDistance > distance) {
+                                closestTankID = entityID;
+                                closestTankDistance = distance;
+                            }
+                        }
+                        break;
+                    case 'item':
+                        {
+                            if (tank.team === Team.BLUE && entity.x < tank.x) { return; }
+                            if (tank.team === Team.RED && entity.x > tank.x) { return; }
+                            if (closestItemDistance > distance) {
+                                closestItemID = entityID;
+                                closestItemDistance = distance;
+                            }
+                        }
+                        break;
+                }
+            });
+            if (closestTankID !== -1) {
+                closestTank = this.instancesByID[closestTankID] as (Tank | Player);
+                // this.physicsDebugLayer?.lineStyle(1, 0xFF0000, 0.5);
+                // this.physicsDebugLayer?.lineBetween(tank.x, tank.y, closestTank.x, closestTank.y);
+            }
+            if (closestItemID !== -1) {
+                closestItem = this.instancesByID[closestItemID] as Item;
+                // this.physicsDebugLayer?.lineStyle(1, 0x00FF00, 0.5);
+                // this.physicsDebugLayer?.lineBetween(tank.x, tank.y, closestItem.x, closestItem.y);
+            }
+
+            if (closestTank !== null && closestTankDistance <= tank.range) {
                 // stop and attack
-                this.fireBullet(tank, target!, distance);
+                this.fireBullet(tank, closestTank!, closestTankDistance);
                 // tank.b2Body.SetLinearVelocity({
                 //     x: 0 * PIXEL_TO_METER,
                 //     y: tank.b2Body.GetLinearVelocity().y,
                 // });
+            } else if (closestItem !== null && closestItemDistance <= TANK_CHASE_ITEM_RANGE) {
+                const velocity = new Vector2(
+                    closestItem.x - tank.x,
+                    closestItem.y - tank.y
+                );
+                velocity.normalize().scale(TANK_SPEED * PIXEL_TO_METER);
+                tank.b2Body.SetLinearVelocity(velocity);
+                const rot = Math.atan2(velocity.y, velocity.x);
+                tank.hpBar.setRotation(-rot);
+                tank.setRotation(rot);
             } else {
+                const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
                 tank.b2Body.SetLinearVelocity({
                     x: direction * PIXEL_TO_METER,
-                    y: tank.b2Body.GetLinearVelocity().y,
+                    y: 0,
                 });
+                const rot = Math.atan2(0, direction);
+                tank.hpBar.setRotation(-rot);
+                tank.setRotation(rot);
             }
         }
 
@@ -719,13 +775,22 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     fireBullet(tank: Tank, target: Tank | Player, distance: number) {
         if (!tank.canFire()) return;
         if (!target) return;
-        const xDiff = target.x - tank.x;
-        const yDiff = target.y - tank.y;
+        const tempMatrix = new Phaser.GameObjects.Components.TransformMatrix();
+        const tempParentMatrix = new Phaser.GameObjects.Components.TransformMatrix();
+
+        tank.barrelSprite.getWorldTransformMatrix(tempMatrix, tempParentMatrix);
+        const d: any = tempMatrix.decomposeMatrix();
+
+        const xDiff = target.x - d.translateX;
+        const yDiff = target.y - d.translateY;
         tank.setFiring({ x: xDiff, y: yDiff });
+
+
         const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-        bullet.init(tank.x, tank.y, tank.getDamage(), tank.getRange());
+        bullet.init(d.translateX, d.translateY, tank.getDamage(), tank.getRange());
         this.sfx_shoot.play();
-        this.bullets.push(bullet);
+
+        this.addToList(bullet, this.bullets);
 
         const dir = new Vector2(xDiff, yDiff);
         dir.scale(1 / distance * BULLET_SPEED);

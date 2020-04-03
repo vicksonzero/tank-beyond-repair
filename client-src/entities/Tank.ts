@@ -44,6 +44,7 @@ export class Tank extends Phaser.GameObjects.Container {
     hpBar: HpBar;
     bodySprite: Image;
     barrelSprite: Image;
+    turretGraphics: Graphics;
     uiContainer: Container;
     detailsText: Text;
     rangeMarker: Graphics;
@@ -76,12 +77,20 @@ export class Tank extends Phaser.GameObjects.Container {
                 frame: `tankBody_${color}`,
             }, false),
             this.barrelSprite = this.scene.make.image({
-                x: 0, y: 0,
+                x: -4, y: 0,
                 key: 'allSprites_default',
                 frame: `tank${capitalize(color)}_barrel2_outline`,
             }, false),
+            this.turretGraphics = this.scene.make.graphics({
+                x: -4, y: 0,
+            }, false),
             this.uiContainer = this.scene.make.container({ x: 0, y: 0 }),
         ]);
+
+        this.turretGraphics.lineStyle(2, (this.team === Team.BLUE ? 0x333333 : 0x888888), 1);
+        this.turretGraphics.fillStyle((this.team === Team.BLUE ? 0x8888FF : 0xFF4444), 1);
+        this.turretGraphics.fillCircle(0, 0, 8);
+        this.turretGraphics.strokeCircle(0, 0, 8);
 
         this.uiContainer.add([
             this.detailsText = this.scene.make.text({ x: 0, y: -20, text: '', style: { align: 'center' } }),
@@ -91,9 +100,9 @@ export class Tank extends Phaser.GameObjects.Container {
         this.detailsText.setOrigin(0.5, 1);
 
 
-        this.bodySprite.setAngle(this.team === Team.BLUE ? 90 : -90);
-        this.barrelSprite.setOrigin(0.5, 0.7);
-        this.barrelSprite.setAngle(this.team === Team.BLUE ? 90 : -90);
+        this.bodySprite.setAngle(90);
+        this.barrelSprite.setOrigin(0.5, 0);
+        this.barrelSprite.setAngle(-90);
 
         this.on('destroy', () => {
             this.emit(Tank.TANK_DIE, this);
@@ -237,7 +246,7 @@ export class Tank extends Phaser.GameObjects.Container {
     }
 
     setFiring({ x, y }: { x: number, y: number }) {
-        this.barrelSprite.setRotation(Math.atan2(y, x) + Math.PI / 2);
+        this.barrelSprite.setRotation(Math.atan2(y, x) - Math.PI / 2 - this.rotation);
         this.lastFired = Date.now();
     }
     canFire() {
@@ -261,7 +270,7 @@ export class Tank extends Phaser.GameObjects.Container {
         // this.gm.gameIsOver = true;
         this.visible = false;
         // this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
-        
+
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
         super.destroy();

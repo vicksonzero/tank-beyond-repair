@@ -291,14 +291,13 @@ export class Player extends Phaser.GameObjects.Container {
                 const yy = Math.sin(rotation) * 30;
                 const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
 
-                sfx_pickup.play();
-
                 if (item) {
+                    sfx_pickup.play();
                     const myOldUpgrade = this.holdingItem.upgrades!;
                     item.setUpgrades(myOldUpgrade);
+                    this.holdingItem.destroy();
+                    this.holdingItem = null;
                 }
-                this.holdingItem.destroy();
-                this.holdingItem = null;
             }
         } else if (this.pointerTarget.name === 'item') {
             const item = this.pointerTarget as Item;
