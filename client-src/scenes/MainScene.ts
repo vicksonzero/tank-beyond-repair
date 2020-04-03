@@ -145,6 +145,23 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 loop: true,
             });
         }
+        for (let i = 0; i < 10; i++) {
+            const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+            dir.scale(10);
+            const pos = new Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+            pos.add(dir);
+            const upgrades = {
+                range: 0,
+                damage: 0,
+                attackSpeed: 0,
+                maxHP: 0,
+                movementSpeed: 0,
+            };
+            const keys = Object.keys(upgrades);
+            const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
+            upgrades[randomUpgradeKey] += 1;
+            this.spawnItem(pos.x, pos.y, upgrades, true);
+        }
 
         this.time.addEvent({
             delay: SPAWN_DELAY,
