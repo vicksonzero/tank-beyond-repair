@@ -1,4 +1,3 @@
-import MatterContainer from './MatterContainer';
 import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
 import { UpgradeObject, UpgradeType } from './Upgrade';
@@ -12,16 +11,17 @@ import { b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType, b2Body, b2PolygonSh
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
 import { IFixtureUserData } from '../PhysicsSystem';
+import { GameObjects } from 'phaser';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
 // warn.log = console.warn.bind(console);
 
-type Image = Phaser.GameObjects.Image;
-type Text = Phaser.GameObjects.Text;
+type Image = GameObjects.Image;
+type Text = GameObjects.Text;
 
 
-export class Item extends MatterContainer {
+export class Item extends GameObjects.Container {
 
 
     static ITEM_DIE = 'item-die';
@@ -164,11 +164,6 @@ export class Item extends MatterContainer {
         if (this.dieEvent) this.dieEvent.destroy();
         this.itemSprite.setVisible(true);
         this.initDeathTimer();
-        return this;
-    }
-    moveInDirection(dirX: number, dirY: number): this {
-        this.setVelocity(dirX, dirY);
-        this.setRotation(Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x));
         return this;
     }
 

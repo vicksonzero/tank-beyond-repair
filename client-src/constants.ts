@@ -11,13 +11,13 @@ export const SPAWN_DELAY = 5000; // ms
 export const PLAYER_MOVE_SPEED = 0.7; // px per second
 export const TANK_SPEED = 0.3; // px per second
 export const BULLET_SPEED = 0.06; // px per second
-export const ITEM_LIFESPAN = 10 * 1000; // ms
-export const ITEM_LIFESPAN_WARNING = 7 * 1000; // ms
+export const ITEM_LIFESPAN = 60 * 1000; // ms
+export const ITEM_LIFESPAN_WARNING = 55 * 1000; // ms
 
 // debug
 export const DEBUG_DISABLE_SPAWNING = false; // default false
-export const DEBUG_PHYSICS = false; // default false, draws the physics bodies and constraints
-export const AUDIO_START_MUTED = false; // default false
+export const DEBUG_PHYSICS = true; // default false, draws the physics bodies and constraints
+export const AUDIO_START_MUTED = true; // default false
 
 // physics
 export const PHYSICS_FRAME_SIZE = 16; // ms

@@ -1,4 +1,3 @@
-import MatterContainer from './MatterContainer';
 
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
@@ -11,24 +10,25 @@ import { MainScene } from '../scenes/MainScene';
 import * as Debug from 'debug';
 import { getUniqueID } from '../utils/UniqueID';
 import { IFixtureUserData } from '../PhysicsSystem';
+import { GameObjects, Scene } from 'phaser';
 
 const log = Debug('tank-beyond-repair:Bullet:log');
 // const warn = Debug('tank-beyond-repair:MainScene:warn');
 // warn.log = console.warn.bind(console);
 
-export class Bullet extends Phaser.GameObjects.Container {
+export class Bullet extends GameObjects.Container {
 
     uniqueID: number;
     team: Team;
     damage: number;
     range: number;
-    sprite: Phaser.GameObjects.Graphics;
+    sprite: GameObjects.Graphics;
     originalX: number;
     originalY: number;
 
     b2Body: b2Body;
 
-    constructor(scene: Phaser.Scene, team: Team) {
+    constructor(scene: Scene, team: Team) {
         super(scene, 0, 0, []);
         this.uniqueID = getUniqueID();
         this.team = team;

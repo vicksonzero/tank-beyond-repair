@@ -1,4 +1,3 @@
-import MatterContainer from './MatterContainer';
 
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
