@@ -13,7 +13,7 @@ import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
 import { PhysicsSystem, IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
 // import { GameObjects } from 'phaser';
-import { capitalize } from '../utils/utils';
+import { capitalize, lerpRadians } from '../utils/utils';
 import { DistanceMatrix } from '../utils/DistanceMatrix';
 import { GameObjects } from 'phaser';
 
@@ -628,6 +628,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         gameObject.on('destroy', () => {
             list.splice(list.indexOf(gameObject), 1);
             delete this.instancesByID[gameObject.uniqueID];
+            this.distanceMatrix.removeTransform(gameObject);
         });
     }
 
@@ -683,6 +684,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.distanceMatrix.distanceMatrix[tank.uniqueID].forEach((distance, entityID) => {
                 if (entityID === tank.uniqueID) { return; }
                 const entity = this.instancesByID[entityID];
+                if (entity == null) {
+                    if (this.distanceMatrix.distanceMatrix[entityID] === null) { return; }
+                }
                 const name = entity.name;
                 switch (name) {
                     case 'tank':
@@ -726,9 +730,16 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 //     y: tank.b2Body.GetLinearVelocity().y,
                 // });
             } else if (closestItem !== null && closestItemDistance <= TANK_CHASE_ITEM_RANGE) {
-                const velocity = new Vector2(
+                const targetVelocity = new Vector2(
                     closestItem.x - tank.x,
                     closestItem.y - tank.y
+                );
+                const targetAngle = targetVelocity.angle();
+                const originalAngle = tank.b2Body.GetAngle();
+                const stepAngle = lerpRadians(originalAngle, targetAngle, 0.07);
+                const velocity = new Vector2(
+                    Math.cos(stepAngle),
+                    Math.sin(stepAngle)
                 );
                 velocity.normalize().scale(TANK_SPEED * PIXEL_TO_METER);
                 tank.b2Body.SetLinearVelocity(velocity);
@@ -783,24 +794,33 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         const xDiff = target.x - d.translateX;
         const yDiff = target.y - d.translateY;
-        tank.setFiring({ x: xDiff, y: yDiff });
 
+        const targetDir = new Vector2(xDiff, yDiff);
+        const targetAngle = targetDir.angle();
+        let originalAngle = tank.barrelSprite.rotation + tank.rotation + Math.PI / 2;
+        while (originalAngle < 0) { originalAngle += 2 * Math.PI; }
 
-        const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-        bullet.init(d.translateX, d.translateY, tank.getDamage(), tank.getRange());
-        this.sfx_shoot.play();
+        if (Math.abs(targetAngle - originalAngle) > 0.04) {
+            const stepAngle = lerpRadians(originalAngle, targetAngle, 0.04);
+            tank.barrelSprite.setRotation(stepAngle - Math.PI / 2 - tank.rotation);
+        } else {
+            tank.setFiring(targetDir);
 
-        this.addToList(bullet, this.bullets);
+            const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
+            bullet.init(d.translateX, d.translateY, tank.getDamage(), tank.getRange());
+            this.sfx_shoot.play();
 
-        const dir = new Vector2(xDiff, yDiff);
-        dir.scale(1 / distance * BULLET_SPEED);
-        bullet.initPhysics(() => {
-            bullet.b2Body.SetLinearVelocity({
-                x: dir.x * PIXEL_TO_METER,
-                y: dir.y * PIXEL_TO_METER,
+            this.addToList(bullet, this.bullets);
+
+            targetDir.scale(1 / distance * BULLET_SPEED);
+            bullet.initPhysics(() => {
+                bullet.b2Body.SetLinearVelocity({
+                    x: targetDir.x * PIXEL_TO_METER,
+                    y: targetDir.y * PIXEL_TO_METER,
+                });
+                bullet.b2Body.SetAwake(true);
             });
-            bullet.b2Body.SetAwake(true);
-        });
+        }
     }
 
     getPhysicsSystem() {

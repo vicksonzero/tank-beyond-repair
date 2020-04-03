@@ -37,6 +37,10 @@ export class DistanceMatrix {
         this.distanceMatrix = distanceMatrix;
     }
 
+    removeTransform(transform: TransformWithUniqueID){
+        delete this.distanceMatrix[transform.uniqueID];
+    }
+
     updateDistanceBetween(transform1: TransformWithUniqueID, transform2: TransformWithUniqueID, distanceMatrix: number[][]) {
         const dx = transform1.x - transform2.x;
         const dy = transform1.y - transform2.y;
