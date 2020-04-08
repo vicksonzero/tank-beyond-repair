@@ -758,15 +758,26 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.hpBar.setRotation(-rot);
+                tank.uiContainer.setRotation(-rot);
                 tank.setRotation(rot);
             } else {
                 const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
-                tank.b2Body.SetLinearVelocity({
-                    x: direction * PIXEL_TO_METER,
-                    y: 0,
-                });
-                const rot = Math.atan2(0, direction);
+                const targetVelocity = new Vector2(
+                    direction,
+                   0
+                );
+                const targetAngle = targetVelocity.angle();
+                const originalAngle = tank.b2Body.GetAngle();
+                const stepAngle = lerpRadians(originalAngle, targetAngle, 0.07);
+                const velocity = new Vector2(
+                    Math.cos(stepAngle),
+                    Math.sin(stepAngle)
+                );
+                velocity.normalize().scale(TANK_SPEED * tank.movementSpeed * PIXEL_TO_METER);
+                tank.b2Body.SetLinearVelocity(velocity);
+                const rot = Math.atan2(velocity.y, velocity.x);
                 tank.hpBar.setRotation(-rot);
+                tank.uiContainer.setRotation(-rot);
                 tank.setRotation(rot);
             }
         }
@@ -810,9 +821,18 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         const targetDir = new Vector2(xDiff, yDiff);
         const targetAngle = targetDir.angle();
+        let originalTankAngle = tank.rotation;
+        while (originalTankAngle < 0) { originalTankAngle += 2 * Math.PI; }
+
+        if (Math.abs(targetAngle - originalTankAngle) > 0.03) {
+            const stepAngle = lerpRadians(originalTankAngle, targetAngle, 0.03);
+            tank.setRotation(stepAngle);
+            tank.hpBar.setRotation(-stepAngle);
+            tank.uiContainer.setRotation(-stepAngle);
+        }
+
         let originalAngle = tank.barrelSprite.rotation + tank.rotation + Math.PI / 2;
         while (originalAngle < 0) { originalAngle += 2 * Math.PI; }
-
         if (Math.abs(targetAngle - originalAngle) > 0.04) {
             const stepAngle = lerpRadians(originalAngle, targetAngle, 0.04);
             tank.barrelSprite.setRotation(stepAngle - Math.PI / 2 - tank.rotation);
