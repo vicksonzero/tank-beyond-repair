@@ -318,6 +318,7 @@ export class Player extends Phaser.GameObjects.Container {
                 const xx = Math.cos(rotation) * 30;
                 const yy = Math.sin(rotation) * 30;
                 this.add(this.holdingItem = this.scene.make.container({ x: xx, y: yy }) as HoldingItem);
+                this.holdingItem.setScale(1.15);
 
                 this.holdingItem.add(this.scene.make.image({
                     x: 0, y: 0,
