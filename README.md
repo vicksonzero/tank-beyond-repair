@@ -77,7 +77,7 @@ Built content will be put in `master`
 - [x] typescript (For Static type)
 - [x] webpack (For client side dependency management; server side will just use `require()` after running tsc)
 - [x] phaser 3 (For Graphics and some game rules)
-- [x] matter.js (From Phaser3, For Physics Engine)
+- [x] box2d.ts (For Stand-alone Physics Engine)
 - [x] debug.js (for logging with tags)
 
 

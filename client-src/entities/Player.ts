@@ -1,11 +1,14 @@
-import MatterContainer from './MatterContainer';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Contact, b2Fixture, b2FixtureDef, b2Shape, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
-import { collisionCategory } from './collisionCategory';
-import { capitalize, IMatterContactPoints, makeUpgradeString } from '../utils/utils';
-import { Team } from './Team';
-import { Item } from './Item';
+import { PIXEL_TO_METER } from '../constants';
+import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
+import { getUniqueID } from '../utils/UniqueID';
+import { capitalize, makeUpgradeString } from '../utils/utils';
+import { collisionCategory } from './collisionCategory';
+import { Item } from './Item';
 import { Tank } from './Tank';
+import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
 
 const log = Debug('tank-beyond-repair:Player:log');
@@ -21,31 +24,34 @@ interface HoldingItem extends Container {
     upgrades?: UpgradeObject;
 }
 
-export class Player extends MatterContainer {
+export class Player extends Phaser.GameObjects.Container {
 
+    uniqueID: number;
     team: Team;
     hp: number;
     maxHP: number;
     hpBar: HpBar;
-    tank: Tank;
+    tank: Tank | null;
 
     armLength = 30;
     armRadius = 20;
-
-    playerHandSensor: MatterJS.Body;
 
     // input
     mouseTarget?: Phaser.Input.Pointer;
     mouseOffset?: { x: number, y: number };
     followingMouse?: boolean;
 
+    debugText: Text;
     bodySprite: Image;
     repairSprite: Image;
 
-    pointerTarget: GameObject;
+    pointerTarget: GameObject | null;
 
-    holdingItem: HoldingItem;
+    holdingItem: HoldingItem | null;
     holdingItemText: Text;
+
+    b2Body: b2Body;
+    playerHandSensor: b2Fixture;
 
     spawnItem: (x: number, y: number, upgrades: UpgradeObject) => Item; // to be filled in by MainScene
 
@@ -56,6 +62,7 @@ export class Player extends MatterContainer {
 
     constructor(scene: Phaser.Scene, team: Team) {
         super(scene, 0, 0, []);
+        this.uniqueID = getUniqueID();
         this.team = team;
         this
             .setName('player')
@@ -71,6 +78,11 @@ export class Player extends MatterContainer {
                 x: 0, y: - 40,
                 key: `repair`,
             }, false),
+            this.debugText = this.scene.make.text({
+                x: 0, y: 0,
+                text: '',
+                style: { align: 'left' }
+            })
         ]);
         this.repairSprite.visible = false;
 
@@ -94,34 +106,67 @@ export class Player extends MatterContainer {
         return this;
     }
 
-    initPhysics(): this {
+    initPhysics(physicsFinishedCallback: () => void): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
-        const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
+        const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
 
-        const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
+        // see node_modules/@flyover/box2d/Box2D/Collision/Shapes for more shapes
+        const circleShape = new b2CircleShape();
+        circleShape.m_p.Set(0, 0); // position, relative to body position
+        circleShape.m_radius = 20 * PIXEL_TO_METER; // radius, in meters
 
-        const circleBody = MatterMatter.Bodies.circle(0, 0, 20, { isSensor: false, label: 'body' });
+        const fixtureDef = new b2FixtureDef();
+        fixtureDef.shape = circleShape;
+        fixtureDef.density = 1;
+        fixtureDef.filter.categoryBits = hostCollision;
+        fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
+        fixtureDef.userData = {
+            fixtureLabel: 'player-body',
+        };
 
-        this.scene.matter.add.gameObject(this, circleBody);
+        const bodyDef: b2BodyDef = new b2BodyDef();
+        bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
+        bodyDef.position.Set(
+            this.x * PIXEL_TO_METER,
+            this.y * PIXEL_TO_METER,
+        ); // in meters
+        bodyDef.angle = 0; // in radians
+        bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.fixedRotation = true;
+        bodyDef.userData = {
+            label: 'player-body',
+            gameObject: this,
+        };
 
-        this.playerHandSensor = this.scene.matter.add.circle(this.armLength, 0, this.armRadius, { isSensor: true, label: 'hand' });
 
-        (<any>this.playerHandSensor).player = this;
-        (<any>this.playerHandSensor).collisionFilter.category = hostCollision;
-        (<any>this.playerHandSensor).collisionFilter.mask = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollison;
+        const handCircleShape = new b2CircleShape();
+        handCircleShape.m_p.Set(0, 0); // position, relative to body position,  in meters
+        handCircleShape.m_radius = this.armRadius * PIXEL_TO_METER; // in meters
 
-        MatterMatter.Body.setPosition(circleBody, {
-            x: this.x,
-            y: this.y,
+        const handsFixtureDef = new b2FixtureDef();
+        handsFixtureDef.shape = handCircleShape;
+        handsFixtureDef.density = 0;
+        handsFixtureDef.isSensor = true;
+        handsFixtureDef.filter.categoryBits = hostCollision;
+        handsFixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
+        handsFixtureDef.userData = {
+            fixtureLabel: 'player-hand',
+        };
+
+
+        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+            this.b2Body = world.CreateBody(bodyDef);
+            this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+            this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
+            this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
+
+            this.on('destroy', () => {
+                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.b2Body.m_userData.gameObject = null;
+            });
+            physicsFinishedCallback();
         });
 
-        this
-            .setMass(1)
-            .setFrictionAir(0)
-            .setFixedRotation()
-            .setCollisionCategory(hostCollision)
-            .setCollidesWith(collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollison)
-            ;
         return this;
     }
 
@@ -130,12 +175,13 @@ export class Player extends MatterContainer {
     }
 
     moveInDirection(dirX: number, dirY: number) {
-        this.setVelocity(dirX, dirY);
-
-        type Body = any;
-
         if (dirX !== 0 || dirY !== 0) {
-            const rotation = Math.atan2((<any>this.body).velocity.y, (<any>this.body).velocity.x);
+            this.b2Body.SetLinearVelocity({
+                x: dirX * PIXEL_TO_METER,
+                y: dirY * PIXEL_TO_METER,
+            });
+            const velocity = this.b2Body.GetLinearVelocity();
+            const rotation = Math.atan2(velocity.y, velocity.x);
             const xx = Math.cos(rotation) * this.armLength;
             const yy = Math.sin(rotation) * this.armLength;
 
@@ -149,13 +195,25 @@ export class Player extends MatterContainer {
 
     updateAim() {
         const rotation = this.bodySprite.rotation;
-        const MatterMatter = (<any>Phaser.Physics.Matter).Matter; // be careful of any!
         const xx = Math.cos(rotation) * this.armLength;
         const yy = Math.sin(rotation) * this.armLength;
-        MatterMatter.Body.setPosition(this.playerHandSensor, {
-            x: this.x + xx,
-            y: this.y + yy,
-        });
+
+        this.b2Body.SetAngle(rotation);
+
+        // const circleShape = this.playerHandSensor.shape as b2CircleShape;
+
+        // circleShape.Set(
+        //     {
+        //         x: xx * PIXEL_TO_METER,
+        //         y: yy * PIXEL_TO_METER,
+        //     },
+        //     circleShape.m_radius
+        // );
+
+        (this.playerHandSensor.m_shape as b2CircleShape).m_p.Set(
+            xx * PIXEL_TO_METER,
+            yy * PIXEL_TO_METER
+        );
     }
 
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
@@ -165,12 +223,12 @@ export class Player extends MatterContainer {
                 const rotation = this.bodySprite.rotation;
                 const xx = Math.cos(rotation) * 30;
                 const yy = Math.sin(rotation) * 30;
-                const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades);
+                const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
 
                 sfx_pickup.play();
 
                 if (item) {
-                    const myOldUpgrade = this.holdingItem.upgrades;
+                    const myOldUpgrade = this.holdingItem.upgrades!;
                     item.setUpgrades(myOldUpgrade);
                 }
                 this.holdingItem.destroy();
@@ -180,14 +238,16 @@ export class Player extends MatterContainer {
             const item = this.pointerTarget as Item;
 
             if (this.holdingItem) {
-                const myOldUpgrade = { ...this.holdingItem.upgrades };
+                if (this.holdingItem.upgrades) {
+                    const myOldUpgrade = { ...this.holdingItem.upgrades };
 
-                sfx_pickup.play();
-                this.holdingItem.upgrades = { ...item.upgrades };
-                const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
-                this.holdingItemText.setText(upgradeText);
+                    sfx_pickup.play();
+                    this.holdingItem.upgrades = { ...item.upgrades };
+                    const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
+                    this.holdingItemText.setText(upgradeText);
 
-                item.setUpgrades(myOldUpgrade).refreshDeathTimer();
+                    item.setUpgrades(myOldUpgrade).refreshDeathTimer();
+                }
             } else {
                 const rotation = this.bodySprite.rotation;
                 const xx = Math.cos(rotation) * 30;
@@ -214,7 +274,7 @@ export class Player extends MatterContainer {
             const tank = this.pointerTarget as Tank;
             if (this.holdingItem) {
 
-                tank.setUpgrade(this.holdingItem.upgrades);
+                if (this.holdingItem.upgrades) { tank.setUpgrade(this.holdingItem.upgrades); }
 
                 sfx_upgrade.play();
                 this.holdingItem.destroy();
@@ -224,12 +284,11 @@ export class Player extends MatterContainer {
     }
 
     // try to highlight an item
-    onTouchingItemStart(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
-        // log('onTouchingItemStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-        // a and b are bodies, but no TS definition...
-        if (!itemBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
-        // console.log('onTouchingItemStart do');
+    onTouchingItemStart(handFixture: b2Fixture, itemFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
+        // const worldManifold = new b2WorldManifold();
+        // contact.GetWorldManifold(worldManifold);
+        // const activeContacts = worldManifold.points;
+        // log('onTouchingItemStart', handFixture.isSensor, handFixture.label, this.pointerTarget?.name);
 
         // if not holding item, prefer item over tank
         if (!this.holdingItem && this.pointerTarget) { // if already aiming at something
@@ -248,7 +307,7 @@ export class Player extends MatterContainer {
         }
         // if i am looking for an item
         // highlight the item 
-        const item = itemBody.gameObject as Item;
+        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
         this.pointerTarget = item;
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
@@ -256,11 +315,8 @@ export class Player extends MatterContainer {
         item.itemText.setVisible(true);
     }
 
-    onTouchingItemEnd(myBody: any, itemBody: any, activeContacts: IMatterContactPoints) {
-        if (!myBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
-
-        const item = itemBody.gameObject as Item;
+    onTouchingItemEnd(handFixture: b2Fixture, itemFixture: b2Fixture, activeContacts: b2Contact<b2Shape, b2Shape>) {
+        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
         if (!item) return;
         if (this.pointerTarget !== item) return;
 
@@ -278,12 +334,11 @@ export class Player extends MatterContainer {
         this.repairSprite.visible = false;
     }
 
-    onTouchingTankStart(myBody: any, tankBody: any, activeContacts: any) {
-        // a and b are bodies, but no TS definition...
+    onTouchingTankStart(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
+        // const worldManifold = new b2WorldManifold();
+        // contact.GetWorldManifold(worldManifold);
+        // const activeContacts = worldManifold.points;
         // log('onTouchingTankStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-
-        if (!myBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
 
         // console.log('onTouchingTankStart do');
 
@@ -306,7 +361,7 @@ export class Player extends MatterContainer {
             return;
         }
 
-        const tank = tankBody.gameObject as Tank;
+        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
         this.pointerTarget = tank;
         tank.on(Tank.TANK_DIE, this.onTargetDie);
 
@@ -317,12 +372,13 @@ export class Player extends MatterContainer {
         tank.uiContainer.setVisible(true);
     }
 
-    onTouchingTankEnd(myBody: any, tankBody: any, activeContacts: IMatterContactPoints) {
+    onTouchingTankEnd(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
+        // const worldManifold = new b2WorldManifold();
+        // contact.GetWorldManifold(worldManifold);
+        // const activeContacts = worldManifold.points;
         // log('onTouchingTankEnd', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-        if (!myBody.isSensor) return;
-        if (myBody.label !== 'hand') return;
 
-        const tank = tankBody.gameObject as Tank;
+        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
         if (!tank) return;
         if (this.pointerTarget !== tank) return;
         // console.log('onTouchingTankEnd do', new Error());

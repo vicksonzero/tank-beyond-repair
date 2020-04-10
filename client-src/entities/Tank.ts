@@ -5,6 +5,10 @@ import { capitalize } from '../utils/utils';
 import { Team } from './Team';
 import { HpBar } from '../ui/HpBar';
 import { UpgradeObject, UpgradeType } from './Upgrade';
+import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
+import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
+import { MainScene } from '../scenes/MainScene';
+import { getUniqueID } from '../utils/UniqueID';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -12,11 +16,12 @@ type Graphics = Phaser.GameObjects.Graphics;
 type Text = Phaser.GameObjects.Text;
 type Container = Phaser.GameObjects.Container;
 
-export class Tank extends MatterContainer {
+export class Tank extends Phaser.GameObjects.Container {
 
     static TANK_DIE = 'item-die';
     bodyRadius = 20;
     team: Team;
+    uniqueID: number;
 
     hp: number;
 
@@ -43,7 +48,7 @@ export class Tank extends MatterContainer {
     detailsText: Text;
     rangeMarker: Graphics;
 
-
+    b2Body: b2Body;
 
     // onHitPart?: (parent: any, part: Part, contactPoints: { vertex: { x: number, y: number } }[]) => void;
 
@@ -51,6 +56,7 @@ export class Tank extends MatterContainer {
 
     constructor(scene: Phaser.Scene, team: Team) {
         super(scene, 0, 0, []);
+        this.uniqueID = getUniqueID();
         this
             .setName('tank')
             ;
@@ -118,17 +124,50 @@ export class Tank extends MatterContainer {
         this.hpBar.updateHPBar(this.hp, this.maxHP, (this.maxHP - 5) * 2);
     }
 
-    initPhysics(): this {
+    initPhysics(physicsFinishedCallback: () => void): this {
         const hostCollision = this.team === Team.BLUE ? collisionCategory.BLUE : collisionCategory.RED;
-        const bulletCollison = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
-        this.scene.matter.add.gameObject(this, { shape: { type: 'circle', radius: this.bodyRadius }, label: 'tank-body' });
-        this
-            .setMass(1)
-            .setFrictionAir(0.5)
-            .setFixedRotation()
-            .setCollisionCategory(hostCollision)
-            .setCollidesWith(collisionCategory.WORLD | bulletCollison | collisionCategory.RED | collisionCategory.BLUE)
-            ;
+        const bulletCollision = this.team === Team.BLUE ? collisionCategory.RED_BULLET : collisionCategory.BLUE_BULLET;
+
+
+        // see node_modules/@flyover/box2d/Box2D/Collision/Shapes for more shapes
+        const circleShape = new b2CircleShape();
+        circleShape.m_p.Set(0, 0); // position, relative to body position
+        circleShape.m_radius = this.bodyRadius * PIXEL_TO_METER; // radius, in meters
+
+        const fixtureDef = new b2FixtureDef();
+        fixtureDef.shape = circleShape;
+        fixtureDef.density = 1;
+        fixtureDef.filter.categoryBits = hostCollision;
+        fixtureDef.filter.maskBits = collisionCategory.WORLD | bulletCollision | collisionCategory.RED | collisionCategory.BLUE;
+        fixtureDef.userData = {
+            fixtureLabel: 'tank-body',
+        };
+
+        const bodyDef: b2BodyDef = new b2BodyDef();
+        bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
+        bodyDef.position.Set(
+            this.x * PIXEL_TO_METER,
+            this.y * PIXEL_TO_METER,
+        ); // in meters
+        bodyDef.angle = 0; // in radians
+        bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
+        bodyDef.fixedRotation = true;
+        bodyDef.userData = {
+            label: 'tank',
+            gameObject: this,
+        };
+
+        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+            this.b2Body = world.CreateBody(bodyDef);
+            this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
+            this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
+
+            this.on('destroy', () => {
+                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.b2Body.m_userData.gameObject = null;
+            });
+            physicsFinishedCallback();
+        });
         return this;
     }
 
@@ -221,9 +260,8 @@ export class Tank extends MatterContainer {
         // this.gm.makeExplosion3(this.x, this.y);
         // this.gm.gameIsOver = true;
         this.visible = false;
-        this
-            .setCollisionCategory(0)
-            ;
+        // this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
+        
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
         super.destroy();

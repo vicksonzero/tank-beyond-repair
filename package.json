@@ -20,7 +20,7 @@
   },
   "license": "BSD-3-Clause",
   "dependencies": {
-    "box2d.ts": "^1.0.2"
+    "@flyover/box2d": "^1.0.1"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
@@ -33,7 +33,7 @@
     "json-loader": "^0.5.7",
     "phaser": "^3.21.0",
     "ts-loader": "^6.2.1",
-    "typescript": "^3.7.4",
+    "typescript": "^3.8.3",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.10.1",
