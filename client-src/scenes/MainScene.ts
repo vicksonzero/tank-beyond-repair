@@ -595,10 +595,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         const isBlue = winner === Team.BLUE;
         if (isBlue) {
             this.redAi.forEach(ai => ai.destroy());
-            this.redAi.length = 0;;
+            this.redAi.length = 0;
         } else {
             this.blueAi.forEach(ai => ai.destroy());
-            this.blueAi.length = 0;;
+            this.blueAi.length = 0;
         }
         this.cameras.main.shake(1000, 0.04, false);
         this.isGameOver = true;
