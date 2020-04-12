@@ -9,7 +9,7 @@ import { Item } from '../entities/Item';
 import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
-import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
+import { UpgradeObject } from '../entities/Upgrade';
 import { PhysicsSystem, IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
 // import { GameObjects } from 'phaser';
@@ -158,16 +158,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             dir.scale(10);
             const pos = new Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
             pos.add(dir);
-            const upgrades = {
-                range: 0,
-                damage: 0,
-                attackSpeed: 0,
-                maxHP: 0,
-                movementSpeed: 0,
-            };
-            const keys = Object.keys(upgrades);
-            const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
-            upgrades[randomUpgradeKey] += 1;
+            const upgrades = UpgradeObject.getRandomPartFromPool();
             this.spawnItem(pos.x, pos.y, upgrades, true);
         }
 
@@ -277,16 +268,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.redPlayer.onActionPressed(this.sfx_point, this.sfx_open);
         });
         this.cheats.spawnUpgrades.on('down', (evt: any) => {
-            const upgrades = {
-                range: 0,
-                damage: 0,
-                attackSpeed: 0,
-                maxHP: 0,
-                movementSpeed: 0,
-            };
-            const keys = Object.keys(upgrades);
-            const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
-            upgrades[randomUpgradeKey] += 1;
+            const upgrades = UpgradeObject.getRandomPartFromPool();
             this.spawnItem(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, upgrades, true);
         });
     }
@@ -400,9 +382,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         tank.destroy();
         this.sfx_hit.play();
 
-        const keys = Object.keys(upgrades);
-        const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
-        upgrades[randomUpgradeKey] += 1;
+        const randomUpgrade = UpgradeObject.getRandomPartFromPool();
+        upgrades.addParts(randomUpgrade.partsList);
         this.spawnItem(position.x, position.y, upgrades, true);
     }
 
@@ -735,7 +716,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 // this.physicsDebugLayer?.lineBetween(tank.x, tank.y, closestItem.x, closestItem.y);
             }
 
-            if (closestTank !== null && closestTankDistance <= tank.range) {
+            if (closestTank !== null && closestTankDistance <= tank.attr.range) {
                 // stop and attack
                 this.fireBullet(tank, closestTank!, closestTankDistance);
                 // tank.b2Body.SetLinearVelocity({
@@ -754,7 +735,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                     Math.cos(stepAngle),
                     Math.sin(stepAngle)
                 );
-                velocity.normalize().scale(TANK_SPEED * tank.movementSpeed * PIXEL_TO_METER);
+                velocity.normalize().scale(TANK_SPEED * tank.attr.movementSpeed * PIXEL_TO_METER);
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.hpBar.setRotation(-rot);
@@ -764,7 +745,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
                 const targetVelocity = new Vector2(
                     direction,
-                   0
+                    0
                 );
                 const targetAngle = targetVelocity.angle();
                 const originalAngle = tank.b2Body.GetAngle();
@@ -773,7 +754,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                     Math.cos(stepAngle),
                     Math.sin(stepAngle)
                 );
-                velocity.normalize().scale(TANK_SPEED * tank.movementSpeed * PIXEL_TO_METER);
+                velocity.normalize().scale(TANK_SPEED * tank.attr.movementSpeed * PIXEL_TO_METER);
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.hpBar.setRotation(-rot);

@@ -15,6 +15,10 @@ module.exports = {
     },
     module: {
         rules: [
+            {
+                test: /\.yml$/i,
+                loader: 'raw-loader',
+            },
             { test: /\.ts$/, loader: 'ts-loader', exclude: '/node_modules/' },
             { test: /phaser\.js$/, loader: 'expose-loader?Phaser' },
             {
@@ -23,11 +27,11 @@ module.exports = {
                 // exclude: '/node_modules/',
                 include: path.resolve('.')
             },
-            {
-                test: /\.ya?ml$/,
-                include: path.resolve('.'),
-                loader: 'yaml-loader',
-            }
+            // {
+            //     test: /\.ya?ml$/,
+            //     include: path.resolve('.'),
+            //     loader: 'yaml-loader',
+            // }
         ],
     },
     devServer: {
@@ -38,7 +42,7 @@ module.exports = {
         open: true,
     },
     resolve: {
-        extensions: ['.ts', '.js'],
+        extensions: ['.ts', '.js', '.yml'],
         alias: {
             phaser: phaser
         }
@@ -72,5 +76,5 @@ module.exports = {
         //     { from: '*.html', context: 'client-src/' },
         //     { from: '**/*.css', context: 'client-src/' },
         // ])
-    ]
+    ],
 };

@@ -1,0 +1,77 @@
+config:
+  controls:
+    swipeThumbSize: 30
+    minSwipeDist: 50
+    directionSnaps: 4
+  itemSpawnChance:
+    scrap: 4
+    cannon: 2
+    armor: 2
+    battery: 2
+  items:
+    # range | damage | attackInterval | aimSpeed | maxHP | movementSpeed | turnSpeed | maxBattery | dmgMultiplier | battery;
+    scrap:
+      - xp: 1
+        chassisLevel: 1
+        maxHP: 100
+        movementSpeed: 1
+        maxBattery: 100
+      - xp: 2
+        chassisLevel: 2
+        maxHP: 120
+        movementSpeed: 1
+        maxBattery: 150
+      - xp: 6
+        chassisLevel: 3
+        maxHP: 200      
+        movementSpeed: 0.8
+        maxBattery: 180
+      - xp: 10
+        chassisLevel: 4
+        maxHP: 400
+        movementSpeed: 0.8
+        maxBattery: 240
+    cannon:
+      - xp: 1
+        damage: 10
+        attackInterval: 1000
+        aimSpeed: 0.1 # rad/16ms
+        range: 250
+      - xp: 2
+        damage: 12
+        attackInterval: 900
+        aimSpeed: 0.1 # rad/16ms
+        range: 300
+      - xp: 3
+        damage: 12
+        attackInterval: 700
+        aimSpeed: 0.1 # rad/16ms
+        range: 330
+    armor:
+      - xp: 1
+        dmgMultiplier: -0.2
+      - xp: 2
+        dmgMultiplier: -0.3
+      - xp: 4
+        dmgMultiplier: -0.4
+    battery:
+      - xp: 'n'
+        battery: 100
+  credits:
+    - title: Programming
+      names:
+        - Dickson Chui
+        - William Chong
+        - Sunday Ku
+    - title: Graphics
+      names:
+        - Kenney.nl (Once again!)
+    - title: Sound
+      names:
+        - 'Music: Eric Skiff - Song Name - Resistor Anthems - Available at http://EricSkiff.com/music (CC-BY 4.0)'
+        - https://freesound.org/people/LittleRobotSoundFactory/packs/16681/ (CC-BY 3.0)
+        - https://freesound.org/people/Raclure/sounds/458867/ (CC0, but did not make it into the final game...)
+  
+  
+  
+  

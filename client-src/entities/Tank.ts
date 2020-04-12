@@ -3,13 +3,14 @@ import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
 import { HpBar } from '../ui/HpBar';
-import { UpgradeObject, UpgradeType } from './Upgrade';
-import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
+import { UpgradeObject, AttributeType, AttributeObject } from './Upgrade';
+import { PIXEL_TO_METER } from '../constants';
 import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
 import { IFixtureUserData } from '../PhysicsSystem';
 
+import { Immutable } from '../utils/ImmutableType';
 
 type Image = Phaser.GameObjects.Image;
 type Graphics = Phaser.GameObjects.Graphics;
@@ -23,14 +24,22 @@ export class Tank extends Phaser.GameObjects.Container {
     team: Team;
     uniqueID: number;
 
-    hp: number;
-
-    range: number;
-    damage: number;
-    repairCnt: number = 0;
-    attackSpeed: number;
-    maxHP: number;
-    movementSpeed: number;
+    repairCnt = 1;
+    hp = 100;
+    private _attr: AttributeObject = {
+        range: 250,
+        damage: 10,
+        attackInterval: 1000,
+        maxHP: 100,
+        movementSpeed: 1,
+        battery: 100,
+        maxBattery: 100,
+        aimSpeed: 1,
+        turnSpeed: 1,
+        dmgMultiplier: 1,
+        chassisLevel: 1,
+    }
+    get attr(): Immutable<AttributeObject> { return this._attr; }
 
     upgrades: UpgradeObject;
 
@@ -62,13 +71,13 @@ export class Tank extends Phaser.GameObjects.Container {
             .setName('tank')
             ;
         this.team = team
-        this.upgrades = {
-            range: 0,
-            damage: 0,
-            attackSpeed: 0,
-            maxHP: 0,
-            movementSpeed: 0,
-        };
+        this.upgrades = new UpgradeObject();
+        this.upgrades.setParts({
+            scrap: 1,
+            battery: 100,
+            cannon: 1,
+            armor: 0,
+        });
         const color = this.team === Team.BLUE ? 'dark' : 'sand';
         this.add([
             this.bodySprite = this.scene.make.image({
@@ -113,13 +122,14 @@ export class Tank extends Phaser.GameObjects.Container {
             .setX(x)
             .setY(y)
             ;
-        this.range = 250;
+        this._attr.range = 250;
         this.hp = 5;
-        this.maxHP = 5;
-        this.damage = 1;
+        this._attr.maxHP = 5;
+        this._attr.damage = 1;
         this.lastFired = 0;
-        this.attackSpeed = 1000;
-        this.movementSpeed = 1;
+        this._attr.attackInterval = 1000;
+        this._attr.movementSpeed = 1;
+        this.refreshAttributes();
         this.updateHpBar();
         this.refreshUpgradeGraphics();
         return this;
@@ -131,7 +141,7 @@ export class Tank extends Phaser.GameObjects.Container {
         return this;
     }
     updateHpBar() {
-        this.hpBar.updateHPBar(this.hp, this.maxHP, (this.maxHP - 5) * 2);
+        this.hpBar.updateHPBar(this.hp, this._attr.maxHP, (this._attr.maxHP - 5) * 0.5);
     }
 
     initPhysics(physicsFinishedCallback: () => void): this {
@@ -182,11 +192,11 @@ export class Tank extends Phaser.GameObjects.Container {
     }
 
     getDamage() {
-        return this.damage;
+        return this._attr.damage;
     }
 
     getRange() {
-        return this.range;
+        return this._attr.range;
     }
 
     takeDamage(amount: number): this {
@@ -206,45 +216,44 @@ export class Tank extends Phaser.GameObjects.Container {
     }
 
     setUpgrade(upgrades: UpgradeObject) {
-        Object.keys(upgrades).forEach((key: UpgradeType) => {
-            this.upgrades[key] += upgrades[key];
-            let value = 0;
-            let level = upgrades[key];
-            switch (key) {
-                case 'range': value = 15; break;
-                case 'damage': value = 0.15; break;
-                case 'attackSpeed': value = -70; break;
-                case 'maxHP': value = 5; break;
-                case 'movementSpeed': value = 0.1; break;
-                default: break;
+        this.upgrades.addParts(upgrades.partsList);
+
+        this.refreshAttributes();
+    }
+
+    refreshAttributes(doRefreshGraphics = true) {
+        Object.keys(this._attr).forEach((attributeName: AttributeType) => {
+            const oldValue = this._attr[attributeName];
+            this._attr[attributeName] = this.upgrades.getAttribute(attributeName as AttributeType);
+
+            if (attributeName === 'maxHP') {
+                // always heal at least 1
+                const healAmount = Math.max((this._attr[attributeName] - oldValue), 1);
+                this.hp = Math.min(this.hp + healAmount, this._attr.maxHP);
             }
-            this[key] += level * value;
-        })
-        // always heal at least 1
-        const healAmount = Math.max(upgrades.maxHP * 5, 1);
-        this.hp = Math.min(this.hp + healAmount, this.maxHP);
+        });
 
-        this.attackSpeed = Math.max(20, this.attackSpeed); // cap at a point
+        this._attr.attackInterval = Math.max(20, this._attr.attackInterval); // cap at a point
 
-        this.refreshUpgradeGraphics();
+        if (doRefreshGraphics) { this.refreshUpgradeGraphics(); }
     }
 
     refreshUpgradeGraphics(): this {
-        const str = `HP: ${this.hp.toFixed(2)}/${this.maxHP.toFixed(2)}\n` +
-            `DMG: ${this.damage.toFixed(2)} x ${(1000 / this.attackSpeed).toFixed(2)}\n` +
-            `Movement: ${this.movementSpeed.toFixed(2)}x\n` +
+        const str = `HP: ${this.hp.toFixed(2)}/${this._attr.maxHP.toFixed(2)}\n` +
+            `DMG: ${this._attr.damage.toFixed(2)} x ${(1000 / this._attr.attackInterval).toFixed(2)}\n` +
+            `Movement: ${this._attr.movementSpeed.toFixed(2)}x\n` +
             ``;
         this.detailsText.setText(str);
 
         this.rangeMarker.clear();
         this.rangeMarker.lineStyle(2, 0xFFFFFF, 0.8);
-        this.rangeMarker.strokeCircle(0, 0, this.range);
+        this.rangeMarker.strokeCircle(0, 0, this._attr.range);
         this.rangeMarker.lineStyle(8, 0xFFFFFF, 0.2);
-        this.rangeMarker.strokeCircle(0, 0, this.range - 6);
+        this.rangeMarker.strokeCircle(0, 0, this._attr.range - 6);
 
-        this.barrelSprite.setScale(1 + 0.2 * this.upgrades.damage, 1 + 0.2 * this.upgrades.range);
+        this.barrelSprite.setScale(1 + 0.2 * this.upgrades.partsList.cannon, 1 + 0.2 * this.upgrades.partsList.cannon);
 
-        this.bodySprite.setScale(1, this.movementSpeed);
+        this.bodySprite.setScale(Math.pow(this._attr.chassisLevel, 1 / 3));
 
         return this;
     }
@@ -255,10 +264,10 @@ export class Tank extends Phaser.GameObjects.Container {
     }
     canFire() {
         const time = Date.now();
-        return (this.lastFired + this.attackSpeed < time);
+        return (this.lastFired + this._attr.attackInterval < time);
     }
     repair() {
-        if (this.maxHP > this.hp) {
+        if (this._attr.maxHP > this.hp) {
             this.repairCnt += 1;
             if (this.repairCnt >= 100) {
                 this.hp += 1;

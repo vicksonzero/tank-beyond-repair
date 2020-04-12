@@ -304,10 +304,10 @@ export class Player extends Phaser.GameObjects.Container {
 
             if (this.holdingItem) {
                 if (this.holdingItem.upgrades) {
-                    const myOldUpgrade = { ...this.holdingItem.upgrades };
+                    const myOldUpgrade = this.holdingItem.upgrades.clone();
 
                     sfx_pickup.play();
-                    this.holdingItem.upgrades = { ...item.upgrades };
+                    this.holdingItem.upgrades = item.upgrades.clone();
                     const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
                     this.holdingItemText.setText(upgradeText);
 
@@ -327,7 +327,8 @@ export class Player extends Phaser.GameObjects.Container {
                 }));
 
                 sfx_pickup.play();
-                this.holdingItem.upgrades = { ...item.upgrades };
+                this.holdingItem.upgrades = new UpgradeObject();
+                this.holdingItem.upgrades.setParts(item.upgrades.partsList);
                 const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
 
                 this.holdingItem.add(this.holdingItemText = this.scene.make.text({ x: 0, y: -20, text: upgradeText, style: { align: 'center' } }));

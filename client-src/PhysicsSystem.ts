@@ -101,7 +101,7 @@ export class PhysicsSystem {
     createScheduledBodies() {
         const len = this.scheduledCreateBodyList.length;
         if (len > 0) {
-            log(`createScheduledBodies: ${len} callbacks`);
+            // log(`createScheduledBodies: ${len} callbacks`);
         }
         this.scheduledCreateBodyList.forEach((callback) => {
             callback(this.world);
@@ -116,7 +116,7 @@ export class PhysicsSystem {
     destroyScheduledBodies(debugString: string) {
         const len = this.scheduledCreateBodyList.length;
         if (len > 0) {
-            log(`destroyScheduledBodies(${debugString}): ${len} callbacks`);
+            // log(`destroyScheduledBodies(${debugString}): ${len} callbacks`);
         }
         this.scheduledDestroyBodyList.forEach((body) => {
             this.world.DestroyBody(body);

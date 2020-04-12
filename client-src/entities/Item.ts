@@ -1,13 +1,13 @@
 import * as Debug from 'debug';
 import { collisionCategory } from './collisionCategory';
-import { UpgradeObject, UpgradeType } from './Upgrade';
+import { UpgradeObject } from './Upgrade';
 import { makeUpgradeString } from '../utils/utils';
 import {
     ITEM_LIFESPAN,
     ITEM_LIFESPAN_WARNING,
     PIXEL_TO_METER,
 } from '../constants';
-import { b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType, b2Body, b2PolygonShape, b2World } from '@flyover/box2d';
+import { b2FixtureDef, b2BodyDef, b2BodyType, b2Body, b2PolygonShape, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
 import { IFixtureUserData } from '../PhysicsSystem';
@@ -42,13 +42,7 @@ export class Item extends GameObjects.Container {
         this
             .setName('item')
             ;
-        this.upgrades = {
-            range: 0,
-            damage: 0,
-            attackSpeed: 0,
-            maxHP: 0,
-            movementSpeed: 0,
-        }
+        this.upgrades = new UpgradeObject();
 
         this.add([
             this.itemSprite = this.scene.make.image({
@@ -79,20 +73,7 @@ export class Item extends GameObjects.Container {
             .setX(x)
             .setY(y)
             ;
-        const {
-            range,
-            damage,
-            attackSpeed,
-            maxHP,
-            movementSpeed,
-        } = upgrades;
-        this.upgrades = {
-            range,
-            damage,
-            attackSpeed,
-            maxHP,
-            movementSpeed,
-        }
+        this.upgrades.setParts(upgrades.partsList);
         return this;
     }
 
@@ -168,7 +149,7 @@ export class Item extends GameObjects.Container {
     }
 
     setUpgrades(upgrades: UpgradeObject): this {
-        this.upgrades = { ...upgrades };
+        this.upgrades.setParts(upgrades.partsList);
 
         const upgradeText = makeUpgradeString(this.upgrades);
         this.itemText.setText(upgradeText);
