@@ -384,7 +384,14 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         const randomUpgrade = UpgradeObject.getRandomPartFromPool();
         upgrades.addParts(randomUpgrade.partsList);
-        this.spawnItem(position.x, position.y, upgrades, true);
+
+        Object.entries(upgrades.partsList).forEach(([partName, level]) => {
+            const u = new UpgradeObject();
+            u.setParts({
+                [partName]: level,
+            })
+            this.spawnItem(position.x, position.y, u, true);
+        })
     }
 
     removeBullet(bullet: Bullet) {

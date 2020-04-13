@@ -18,12 +18,12 @@ config:
         maxBattery: 100
       - xp: 2
         chassisLevel: 2
-        maxHP: 120
+        maxHP: 150
         movementSpeed: 1
         maxBattery: 150
       - xp: 6
         chassisLevel: 3
-        maxHP: 200      
+        maxHP: 220      
         movementSpeed: 0.8
         maxBattery: 180
       - xp: 10
@@ -34,16 +34,16 @@ config:
     cannon:
       - xp: 1
         damage: 10
-        attackInterval: 1000
+        attackInterval: 1500
         aimSpeed: 0.1 # rad/16ms
         range: 250
-      - xp: 2
-        damage: 12
-        attackInterval: 900
+      - xp: 4
+        damage: 10
+        attackInterval: 1000
         aimSpeed: 0.1 # rad/16ms
         range: 300
-      - xp: 3
-        damage: 12
+      - xp: 9
+        damage: 13
         attackInterval: 700
         aimSpeed: 0.1 # rad/16ms
         range: 330

@@ -53,7 +53,7 @@ export class UpgradeObject {
 		}
 
 		// console.log(num, randomUpgradeKey);
-		
+
 
 		if (randomUpgradeKey != null) {
 			upgrades.addParts({
@@ -114,5 +114,9 @@ export class UpgradeObject {
 			}
 			return result;
 		}, 0);
+	}
+
+	toString() {
+		return `${this._partsList.scrap}/${this._partsList.cannon}/${this._partsList.armor}/${this._partsList.battery}`;
 	}
 }

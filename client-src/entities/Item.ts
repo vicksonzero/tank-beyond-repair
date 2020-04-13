@@ -58,7 +58,7 @@ export class Item extends GameObjects.Container {
 
         ]);
         this.itemText.setOrigin(0.5, 1);
-        this.itemText.setVisible(false);
+        // this.itemText.setVisible(false);
 
         this.on('destroy', () => {
             if (this.warningEvent) this.warningEvent.destroy();

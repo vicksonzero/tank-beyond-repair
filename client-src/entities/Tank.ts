@@ -227,8 +227,8 @@ export class Tank extends Phaser.GameObjects.Container {
             this._attr[attributeName] = this.upgrades.getAttribute(attributeName as AttributeType);
 
             if (attributeName === 'maxHP') {
-                // always heal at least 1
-                const healAmount = Math.max((this._attr[attributeName] - oldValue), 1);
+                // always heal at least 10
+                const healAmount = Math.max((this._attr[attributeName] - oldValue), 8);
                 this.hp = Math.min(this.hp + healAmount, this._attr.maxHP);
             }
         });
@@ -239,7 +239,8 @@ export class Tank extends Phaser.GameObjects.Container {
     }
 
     refreshUpgradeGraphics(): this {
-        const str = `HP: ${this.hp.toFixed(2)}/${this._attr.maxHP.toFixed(2)}\n` +
+        const str = `${this.upgrades.toString()}\n` +
+            `HP: ${this.hp.toFixed(2)}/${this._attr.maxHP.toFixed(2)}\n` +
             `DMG: ${this._attr.damage.toFixed(2)} x ${(1000 / this._attr.attackInterval).toFixed(2)}\n` +
             `Movement: ${this._attr.movementSpeed.toFixed(2)}x\n` +
             ``;
@@ -270,7 +271,7 @@ export class Tank extends Phaser.GameObjects.Container {
         if (this._attr.maxHP > this.hp) {
             this.repairCnt += 1;
             if (this.repairCnt >= 100) {
-                this.hp += 1;
+                this.hp = Math.min(this.hp + 10, this.attr.maxHP);
                 this.repairCnt = 0;
             }
         }

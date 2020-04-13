@@ -94,9 +94,9 @@ export class Player extends Phaser.GameObjects.Container {
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
-        this.hp = 50;
+        this.hp = 500;
 
-        this.maxHP = 50;
+        this.maxHP = 500;
 
         this.updateHpBar();
         return this;
@@ -355,7 +355,7 @@ export class Player extends Phaser.GameObjects.Container {
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
         item.itemSprite.setTint(0xAAAAAA);
-        item.itemText.setVisible(true);
+        // item.itemText.setVisible(true);
     }
 
     giveUpTargetingItem(item: Item) {
@@ -363,7 +363,7 @@ export class Player extends Phaser.GameObjects.Container {
         this.pointerTarget = null;
 
         item.itemSprite.setTint(0xFFFFFF);
-        item.itemText.setVisible(false);
+        // item.itemText.setVisible(false);
     }
 
     startTargetingTank(tank: Tank) {
