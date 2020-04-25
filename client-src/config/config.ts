@@ -1,12 +1,11 @@
 import { Immutable } from "../utils/ImmutableType";
 import * as yaml from 'js-yaml';
-import { PartType, AttributeType } from "../entities/Upgrade";
+import { ItemType, AttributeType } from "../entities/Upgrade";
 
 const txt: any = require('./conf.yml');
 
 
 export type IConfig = Immutable<{
-
     controls: IUIControls;
     items: IItemEffectMap;
     itemSpawnChance: IItemSpawnChance;
@@ -14,11 +13,11 @@ export type IConfig = Immutable<{
 }>
 
 export type IItemSpawnChance = {
-    [x in PartType]: number;
+    [x in ItemType]: number;
 }
 
 export type IItemEffectMap = {
-    [x in PartType]: Array<IItemEffect>;
+    [x in ItemType]: Array<IItemEffect>;
 };
 
 export type IItemEffect = {
@@ -30,7 +29,7 @@ export type IItemEffect = {
 export interface IUIControls {
     swipeThumbSize: number,
     minSwipeDist: number,
-    directionSnaps: integer,
+    directionSnaps: number,
 }
 
 export interface ICreditEntry {

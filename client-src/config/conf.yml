@@ -8,55 +8,97 @@ config:
     cannon: 2
     armor: 2
     battery: 2
-  items:
-    # range | damage | attackInterval | aimSpeed | maxHP | movementSpeed | turnSpeed | maxBattery | dmgMultiplier | battery;
-    scrap:
-      - xp: 1
-        chassisLevel: 1
-        maxHP: 100
-        movementSpeed: 1
-        maxBattery: 100
-      - xp: 2
-        chassisLevel: 2
-        maxHP: 150
-        movementSpeed: 1
-        maxBattery: 150
-      - xp: 6
-        chassisLevel: 3
-        maxHP: 220      
-        movementSpeed: 0.8
-        maxBattery: 180
-      - xp: 10
-        chassisLevel: 4
-        maxHP: 400
-        movementSpeed: 0.8
-        maxBattery: 240
+  partRecipe:
+    chassis:
+      - scrap: 1
+      - scrap: 2
+      - scrap: 6
+      - scrap: 10
     cannon:
-      - xp: 1
-        damage: 10
-        attackInterval: 1500
-        aimSpeed: 0.1 # rad/16ms
-        range: 250
-      - xp: 4
-        damage: 10
-        attackInterval: 1000
-        aimSpeed: 0.1 # rad/16ms
-        range: 300
-      - xp: 9
-        damage: 13
-        attackInterval: 700
-        aimSpeed: 0.1 # rad/16ms
-        range: 330
+      - barrel: 1
+      - barrel: 4
+      - barrel: 9
     armor:
-      - xp: 1
-        dmgMultiplier: -0.2
-      - xp: 2
-        dmgMultiplier: -0.3
-      - xp: 4
-        dmgMultiplier: -0.4
-    battery:
-      - xp: 'n'
-        battery: 100
+      - armor: 1
+      - armor: 2
+      - armor: 4
+  parts:
+    chassis:
+      - level: 1
+        stat:
+          maxHP: 100
+          movementSpeed: 1
+          maxBattery: 100
+        graphics:
+          sprite: chassis_1
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+      - level: 2
+        stat:
+          maxHP: 150
+          movementSpeed: 1
+          maxBattery: 150
+        graphics:
+          sprite: chassis_2
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+      - level: 3
+        stat:
+          maxHP: 220      
+          movementSpeed: 0.8
+          maxBattery: 180
+        graphics:
+          sprite: chassis_3
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+      - level: 4
+        stat:
+          maxHP: 400
+          movementSpeed: 0.8
+          maxBattery: 240
+        graphics:
+          sprite: chassis_4
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+    cannon:
+      - level: 1
+        stat:
+          damage: 10
+          attackInterval: 1500
+          aimSpeed: 0.1 # rad/16ms
+          range: 250
+      - level: 2
+        stat:
+          damage: 10
+          attackInterval: 1000
+          aimSpeed: 0.1 # rad/16ms
+          range: 300
+      - level: 3
+        stat:
+          damage: 13
+          attackInterval: 700
+          aimSpeed: 0.1 # rad/16ms
+          range: 330
+    armor:
+      - level: 1
+        stat:
+          dmgMultiplier: -0.2
+      - level: 2
+        stat:
+          dmgMultiplier: -0.3
+      - level: 3
+        stat:
+          dmgMultiplier: -0.4
+
+    # range | damage | attackInterval | aimSpeed | maxHP | movementSpeed | turnSpeed | maxBattery | dmgMultiplier | battery;
   credits:
     - title: Programming
       names:
@@ -71,7 +113,8 @@ config:
         - 'Music: Eric Skiff - Song Name - Resistor Anthems - Available at http://EricSkiff.com/music (CC-BY 4.0)'
         - https://freesound.org/people/LittleRobotSoundFactory/packs/16681/ (CC-BY 3.0)
         - https://freesound.org/people/Raclure/sounds/458867/ (CC0, but did not make it into the final game...)
-  
-  
-  
-  
+
+
+
+
+

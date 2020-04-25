@@ -3,22 +3,24 @@ import { Immutable } from '../utils/ImmutableType';
 
 console.log(config);
 
-export type PartType = 'scrap' | 'cannon' | 'armor' | 'battery';
+export type PartType = 'chassis' | 'cannon' | 'armor' | 'gun' | 'missile' | 'rocket';
 
-export type PartsList = {
-	[x in PartType]: number;
+export type ItemType = 'scrap' | 'barrel' | 'armor' | 'battery';
+
+export type ItemsList = {
+	[x in ItemType]: number;
 };
 
-export type AttributeType = 'chassisLevel' | 'range' | 'damage' | 'attackInterval' | 'aimSpeed' | 'maxHP' | 'movementSpeed' | 'turnSpeed' | 'maxBattery' | 'dmgMultiplier' | 'battery';
+export type AttributeType = 'range' | 'damage' | 'attackInterval' | 'aimSpeed' | 'maxHP' | 'movementSpeed' | 'turnSpeed' | 'maxBattery' | 'dmgMultiplier';
 
 export type AttributeObject = {
 	[x in AttributeType]: number;
 }
 
 export class UpgradeObject {
-	private _partsList: PartsList = {
+	private _partsList: ItemsList = {
 		'scrap': 0,
-		'cannon': 0,
+		'barrel': 0,
 		'armor': 0,
 		'battery': 0,
 	};
@@ -33,18 +35,18 @@ export class UpgradeObject {
 	static getRandomPartFromPool() {
 		const upgrades = new UpgradeObject();
 
-		const cumulativeSpawnChance: { cumulativeWeight: number, key: PartType }[] = [];
+		const cumulativeSpawnChance: { cumulativeWeight: number, key: ItemType }[] = [];
 		let totalWeight = 0;
 		Object.entries(config.itemSpawnChance).forEach(([key, weight]) => {
 			totalWeight += weight;
 			cumulativeSpawnChance.push({
 				cumulativeWeight: 0 + totalWeight,
-				key: key as PartType,
+				key: key as ItemType,
 			})
 		});
 		// console.log(cumulativeSpawnChance);
 		const num = Math.random() * totalWeight;
-		let randomUpgradeKey: PartType | null = null;
+		let randomUpgradeKey: ItemType | null = null;
 
 		for (let i = 0; i < cumulativeSpawnChance.length; i++) {
 			const { cumulativeWeight, key } = cumulativeSpawnChance[i];
@@ -64,28 +66,28 @@ export class UpgradeObject {
 		return upgrades;
 	}
 
-	get partsList(): Immutable<PartsList> {
+	get partsList(): Immutable<ItemsList> {
 		return this._partsList;
 	}
 
-	setParts(params: Partial<PartsList>) {
+	setParts(params: Partial<ItemsList>) {
 		this._partsList = {
 			'scrap': 0,
-			'cannon': 0,
+			'barrel': 0,
 			'armor': 0,
 			'battery': 0,
-		} as PartsList;
+		} as ItemsList;
 		Object.entries(params).forEach(([k, v]) => {
 			if (v != undefined) {
-				this._partsList[k as PartType] = v;
+				this._partsList[k as ItemType] = v;
 			}
 		});
 	}
 
-	addParts(params: Partial<PartsList>) {
+	addParts(params: Partial<ItemsList>) {
 		Object.entries(params).forEach(([k, v]) => {
 			if (v != undefined) {
-				this._partsList[k as PartType] += v;
+				this._partsList[k as ItemType] += v;
 			}
 		});
 	}
@@ -99,7 +101,7 @@ export class UpgradeObject {
 	getAttribute(attributeName: AttributeType) {
 		return Object.entries(this._partsList).reduce((result, [k, v]) => {
 			if (v != undefined) {
-				const itemEffects = config.items[k as PartType];
+				const itemEffects = config.items[k as ItemType];
 				let eligibleEffect: Partial<AttributeObject> = {};
 				let i = 0;
 				for (; i < itemEffects.length; i++) {
@@ -117,6 +119,6 @@ export class UpgradeObject {
 	}
 
 	toString() {
-		return `${this._partsList.scrap}/${this._partsList.cannon}/${this._partsList.armor}/${this._partsList.battery}`;
+		return `${this._partsList.scrap}/${this._partsList.barrel}/${this._partsList.armor}/${this._partsList.battery}`;
 	}
 }

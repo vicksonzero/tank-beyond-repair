@@ -26,18 +26,18 @@ export class Tank extends Phaser.GameObjects.Container {
 
     repairCnt = 1;
     hp = 100;
+    battery = 100;
+
     private _attr: AttributeObject = {
         range: 250,
         damage: 10,
         attackInterval: 1000,
         maxHP: 100,
         movementSpeed: 1,
-        battery: 100,
         maxBattery: 100,
         aimSpeed: 1,
         turnSpeed: 1,
         dmgMultiplier: 1,
-        chassisLevel: 1,
     }
     get attr(): Immutable<AttributeObject> { return this._attr; }
 
