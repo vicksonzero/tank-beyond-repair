@@ -3,7 +3,7 @@ import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
 import { HpBar } from '../ui/HpBar';
-import { UpgradeObject, AttributeType, AttributeObject } from './Upgrade';
+import { UpgradeObject, AttributeType, IAttributeMap } from './Upgrade';
 import { PIXEL_TO_METER } from '../constants';
 import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
@@ -28,7 +28,7 @@ export class Tank extends Phaser.GameObjects.Container {
     hp = 100;
     battery = 100;
 
-    private _attr: AttributeObject = {
+    private _attr: IAttributeMap = {
         range: 250,
         damage: 10,
         attackInterval: 1000,
@@ -39,7 +39,7 @@ export class Tank extends Phaser.GameObjects.Container {
         turnSpeed: 1,
         dmgMultiplier: 1,
     }
-    get attr(): Immutable<AttributeObject> { return this._attr; }
+    get attr(): Immutable<IAttributeMap> { return this._attr; }
 
     upgrades: UpgradeObject;
 
@@ -75,7 +75,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.upgrades.setParts({
             scrap: 1,
             battery: 100,
-            cannon: 1,
+            barrel: 1,
             armor: 0,
         });
         const color = this.team === Team.BLUE ? 'dark' : 'sand';
@@ -252,9 +252,9 @@ export class Tank extends Phaser.GameObjects.Container {
         this.rangeMarker.lineStyle(8, 0xFFFFFF, 0.2);
         this.rangeMarker.strokeCircle(0, 0, this._attr.range - 6);
 
-        this.barrelSprite.setScale(1 + 0.2 * this.upgrades.partsList.cannon, 1 + 0.2 * this.upgrades.partsList.cannon);
+        this.barrelSprite.setScale(1 + 0.2 * this.upgrades.levels.cannon, 1 + 0.2 * this.upgrades.levels.cannon);
 
-        this.bodySprite.setScale(Math.pow(this._attr.chassisLevel, 1 / 3));
+        this.bodySprite.setScale(Math.pow(this.upgrades.levels.chassis, 1 / 3));
 
         return this;
     }

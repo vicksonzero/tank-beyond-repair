@@ -5,6 +5,10 @@ console.log(config);
 
 export type PartType = 'chassis' | 'cannon' | 'armor' | 'gun' | 'missile' | 'rocket';
 
+export type IPartList = {
+	[x in PartType]: number;
+}
+
 export type ItemType = 'scrap' | 'barrel' | 'armor' | 'battery';
 
 export type ItemsList = {
@@ -13,7 +17,7 @@ export type ItemsList = {
 
 export type AttributeType = 'range' | 'damage' | 'attackInterval' | 'aimSpeed' | 'maxHP' | 'movementSpeed' | 'turnSpeed' | 'maxBattery' | 'dmgMultiplier';
 
-export type AttributeObject = {
+export type IAttributeMap = {
 	[x in AttributeType]: number;
 }
 
@@ -24,6 +28,7 @@ export class UpgradeObject {
 		'armor': 0,
 		'battery': 0,
 	};
+	private _levels: IPartList | null = null;
 	constructor() {
 
 	}
@@ -70,18 +75,26 @@ export class UpgradeObject {
 		return this._partsList;
 	}
 
+	get levels(): Immutable<IPartList> {
+		if (!this._levels) {
+			this._levels = this._getLevel();
+		}
+		return this._levels;
+	}
+
 	setParts(params: Partial<ItemsList>) {
 		this._partsList = {
-			'scrap': 0,
-			'barrel': 0,
-			'armor': 0,
-			'battery': 0,
+			scrap: 0,
+			barrel: 0,
+			armor: 0,
+			battery: 0,
 		} as ItemsList;
 		Object.entries(params).forEach(([k, v]) => {
 			if (v != undefined) {
 				this._partsList[k as ItemType] = v;
 			}
 		});
+		this._levels = null; // set dirty
 	}
 
 	addParts(params: Partial<ItemsList>) {
@@ -90,35 +103,61 @@ export class UpgradeObject {
 				this._partsList[k as ItemType] += v;
 			}
 		});
+		this._levels = null; // set dirty
 	}
 
 	clone() {
 		const result = new UpgradeObject();
-		result.setParts(this._partsList);
+		result.setParts(this.partsList);
+		return result;
+	}
+
+	private _getLevel() {
+		const result: IPartList = {
+			chassis: 0,
+			cannon: 0,
+			armor: 0,
+			gun: 0,
+			missile: 0,
+			rocket: 0,
+		};
+		const fulfillRequirements = (req: ItemsList): boolean => {
+			return Object.entries(req)
+				.every(([requiredItem, count]: [ItemType, number]) => this.partsList[requiredItem] >= count)
+				;
+		};
+
+		Object.entries(config.partRequirements).forEach(([partType, partReq]: [PartType, Array<ItemsList>]) => {
+			if (!partReq) return;
+			let i = 0;
+			for (; i < partReq.length; i++) {
+				const req = partReq[i];
+
+				if (!fulfillRequirements(req)) {
+					// if v is smaller than the lowest requirement, just give them an empty object
+					break;
+				}
+			}
+			result[partType] = i;
+		});
+
 		return result;
 	}
 
 	getAttribute(attributeName: AttributeType) {
-		return Object.entries(this._partsList).reduce((result, [k, v]) => {
-			if (v != undefined) {
-				const itemEffects = config.items[k as ItemType];
-				let eligibleEffect: Partial<AttributeObject> = {};
-				let i = 0;
-				for (; i < itemEffects.length; i++) {
-					const effect = itemEffects[i];
-					if (v < effect.xp) {
-						// if v is smaller than the lowest requirement, just give them an empty object
-						break;
-					}
-					eligibleEffect = itemEffects[i];
-				}
-				result += eligibleEffect[attributeName] || 0;
-			}
-			return result;
+		return Object.entries(this.levels).reduce((result, [partType, partLevel]: [PartType, number]) => {
+
+			const a = config.parts[partType] || [];
+			const b = a[partLevel] || {};
+
+
+			const stat = b.stat?.[attributeName] || 0;
+			return result + stat;
 		}, 0);
 	}
 
 	toString() {
-		return `${this._partsList.scrap}/${this._partsList.barrel}/${this._partsList.armor}/${this._partsList.battery}`;
+		return `${this.partsList.scrap}/${this.partsList.barrel}/${this.partsList.armor}/${this.partsList.battery}\n` +
+			`${this.levels.chassis}|${this.levels.cannon}|${this.levels.armor}|${this.levels.gun}|${this.levels.missile}|${this.levels.rocket}`;
 	}
 }

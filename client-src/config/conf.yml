@@ -5,10 +5,10 @@ config:
     directionSnaps: 4
   itemSpawnChance:
     scrap: 4
-    cannon: 2
+    barrel: 2
     armor: 2
     battery: 2
-  partRecipe:
+  partRequirements:
     chassis:
       - scrap: 1
       - scrap: 2
@@ -24,8 +24,7 @@ config:
       - armor: 4
   parts:
     chassis:
-      - level: 1
-        stat:
+      - stat:
           maxHP: 100
           movementSpeed: 1
           maxBattery: 100
@@ -35,8 +34,7 @@ config:
         mountPoints:
           - type: cannon
             offset: [-4, 0]
-      - level: 2
-        stat:
+      - stat:
           maxHP: 150
           movementSpeed: 1
           maxBattery: 150
@@ -46,8 +44,7 @@ config:
         mountPoints:
           - type: cannon
             offset: [-4, 0]
-      - level: 3
-        stat:
+      - stat:
           maxHP: 220      
           movementSpeed: 0.8
           maxBattery: 180
@@ -57,8 +54,7 @@ config:
         mountPoints:
           - type: cannon
             offset: [-4, 0]
-      - level: 4
-        stat:
+      - stat:
           maxHP: 400
           movementSpeed: 0.8
           maxBattery: 240
@@ -69,35 +65,31 @@ config:
           - type: cannon
             offset: [-4, 0]
     cannon:
-      - level: 1
-        stat:
+      - stat:
           damage: 10
           attackInterval: 1500
           aimSpeed: 0.1 # rad/16ms
           range: 250
-      - level: 2
-        stat:
+      - stat:
           damage: 10
           attackInterval: 1000
           aimSpeed: 0.1 # rad/16ms
           range: 300
-      - level: 3
-        stat:
+      - stat:
           damage: 13
           attackInterval: 700
           aimSpeed: 0.1 # rad/16ms
           range: 330
     armor:
-      - level: 1
-        stat:
+      - stat:
           dmgMultiplier: -0.2
-      - level: 2
-        stat:
+      - stat:
           dmgMultiplier: -0.3
-      - level: 3
-        stat:
+      - stat:
           dmgMultiplier: -0.4
-
+    gun: []
+    missile: []
+    rocket: []
     # range | damage | attackInterval | aimSpeed | maxHP | movementSpeed | turnSpeed | maxBattery | dmgMultiplier | battery;
   credits:
     - title: Programming
