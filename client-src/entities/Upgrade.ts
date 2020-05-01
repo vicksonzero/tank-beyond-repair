@@ -1,25 +1,7 @@
-import { config } from '../config/config';
+import { AttributeType, config, IPartList, ItemsList, ItemType, PartType } from '../config/config';
 import { Immutable } from '../utils/ImmutableType';
+import { capitalize } from '../utils/utils';
 
-console.log(config);
-
-export type PartType = 'chassis' | 'cannon' | 'armor' | 'gun' | 'missile' | 'rocket';
-
-export type IPartList = {
-	[x in PartType]: number;
-}
-
-export type ItemType = 'scrap' | 'barrel' | 'armor' | 'battery';
-
-export type ItemsList = {
-	[x in ItemType]: number;
-};
-
-export type AttributeType = 'range' | 'damage' | 'attackInterval' | 'aimSpeed' | 'maxHP' | 'movementSpeed' | 'turnSpeed' | 'maxBattery' | 'dmgMultiplier';
-
-export type IAttributeMap = {
-	[x in AttributeType]: number;
-}
 
 export class UpgradeObject {
 	private _partsList: ItemsList = {
@@ -64,11 +46,19 @@ export class UpgradeObject {
 
 		if (randomUpgradeKey != null) {
 			upgrades.addParts({
-				[randomUpgradeKey]: 1,
+				[randomUpgradeKey]: Math.ceil(Math.random() * 10),
 			});
 		}
 
 		return upgrades;
+	}
+
+	static makeUpgradeString(upgrades: UpgradeObject) {
+		return (Object.entries(upgrades.partsList)
+			.filter(([key, value]) => value !== 0)
+			.map(([key, value]) => `${capitalize(key)}${(value >= 0 ? ' x' + value : value)}`)
+			.join('\n')
+		);
 	}
 
 	get partsList(): Immutable<ItemsList> {

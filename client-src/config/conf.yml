@@ -70,27 +70,44 @@ config:
           attackInterval: 1500
           aimSpeed: 0.1 # rad/16ms
           range: 250
+        graphics:
+          sprite: cannon_1
+          scale: [1, 1]
       - stat:
           damage: 10
           attackInterval: 1000
           aimSpeed: 0.1 # rad/16ms
           range: 300
+        graphics:
+          sprite: cannon_2
+          scale: [1, 1]
       - stat:
           damage: 13
           attackInterval: 700
           aimSpeed: 0.1 # rad/16ms
           range: 330
+        graphics:
+          sprite: cannon_3
+          scale: [1, 1]
     armor:
       - stat:
           dmgMultiplier: -0.2
+        graphics:
+          sprite: armor_1
+          scale: [1, 1]
       - stat:
           dmgMultiplier: -0.3
+        graphics:
+          sprite: armor_2
+          scale: [1, 1]
       - stat:
           dmgMultiplier: -0.4
+        graphics:
+          sprite: armor_3
+          scale: [1, 1]
     gun: []
     missile: []
     rocket: []
-    # range | damage | attackInterval | aimSpeed | maxHP | movementSpeed | turnSpeed | maxBattery | dmgMultiplier | battery;
   credits:
     - title: Programming
       names:
@@ -105,6 +122,9 @@ config:
         - 'Music: Eric Skiff - Song Name - Resistor Anthems - Available at http://EricSkiff.com/music (CC-BY 4.0)'
         - https://freesound.org/people/LittleRobotSoundFactory/packs/16681/ (CC-BY 3.0)
         - https://freesound.org/people/Raclure/sounds/458867/ (CC0, but did not make it into the final game...)
+    - title: Testers & Community
+      names:
+        - names here
 
 
 

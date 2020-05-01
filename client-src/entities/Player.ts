@@ -4,7 +4,7 @@ import { PIXEL_TO_METER } from '../constants';
 import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
 import { getUniqueID } from '../utils/UniqueID';
-import { capitalize, makeUpgradeString } from '../utils/utils';
+import { capitalize } from '../utils/utils';
 import { collisionCategory } from './collisionCategory';
 import { Item } from './Item';
 import { Tank } from './Tank';
@@ -308,7 +308,7 @@ export class Player extends Phaser.GameObjects.Container {
 
                     sfx_pickup.play();
                     this.holdingItem.upgrades = item.upgrades.clone();
-                    const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
+                    const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
                     this.holdingItemText.setText(upgradeText);
 
                     item.setUpgrades(myOldUpgrade).refreshDeathTimer();
@@ -329,7 +329,7 @@ export class Player extends Phaser.GameObjects.Container {
                 sfx_pickup.play();
                 this.holdingItem.upgrades = new UpgradeObject();
                 this.holdingItem.upgrades.setParts(item.upgrades.partsList);
-                const upgradeText = makeUpgradeString(this.holdingItem.upgrades);
+                const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
 
                 this.holdingItem.add(this.holdingItemText = this.scene.make.text({ x: 0, y: -20, text: upgradeText, style: { align: 'center' } }));
                 this.holdingItemText.setOrigin(0.5, 1);

@@ -1,6 +1,5 @@
-import { Immutable } from "../utils/ImmutableType";
 import * as yaml from 'js-yaml';
-import { ItemType, AttributeType, PartType, ItemsList, IAttributeMap, IPartList } from "../entities/Upgrade";
+import { Immutable } from "../utils/ImmutableType";
 
 const txt: any = require('./conf.yml');
 
@@ -12,6 +11,24 @@ export type IConfig = Immutable<{
     parts: Partial<IPartEffectMap>;
     credits: ICreditEntry[];
 }>
+
+export type PartType = 'chassis' | 'cannon' | 'armor' | 'gun' | 'missile' | 'rocket';
+
+export type IPartList = {
+	[x in PartType]: number;
+}
+
+export type ItemType = 'scrap' | 'barrel' | 'armor' | 'battery';
+
+export type ItemsList = {
+	[x in ItemType]: number;
+};
+
+export type AttributeType = 'range' | 'damage' | 'attackInterval' | 'aimSpeed' | 'maxHP' | 'movementSpeed' | 'turnSpeed' | 'maxBattery' | 'dmgMultiplier';
+
+export type IAttributeMap = {
+	[x in AttributeType]: number;
+}
 
 export type IPartRequirements = {
     [x in PartType]: Array<ItemsList>;

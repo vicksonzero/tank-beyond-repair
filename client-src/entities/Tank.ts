@@ -3,7 +3,7 @@ import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
 import { Team } from './Team';
 import { HpBar } from '../ui/HpBar';
-import { UpgradeObject, AttributeType, IAttributeMap } from './Upgrade';
+import { UpgradeObject } from './Upgrade';
 import { PIXEL_TO_METER } from '../constants';
 import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
@@ -11,6 +11,7 @@ import { getUniqueID } from '../utils/UniqueID';
 import { IFixtureUserData } from '../PhysicsSystem';
 
 import { Immutable } from '../utils/ImmutableType';
+import { IAttributeMap, AttributeType } from '../config/config';
 
 type Image = Phaser.GameObjects.Image;
 type Graphics = Phaser.GameObjects.Graphics;

@@ -1,8 +1,10 @@
 import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, b2ParticleBodyContact, b2ParticleContact, b2ParticleSystem, b2Shape } from '@flyover/box2d';
 import * as Debug from 'debug';
 import "phaser";
+import { GameObjects } from 'phaser';
 import { preload as _preload, setUpAudio } from '../assets';
-import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH, TANK_CHASE_ITEM_RANGE } from '../constants';
+import { ItemType } from '../config/config';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_CHASE_ITEM_RANGE, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
@@ -10,12 +12,11 @@ import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
 import { UpgradeObject } from '../entities/Upgrade';
-import { PhysicsSystem, IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
+import { IBodyUserData, IFixtureUserData, PhysicsSystem } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
+import { DistanceMatrix } from '../utils/DistanceMatrix';
 // import { GameObjects } from 'phaser';
 import { capitalize, lerpRadians } from '../utils/utils';
-import { DistanceMatrix } from '../utils/DistanceMatrix';
-import { GameObjects } from 'phaser';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -158,7 +159,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             dir.scale(10);
             const pos = new Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
             pos.add(dir);
-            const upgrades = UpgradeObject.getRandomPartFromPool();
+            // const upgrades = UpgradeObject.getRandomPartFromPool();
+            const upgrades = new UpgradeObject();
+            upgrades.setParts({ barrel: i + 1 });
             this.spawnItem(pos.x, pos.y, upgrades, true);
         }
 
@@ -615,7 +618,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         box.initPhysics(() => {
             if (isScatter) {
                 const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
-                dir.scale(0.02 * PIXEL_TO_METER);
+                dir.scale(0.02 * 3 * PIXEL_TO_METER);
                 box.b2Body.SetLinearVelocity(dir);
             }
         });
@@ -842,6 +845,95 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 bullet.b2Body.SetAwake(true);
             });
         }
+    }
+
+    makeUpgradeGraphics(container: Phaser.GameObjects.Container, upgrades: UpgradeObject) {
+        const parts = Object.entries(upgrades.partsList) as [ItemType, number][];
+
+        const iconCount = parts.reduce((sum, [itemType, count]) => {
+            return sum + (itemType === 'battery' ? Math.ceil(count / 100) : count);
+        }, 0);
+        const colCount = Math.max(1, Math.floor(Math.sqrt(iconCount)));
+        const rowCount = Math.max(1, Math.ceil(iconCount / colCount));
+
+        const totalWidth = 24;
+        const gap = Math.ceil(totalWidth / Math.max(1, rowCount - 1) / 2);
+        console.log(gap);
+
+        const itemIcon = {
+            scrap: 'S',
+            barrel: 'C',
+            armor: 'A',
+            battery: 'B',
+        };
+
+        // FIXME: Use object pool instead when performance is too slow
+        container.removeAll(true);
+        let xx = rowCount <= 1 ? 0 : (rowCount % 2 === 1 ? (-totalWidth / 2) : (-totalWidth / 3));
+        let yy = colCount <= 1 ? 0 : (colCount % 2 === 1 ? (-totalWidth / 2) : (-totalWidth / 3));
+        let x = 0;
+        let y = 0;
+        let icon;
+        container.add(
+            icon = this.make.text({
+                x: 0, y: 0,
+                text: 'X',
+                style: { align: 'center', fontSize: 24 }
+            }, false)
+        );
+        icon.setOrigin(0.5);
+
+        // align
+        icon.setPosition(
+            xx,
+            yy,
+        );
+        // container.add(
+        //     icon = this.make.text({
+        //         x: 0, y: 0,
+        //         text: 'X',
+        //         style: { align: 'center', fontSize: 24 }
+        //     }, false)
+        // );
+        // icon.setOrigin(0.5);
+
+        // // align
+        // icon.setPosition(
+        //     xx,
+        //     yy,
+        // );
+        parts.forEach(([itemType, count]) => {
+            const renderedCount = itemType === 'battery' ? count / 100 : count;
+            for (let i = 0; i < renderedCount; i++) {
+                let icon: GameObjects.Text;
+                container.add(
+                    icon = this.make.text({
+                        x: 0, y: 0,
+                        text: itemIcon[itemType],
+                        style: { align: 'center', fontSize: 24 }
+                    }, false)
+                );
+                icon.setOrigin(0.5);
+
+                // align
+                icon.setPosition(
+                    xx + x * gap,
+                    yy + y * gap,
+                );
+                // icon.setScale(12 / gap);
+                x += 1;
+                if (x > rowCount) {
+                    y += 1;
+                    x = 0;
+                }
+            }
+        });
+
+        // return (Object.entries(upgrades.partsList)
+        // 	.filter(([key, value]) => value !== 0)
+        // 	.map(([key, value]) => `${capitalize(key)}${(value >= 0 ? ' x' + value : value)}`)
+        // 	.join('\n')
+        // );
     }
 
     getPhysicsSystem() {

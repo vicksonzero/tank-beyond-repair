@@ -6,13 +6,6 @@ export function capitalize(str: string) {
 
 export type IMatterContactPoints = { vertex: { x: number; y: number; }; }[];
 
-export function makeUpgradeString(upgrades: UpgradeObject) {
-    return (Object.entries(upgrades.partsList)
-        .filter(([key, value]) => value !== 0)
-        .map(([key, value]) => `${capitalize(key)}${(value >= 0 ? ' x' + value : value)}`)
-        .join('\n')
-    );
-}
 
 function lerp(a: number, b: number, lerpFactor: number): number {
     const result: number = ((1 - lerpFactor) * a) + (lerpFactor * b);

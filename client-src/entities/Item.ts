@@ -1,17 +1,12 @@
+import { b2Body, b2BodyDef, b2BodyType, b2FixtureDef, b2PolygonShape, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
-import { collisionCategory } from './collisionCategory';
-import { UpgradeObject } from './Upgrade';
-import { makeUpgradeString } from '../utils/utils';
-import {
-    ITEM_LIFESPAN,
-    ITEM_LIFESPAN_WARNING,
-    PIXEL_TO_METER,
-} from '../constants';
-import { b2FixtureDef, b2BodyDef, b2BodyType, b2Body, b2PolygonShape, b2World } from '@flyover/box2d';
+import { GameObjects } from 'phaser';
+import { ITEM_LIFESPAN, ITEM_LIFESPAN_WARNING, PIXEL_TO_METER } from '../constants';
+import { IFixtureUserData } from '../PhysicsSystem';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
-import { IFixtureUserData } from '../PhysicsSystem';
-import { GameObjects } from 'phaser';
+import { collisionCategory } from './collisionCategory';
+import { UpgradeObject } from './Upgrade';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
@@ -19,6 +14,7 @@ const log = Debug('tank-beyond-repair:Item:log');
 
 type Image = GameObjects.Image;
 type Text = GameObjects.Text;
+type Container = GameObjects.Container;
 
 
 export class Item extends GameObjects.Container {
@@ -26,6 +22,7 @@ export class Item extends GameObjects.Container {
 
     static ITEM_DIE = 'item-die';
     itemSprite: Image;
+    itemContainer: Container;
     itemText: Text;
     uniqueID: number;
 
@@ -50,11 +47,14 @@ export class Item extends GameObjects.Container {
                 key: `allSprites_default`,
                 frame: 'crateMetal',
             }, false),
+            this.itemContainer = this.scene.make.container({
+                x: 0, y: 0,
+            }),
             this.itemText = this.scene.make.text({
                 x: 0, y: -20,
                 text: '',
                 style: { align: 'center' },
-            })
+            }),
 
         ]);
         this.itemText.setOrigin(0.5, 1);
@@ -151,8 +151,9 @@ export class Item extends GameObjects.Container {
     setUpgrades(upgrades: UpgradeObject): this {
         this.upgrades.setParts(upgrades.partsList);
 
-        const upgradeText = makeUpgradeString(this.upgrades);
-        this.itemText.setText(upgradeText);
+        // const upgradeText = UpgradeObject.makeUpgradeString(this.upgrades);
+        // this.itemText.setText(upgradeText);
+        (this.scene as MainScene).makeUpgradeGraphics(this.itemContainer, this.upgrades);
         return this;
     }
 }
