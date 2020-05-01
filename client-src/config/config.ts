@@ -12,13 +12,27 @@ export type IConfig = Immutable<{
     credits: ICreditEntry[];
 }>
 
-export type PartType = 'chassis' | 'cannon' | 'armor' | 'gun' | 'missile' | 'rocket';
+
+
+export enum PartType {
+	CHASSIS = 'chassis',
+	CANNON = 'cannon',
+	ARMOR = 'armor',
+	GUN = 'gun',
+	MISSILE = 'missile',
+	ROCKET = 'rocket',
+};
 
 export type IPartList = {
 	[x in PartType]: number;
 }
 
-export type ItemType = 'scrap' | 'barrel' | 'armor' | 'battery';
+export enum ItemType {
+	SCRAP = 'scrap',
+	BARREL = 'barrel',
+	ARMOR = 'armor',
+	BATTERY = 'battery',
+};
 
 export type ItemsList = {
 	[x in ItemType]: number;
@@ -29,6 +43,8 @@ export type AttributeType = 'range' | 'damage' | 'attackInterval' | 'aimSpeed' |
 export type IAttributeMap = {
 	[x in AttributeType]: number;
 }
+
+
 
 export type IPartRequirements = {
     [x in PartType]: Array<ItemsList>;
