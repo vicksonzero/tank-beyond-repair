@@ -1,6 +1,7 @@
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Contact, b2Fixture, b2FixtureDef, b2World } from '@flyover/box2d';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Fixture, b2FixtureDef, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
 import { PIXEL_TO_METER } from '../constants';
+import { IBodyUserData, IFixtureUserData } from '../PhysicsSystem';
 import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
 import { getUniqueID } from '../utils/UniqueID';
@@ -10,7 +11,6 @@ import { Item } from './Item';
 import { Tank } from './Tank';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
-import { IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -49,7 +49,7 @@ export class Player extends Phaser.GameObjects.Container {
     pointerTarget: GameObject | null;
 
     holdingItem: HoldingItem | null;
-    holdingItemText: Text;
+    holdingItemContainer: Container;
 
     b2Body: b2Body;
     playerHandSensor: b2Fixture;
@@ -216,6 +216,17 @@ export class Player extends Phaser.GameObjects.Container {
             xx * PIXEL_TO_METER,
             yy * PIXEL_TO_METER
         );
+
+        const velocity = this.b2Body.GetLinearVelocity();
+
+
+        const reverseVelocity = new Phaser.Math.Vector2(velocity.x, velocity.y);
+        reverseVelocity.normalize().scale(-1);
+
+        const itemDisplacementVector = reverseVelocity.scale(1);
+
+        // align
+        if (this.holdingItemContainer) { this.displaceUpgrades(this.holdingItemContainer, itemDisplacementVector); }
     }
 
     doCollision() {
@@ -309,7 +320,7 @@ export class Player extends Phaser.GameObjects.Container {
                     sfx_pickup.play();
                     this.holdingItem.upgrades = item.upgrades.clone();
                     const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
-                    this.holdingItemText.setText(upgradeText);
+                    (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
 
                     item.setUpgrades(myOldUpgrade).refreshDeathTimer();
                 }
@@ -331,8 +342,7 @@ export class Player extends Phaser.GameObjects.Container {
                 this.holdingItem.upgrades.setParts(item.upgrades.partsList);
                 const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
 
-                this.holdingItem.add(this.holdingItemText = this.scene.make.text({ x: 0, y: -20, text: upgradeText, style: { align: 'center' } }));
-                this.holdingItemText.setOrigin(0.5, 1);
+                this.holdingItem.add(this.holdingItemContainer = this.scene.make.container({ x: 0, y: 0 }));
 
                 this.pointerTarget.destroy();
                 this.pointerTarget = null;
@@ -354,7 +364,7 @@ export class Player extends Phaser.GameObjects.Container {
         this.pointerTarget = item;
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
-        item.itemSprite.setTint(0xAAAAAA);
+        item.itemSprite.setTint(item.highlightTint);
         // item.itemText.setVisible(true);
     }
 
@@ -362,7 +372,7 @@ export class Player extends Phaser.GameObjects.Container {
         item.off(Item.ITEM_DIE, this.onTargetDie);
         this.pointerTarget = null;
 
-        item.itemSprite.setTint(0xFFFFFF);
+        item.itemSprite.setTint(item.normalTint);
         // item.itemText.setVisible(false);
     }
 
@@ -408,6 +418,17 @@ export class Player extends Phaser.GameObjects.Container {
         });
 
         return this;
+    }
+
+    displaceUpgrades(container: Container, itemDisplacementVector: Phaser.Math.Vector2) {
+        let i = 0;
+        container.iterate((icon: Phaser.GameObjects.Image) => {
+            icon.setPosition(
+                itemDisplacementVector.x * i,
+                itemDisplacementVector.y * i,
+            );
+            i++;
+        });
     }
 
     faceLeft() {

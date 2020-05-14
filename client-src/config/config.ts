@@ -7,6 +7,13 @@ const txt: any = require('./conf.yml');
 export type IConfig = Immutable<{
     controls: IUIControls;
     itemSpawnChance: IItemSpawnChance;
+    items: {
+        battery: {
+            chargeFull: number;
+            chargeHalf: number;
+            chargeLow: number;
+        }
+    }
     partRequirements: Partial<IPartRequirements>;
     parts: Partial<IPartEffectMap>;
     credits: ICreditEntry[];
@@ -15,33 +22,33 @@ export type IConfig = Immutable<{
 
 
 export enum PartType {
-	CHASSIS = 'chassis',
-	CANNON = 'cannon',
-	ARMOR = 'armor',
-	GUN = 'gun',
-	MISSILE = 'missile',
-	ROCKET = 'rocket',
+    CHASSIS = 'chassis',
+    CANNON = 'cannon',
+    ARMOR = 'armor',
+    GUN = 'gun',
+    MISSILE = 'missile',
+    ROCKET = 'rocket',
 };
 
 export type IPartList = {
-	[x in PartType]: number;
+    [x in PartType]: number;
 }
 
 export enum ItemType {
-	SCRAP = 'scrap',
-	BARREL = 'barrel',
-	ARMOR = 'armor',
-	BATTERY = 'battery',
+    SCRAP = 'scrap',
+    BARREL = 'barrel',
+    ARMOR = 'armor',
+    BATTERY = 'battery',
 };
 
 export type ItemsList = {
-	[x in ItemType]: number;
+    [x in ItemType]: number;
 };
 
 export type AttributeType = 'range' | 'damage' | 'attackInterval' | 'aimSpeed' | 'maxHP' | 'movementSpeed' | 'turnSpeed' | 'maxBattery' | 'dmgMultiplier';
 
 export type IAttributeMap = {
-	[x in AttributeType]: number;
+    [x in AttributeType]: number;
 }
 
 

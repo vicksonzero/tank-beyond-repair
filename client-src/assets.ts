@@ -1,5 +1,5 @@
-import { MainScene } from "./scenes/MainScene";
 import { AUDIO_START_MUTED } from "./constants";
+import { MainScene } from "./scenes/MainScene";
 
 export function preload(this: Phaser.Scene) {
     // this.load.json('sheetMap', url);
@@ -14,6 +14,11 @@ export function preload(this: Phaser.Scene) {
     this.load.image('repair', './assets/sprites/kenney_emotespack/PNG/Vector/Style 8/emote_heart.png');
     this.load.image('btn_mute_dark', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight15.png');
     this.load.image('btn_mute_light', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight17.png');
+
+    this.load.atlas('items_icon',
+        './assets/sprites/dicksonmd/spritesheet (1).png',
+        './assets/sprites/dicksonmd/spritesheet (1).json'
+    );
 
     this.load.audio('bgm', './assets/sfx/04 All of Us.mp3');
     this.load.audio('point', './assets/sfx/270304__littlerobotsoundfactory__collect-point-00.wav');

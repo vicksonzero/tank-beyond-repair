@@ -8,6 +8,11 @@ config:
     barrel: 2
     armor: 2
     battery: 2
+  items:
+    battery:
+      chargeFull: 100
+      chargeHalf: 50
+      chargeLow: 25
   partRequirements:
     chassis:
       - scrap: 1

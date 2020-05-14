@@ -3,7 +3,7 @@ import * as Debug from 'debug';
 import "phaser";
 import { GameObjects } from 'phaser';
 import { preload as _preload, setUpAudio } from '../assets';
-import { ItemType } from '../config/config';
+import { config, ItemType } from '../config/config';
 import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_CHASE_ITEM_RANGE, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
@@ -161,7 +161,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             pos.add(dir);
             // const upgrades = UpgradeObject.getRandomPartFromPool();
             const upgrades = new UpgradeObject();
-            upgrades.setParts({ barrel: i + 1 });
+            upgrades.setParts({ battery: Math.floor(Math.random() * i * 100) + 1 });
             this.spawnItem(pos.x, pos.y, upgrades, true);
         }
 
@@ -617,7 +617,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         box.initPhysics(() => {
             if (isScatter) {
-                const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+                const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 4);
                 dir.scale(0.02 * 3 * PIXEL_TO_METER);
                 box.b2Body.SetLinearVelocity(dir);
             }
@@ -849,83 +849,77 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     makeUpgradeGraphics(container: Phaser.GameObjects.Container, upgrades: UpgradeObject) {
         const parts = Object.entries(upgrades.partsList) as [ItemType, number][];
+        log(JSON.stringify(parts));
 
         const iconCount = parts.reduce((sum, [itemType, count]) => {
             return sum + (itemType === 'battery' ? Math.ceil(count / 100) : count);
         }, 0);
-        const colCount = Math.max(1, Math.floor(Math.sqrt(iconCount)));
-        const rowCount = Math.max(1, Math.ceil(iconCount / colCount));
 
-        const totalWidth = 24;
-        const gap = Math.ceil(totalWidth / Math.max(1, rowCount - 1) / 2);
-        console.log(gap);
-
-        const itemIcon = {
-            scrap: 'S',
-            barrel: 'C',
-            armor: 'A',
-            battery: 'B',
+        const itemIcon: { [x: string]: string } = {
+            scrap: 'I-Beam',
+            barrel: 'Barrel',
+            armor: 'Iron_Plating',
+        };
+        const batteryIcons: { [x: string]: string } = {
+            batteryFull: 'Battery_Full',
+            batteryHalf: 'Battery_Half',
+            batteryLow: 'Battery_Low',
         };
 
-        // FIXME: Use object pool instead when performance is too slow
+        // Gear
+
+        // [0 - 1] how many percent off the center of the sprite origin.
+        // 0 means perfectly straight
+        // 1 means then origin of the sprite can be random around the whole sprite.
+        const offsetVariance = 0.5;
+
         container.removeAll(true);
-        let xx = rowCount <= 1 ? 0 : (rowCount % 2 === 1 ? (-totalWidth / 2) : (-totalWidth / 3));
-        let yy = colCount <= 1 ? 0 : (colCount % 2 === 1 ? (-totalWidth / 2) : (-totalWidth / 3));
-        let x = 0;
-        let y = 0;
-        let icon;
-        container.add(
-            icon = this.make.text({
-                x: 0, y: 0,
-                text: 'X',
-                style: { align: 'center', fontSize: 24 }
-            }, false)
-        );
-        icon.setOrigin(0.5);
 
-        // align
-        icon.setPosition(
-            xx,
-            yy,
-        );
-        // container.add(
-        //     icon = this.make.text({
-        //         x: 0, y: 0,
-        //         text: 'X',
-        //         style: { align: 'center', fontSize: 24 }
-        //     }, false)
-        // );
-        // icon.setOrigin(0.5);
-
-        // // align
-        // icon.setPosition(
-        //     xx,
-        //     yy,
-        // );
-        parts.forEach(([itemType, count]) => {
-            const renderedCount = itemType === 'battery' ? count / 100 : count;
+        // FIXME: Use object pool instead when performance is too slow
+        let icon: GameObjects.Image | null = container.first as GameObjects.Image | null;
+        parts.forEach(([itemType, count]: [ItemType, number]) => {
+            const renderedCount = itemType === 'battery' ? Math.ceil(count / config.items.battery.chargeFull) : count;
             for (let i = 0; i < renderedCount; i++) {
-                let icon: GameObjects.Text;
-                container.add(
-                    icon = this.make.text({
-                        x: 0, y: 0,
-                        text: itemIcon[itemType],
-                        style: { align: 'center', fontSize: 24 }
-                    }, false)
-                );
-                icon.setOrigin(0.5);
+                if (!icon) { icon = container.next as GameObjects.Image | null; }
 
-                // align
-                icon.setPosition(
-                    xx + x * gap,
-                    yy + y * gap,
-                );
-                // icon.setScale(12 / gap);
-                x += 1;
-                if (x > rowCount) {
-                    y += 1;
-                    x = 0;
+                if (!icon) {
+                    container.add(
+                        icon = this.make.image({
+                            x: 0, y: 0,
+                            key: `items_icon`,
+                            frame: 'Gear',
+                        }, false)
+                    );
+                    container.bringToTop(icon);
                 }
+                icon.setOrigin(
+                    0.5 - offsetVariance / 2 + Math.random() * offsetVariance,
+                    0.5 - offsetVariance / 2 + Math.random() * offsetVariance
+                );
+
+                
+                if (itemType !== ItemType.BATTERY) {
+                    icon.setFrame(itemIcon[itemType as string]);
+                } else {
+                    const isLastBattery = i + 1 < renderedCount
+                    log(itemType, isLastBattery);
+                    if (!isLastBattery) {
+                        icon.setFrame(batteryIcons.batteryFull);
+                    } else {
+                        const charge = count % config.items.battery.chargeFull;
+                        if (charge > config.items.battery.chargeHalf) {
+                            icon.setFrame(batteryIcons.batteryFull);
+                        } else if (charge > config.items.battery.chargeLow) {
+                            icon.setFrame(batteryIcons.batteryHalf);
+                        } else {
+                            icon.setFrame(batteryIcons.batteryLow);
+                        }
+                    }
+
+                }
+
+
+                icon = null;
             }
         });
 

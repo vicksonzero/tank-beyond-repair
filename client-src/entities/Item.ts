@@ -25,6 +25,9 @@ export class Item extends GameObjects.Container {
     itemContainer: Container;
     itemText: Text;
     uniqueID: number;
+    
+    normalTint = 0x00FFFF;
+    highlightTint = 0xAAAAAA;
 
     upgrades: UpgradeObject;
 
@@ -59,6 +62,7 @@ export class Item extends GameObjects.Container {
         ]);
         this.itemText.setOrigin(0.5, 1);
         // this.itemText.setVisible(false);
+        this.itemSprite.setTint(this.normalTint)
 
         this.on('destroy', () => {
             if (this.warningEvent) this.warningEvent.destroy();
