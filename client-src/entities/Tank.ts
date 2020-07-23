@@ -1,4 +1,3 @@
-import MatterContainer from './MatterContainer';
 
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
@@ -9,6 +8,7 @@ import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
 import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
+import { IFixtureUserData } from '../PhysicsSystem';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -18,7 +18,7 @@ type Container = Phaser.GameObjects.Container;
 
 export class Tank extends Phaser.GameObjects.Container {
 
-    static TANK_DIE = 'item-die';
+    static TANK_DIE = 'tank-die';
     bodyRadius = 20;
     team: Team;
     uniqueID: number;
@@ -44,6 +44,7 @@ export class Tank extends Phaser.GameObjects.Container {
     hpBar: HpBar;
     bodySprite: Image;
     barrelSprite: Image;
+    turretGraphics: Graphics;
     uiContainer: Container;
     detailsText: Text;
     rangeMarker: Graphics;
@@ -76,12 +77,20 @@ export class Tank extends Phaser.GameObjects.Container {
                 frame: `tankBody_${color}`,
             }, false),
             this.barrelSprite = this.scene.make.image({
-                x: 0, y: 0,
+                x: -4, y: 0,
                 key: 'allSprites_default',
                 frame: `tank${capitalize(color)}_barrel2_outline`,
             }, false),
+            this.turretGraphics = this.scene.make.graphics({
+                x: -4, y: 0,
+            }, false),
             this.uiContainer = this.scene.make.container({ x: 0, y: 0 }),
         ]);
+
+        this.turretGraphics.lineStyle(2, (this.team === Team.BLUE ? 0x333333 : 0x888888), 1);
+        this.turretGraphics.fillStyle((this.team === Team.BLUE ? 0x8888FF : 0xFF4444), 1);
+        this.turretGraphics.fillCircle(0, 0, 8);
+        this.turretGraphics.strokeCircle(0, 0, 8);
 
         this.uiContainer.add([
             this.detailsText = this.scene.make.text({ x: 0, y: -20, text: '', style: { align: 'center' } }),
@@ -91,9 +100,9 @@ export class Tank extends Phaser.GameObjects.Container {
         this.detailsText.setOrigin(0.5, 1);
 
 
-        this.bodySprite.setAngle(this.team === Team.BLUE ? 90 : -90);
-        this.barrelSprite.setOrigin(0.5, 0.7);
-        this.barrelSprite.setAngle(this.team === Team.BLUE ? 90 : -90);
+        this.bodySprite.setAngle(90);
+        this.barrelSprite.setOrigin(0.5, 0);
+        this.barrelSprite.setAngle(-90);
 
         this.on('destroy', () => {
             this.emit(Tank.TANK_DIE, this);
@@ -110,6 +119,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.damage = 1;
         this.lastFired = 0;
         this.attackSpeed = 1000;
+        this.movementSpeed = 1;
         this.updateHpBar();
         this.refreshUpgradeGraphics();
         return this;
@@ -141,7 +151,7 @@ export class Tank extends Phaser.GameObjects.Container {
         fixtureDef.filter.maskBits = collisionCategory.WORLD | bulletCollision | collisionCategory.RED | collisionCategory.BLUE;
         fixtureDef.userData = {
             fixtureLabel: 'tank-body',
-        };
+        } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
         bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
@@ -201,8 +211,8 @@ export class Tank extends Phaser.GameObjects.Container {
             let value = 0;
             let level = upgrades[key];
             switch (key) {
-                case 'range': value = 10; break;
-                case 'damage': value = 1; break;
+                case 'range': value = 15; break;
+                case 'damage': value = 0.15; break;
                 case 'attackSpeed': value = -70; break;
                 case 'maxHP': value = 5; break;
                 case 'movementSpeed': value = 0.1; break;
@@ -220,8 +230,9 @@ export class Tank extends Phaser.GameObjects.Container {
     }
 
     refreshUpgradeGraphics(): this {
-        const str = `HP: ${this.hp}/${this.maxHP}\n` +
-            `DMG: ${this.damage} x ${1000 / this.attackSpeed}\n` +
+        const str = `HP: ${this.hp.toFixed(2)}/${this.maxHP.toFixed(2)}\n` +
+            `DMG: ${this.damage.toFixed(2)} x ${(1000 / this.attackSpeed).toFixed(2)}\n` +
+            `Movement: ${this.movementSpeed.toFixed(2)}x\n` +
             ``;
         this.detailsText.setText(str);
 
@@ -233,11 +244,13 @@ export class Tank extends Phaser.GameObjects.Container {
 
         this.barrelSprite.setScale(1 + 0.2 * this.upgrades.damage, 1 + 0.2 * this.upgrades.range);
 
+        this.bodySprite.setScale(1, this.movementSpeed);
+
         return this;
     }
 
     setFiring({ x, y }: { x: number, y: number }) {
-        this.barrelSprite.setRotation(Math.atan2(y, x) + Math.PI / 2);
+        this.barrelSprite.setRotation(Math.atan2(y, x) - Math.PI / 2 - this.rotation);
         this.lastFired = Date.now();
     }
     canFire() {
@@ -261,7 +274,7 @@ export class Tank extends Phaser.GameObjects.Container {
         // this.gm.gameIsOver = true;
         this.visible = false;
         // this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
-        
+
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
         super.destroy();

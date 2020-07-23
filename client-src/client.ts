@@ -48,8 +48,6 @@ window.onload = () => {
     });
 
 
-    // setTimeout(() => {
-    // }, 100);
     function handleSizeUpdate(event?: Event) {
         const ww = window.innerWidth / Number(phaserConfig.width);
         const hh = window.innerHeight / Number(phaserConfig.height);

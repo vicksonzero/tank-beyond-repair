@@ -1,4 +1,4 @@
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Contact, b2Fixture, b2FixtureDef, b2Shape, b2World } from '@flyover/box2d';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Contact, b2Fixture, b2FixtureDef, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
 import { PIXEL_TO_METER } from '../constants';
 import { MainScene } from '../scenes/MainScene';
@@ -10,6 +10,7 @@ import { Item } from './Item';
 import { Tank } from './Tank';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
+import { IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -85,6 +86,7 @@ export class Player extends Phaser.GameObjects.Container {
             })
         ]);
         this.repairSprite.visible = false;
+        this.debugText.visible = false;
 
         this.on('destroy', () => {
             if (this.undoTintEvent) this.undoTintEvent.destroy();
@@ -122,7 +124,7 @@ export class Player extends Phaser.GameObjects.Container {
         fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         fixtureDef.userData = {
             fixtureLabel: 'player-body',
-        };
+        } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
         bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
@@ -151,7 +153,7 @@ export class Player extends Phaser.GameObjects.Container {
         handsFixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE | bulletCollision;
         handsFixtureDef.userData = {
             fixtureLabel: 'player-hand',
-        };
+        } as IFixtureUserData;
 
 
         (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
@@ -216,6 +218,70 @@ export class Player extends Phaser.GameObjects.Container {
         );
     }
 
+    doCollision() {
+        const world = (this.scene as MainScene).getPhysicsSystem().world;
+        let closestFixture: b2Fixture | null = null;
+        // let closestContact: b2Contact | null = null;
+        let closestDistanceSq = Infinity;
+        for (let contactEdge = this.b2Body.GetContactList(); contactEdge; contactEdge = contactEdge.next) {
+
+            const contact = contactEdge.contact;
+            const sensorFixture = ((contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel === 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
+            if (!['player-hand'].includes((sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel)) { continue; }
+
+            const sensorBody = sensorFixture.GetBody();
+            const sensorPosition = sensorBody.GetWorldPoint((sensorFixture.GetShape() as b2CircleShape).m_p, { x: 0, y: 0 });
+
+            const itemFixture = ((contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel !== 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
+            const itemBody = itemFixture.GetBody();
+            const itemPosition = itemBody.GetPosition();
+
+            if (!['tank', 'item'].includes((contactEdge.other.GetUserData() as IBodyUserData).label)) { continue; }
+
+
+            const distanceSq = Phaser.Math.Distance.Squared(sensorPosition.x, sensorPosition.y, itemPosition.x, itemPosition.y);
+            // log(`doCollision ${(sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel} gets ${(itemFixture.GetUserData() as IFixtureUserData).fixtureLabel}`);
+
+            if (distanceSq < closestDistanceSq) {
+                closestFixture = itemFixture;
+                closestDistanceSq = distanceSq;
+                // closestContact = contact;
+            }
+        }
+        if (closestFixture) {
+            const bodyData = closestFixture.GetBody().GetUserData();
+            // log(`doCollision closestFixture is ${bodyData.label}`);
+            if (this.pointerTarget && this.pointerTarget !== bodyData.gameObject) {
+                if (this.pointerTarget.name === 'item') {
+                    const item = this.pointerTarget as Item;
+                    this.giveUpTargetingItem(item);
+                } else {
+                    const tank = this.pointerTarget as Tank;
+                    this.giveUpTargetingTank(tank);
+                }
+            }
+            const label = bodyData.label;
+            if (label === 'item') {
+                const item = bodyData.gameObject as Item;
+                this.startTargetingItem(item);
+            } else {
+                const tank = bodyData.gameObject as Tank;
+                this.startTargetingTank(tank);
+            }
+        } else {
+            // log(`doCollision no closestFixture found`);
+            if (this.pointerTarget) {
+                if (this.pointerTarget.name === 'item') {
+                    const item = this.pointerTarget as Item;
+                    this.giveUpTargetingItem(item);
+                } else {
+                    const tank = this.pointerTarget as Tank;
+                    this.giveUpTargetingTank(tank);
+                }
+            }
+        }
+    }
+
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
         if (!this.pointerTarget) {
             if (this.holdingItem) {
@@ -225,14 +291,13 @@ export class Player extends Phaser.GameObjects.Container {
                 const yy = Math.sin(rotation) * 30;
                 const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
 
-                sfx_pickup.play();
-
                 if (item) {
+                    sfx_pickup.play();
                     const myOldUpgrade = this.holdingItem.upgrades!;
                     item.setUpgrades(myOldUpgrade);
+                    this.holdingItem.destroy();
+                    this.holdingItem = null;
                 }
-                this.holdingItem.destroy();
-                this.holdingItem = null;
             }
         } else if (this.pointerTarget.name === 'item') {
             const item = this.pointerTarget as Item;
@@ -253,6 +318,7 @@ export class Player extends Phaser.GameObjects.Container {
                 const xx = Math.cos(rotation) * 30;
                 const yy = Math.sin(rotation) * 30;
                 this.add(this.holdingItem = this.scene.make.container({ x: xx, y: yy }) as HoldingItem);
+                this.holdingItem.setScale(1.15);
 
                 this.holdingItem.add(this.scene.make.image({
                     x: 0, y: 0,
@@ -283,31 +349,7 @@ export class Player extends Phaser.GameObjects.Container {
         }
     }
 
-    // try to highlight an item
-    onTouchingItemStart(handFixture: b2Fixture, itemFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
-        // const worldManifold = new b2WorldManifold();
-        // contact.GetWorldManifold(worldManifold);
-        // const activeContacts = worldManifold.points;
-        // log('onTouchingItemStart', handFixture.isSensor, handFixture.label, this.pointerTarget?.name);
-
-        // if not holding item, prefer item over tank
-        if (!this.holdingItem && this.pointerTarget) { // if already aiming at something
-            if (this.pointerTarget.name === 'item') {
-                // ignore the exchange if already looking at item
-                return;
-            } else {
-                // give up target only if is tank
-                const tank = this.pointerTarget as Tank;
-                tank.off(Tank.TANK_DIE, this.onTargetDie);
-
-                tank.bodySprite.setTint(0xFFFFFF);
-                tank.uiContainer.setVisible(false);
-                // give up tank and continue to look for item
-            }
-        }
-        // if i am looking for an item
-        // highlight the item 
-        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
+    startTargetingItem(item: Item) {
         this.pointerTarget = item;
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
@@ -315,11 +357,7 @@ export class Player extends Phaser.GameObjects.Container {
         item.itemText.setVisible(true);
     }
 
-    onTouchingItemEnd(handFixture: b2Fixture, itemFixture: b2Fixture, activeContacts: b2Contact<b2Shape, b2Shape>) {
-        const item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
-        if (!item) return;
-        if (this.pointerTarget !== item) return;
-
+    giveUpTargetingItem(item: Item) {
         item.off(Item.ITEM_DIE, this.onTargetDie);
         this.pointerTarget = null;
 
@@ -327,41 +365,7 @@ export class Player extends Phaser.GameObjects.Container {
         item.itemText.setVisible(false);
     }
 
-    onTargetDie = (target: GameObject) => {
-        if (this.pointerTarget !== target) return;
-        this.pointerTarget = null;
-        this.tank = null;
-        this.repairSprite.visible = false;
-    }
-
-    onTouchingTankStart(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
-        // const worldManifold = new b2WorldManifold();
-        // contact.GetWorldManifold(worldManifold);
-        // const activeContacts = worldManifold.points;
-        // log('onTouchingTankStart', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-
-        // console.log('onTouchingTankStart do');
-
-        // if holding an item
-        if (this.holdingItem) {
-            // prefer tank over item
-            if (this.pointerTarget?.name === 'tank') { // if already pointing at tank
-                // we got what we want. exit.
-                return;
-            } else if (this.pointerTarget?.name === 'item') {
-                // give up item
-                const item = this.pointerTarget as Item;
-                item.off(Item.ITEM_DIE, this.onTargetDie);
-
-                item.itemSprite.setTint(0xFFFFFF);
-                item.itemText.setVisible(false);
-                // give up item and continue to look for tank
-            }
-        } else if (this.pointerTarget) {
-            return;
-        }
-
-        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
+    startTargetingTank(tank: Tank) {
         this.pointerTarget = tank;
         tank.on(Tank.TANK_DIE, this.onTargetDie);
 
@@ -372,21 +376,7 @@ export class Player extends Phaser.GameObjects.Container {
         tank.uiContainer.setVisible(true);
     }
 
-    onTouchingTankEnd(handFixture: b2Fixture, tankFixture: b2Fixture, contact: b2Contact<b2Shape, b2Shape>) {
-        // const worldManifold = new b2WorldManifold();
-        // contact.GetWorldManifold(worldManifold);
-        // const activeContacts = worldManifold.points;
-        // log('onTouchingTankEnd', myBody.isSensor, myBody.label, this.pointerTarget?.name);
-
-        const tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
-        if (!tank) return;
-        if (this.pointerTarget !== tank) return;
-        // console.log('onTouchingTankEnd do', new Error());
-
-        // const dist = Phaser.Math.Distance.Between(myBody.position.x, myBody.position.y, tankBody.position.x, tankBody.position.y);
-
-        // if (dist <= (this.armRadius + tank.bodyRadius)) return;
-
+    giveUpTargetingTank(tank: Tank) {
         tank.off(Tank.TANK_DIE, this.onTargetDie);
         this.pointerTarget = null;
 
@@ -398,13 +388,21 @@ export class Player extends Phaser.GameObjects.Container {
         tank.uiContainer.setVisible(false);
     }
 
+    onTargetDie = (target: GameObject) => {
+        if (this.pointerTarget !== target) return;
+        this.pointerTarget = null;
+        this.tank = null;
+        this.repairSprite.visible = false;
+    }
+
     takeDamage(amount: number): this {
         this.hp -= amount;
         this.hp = Math.max(0, this.hp);
 
+        this.bodySprite.setTint(0xFF0000);
         this.undoTintEvent = this.scene.time.addEvent({
-            delay: 200, loop: false, callback: () => {
-                // some_sprite.setTint(0xAAAAAA);
+            delay: 100, loop: false, callback: () => {
+                this.bodySprite.setTint(0xFFFFFF);
             }
         });
 

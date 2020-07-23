@@ -1,7 +1,8 @@
+import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, b2ParticleBodyContact, b2ParticleContact, b2ParticleSystem, b2Shape } from '@flyover/box2d';
 import * as Debug from 'debug';
 import "phaser";
 import { preload as _preload, setUpAudio } from '../assets';
-import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, WORLD_HEIGHT, WORLD_WIDTH, DEBUG_PHYSICS, PIXEL_TO_METER, TANK_SPEED, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP } from '../constants';
+import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH, TANK_CHASE_ITEM_RANGE } from '../constants';
 import { Bullet } from '../entities/Bullet';
 import { Item } from '../entities/Item';
 // import { Immutable } from '../utils/ImmutableType';
@@ -9,11 +10,12 @@ import { Player } from '../entities/Player';
 import { Tank } from '../entities/Tank';
 import { Team } from '../entities/Team';
 import { UpgradeObject, UpgradeType } from '../entities/Upgrade';
-import { PhysicsSystem } from '../PhysicsSystem';
+import { PhysicsSystem, IFixtureUserData, IBodyUserData } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
 // import { GameObjects } from 'phaser';
-import { capitalize, IMatterContactPoints } from '../utils/utils';
-import { b2ContactListener, b2Contact, b2Shape, b2ParticleSystem, b2ParticleBodyContact, b2ParticleContact, b2Manifold, b2ContactImpulse, b2BodyType, b2Body, b2Fixture, b2WorldManifold } from '@flyover/box2d';
+import { capitalize, lerpRadians } from '../utils/utils';
+import { DistanceMatrix } from '../utils/DistanceMatrix';
+import { GameObjects } from 'phaser';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -25,6 +27,7 @@ type Image = Phaser.GameObjects.Image;
 const Vector2 = Phaser.Math.Vector2;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
 
+const verbose = Debug('tank-beyond-repair:MainScene:verbose');
 const log = Debug('tank-beyond-repair:MainScene:log');
 // const warn = Debug('tank-beyond-repair:MainScene:warn');
 // warn.log = console.warn.bind(console);
@@ -51,10 +54,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     btn_mute: Image;
 
     bluePlayer: Player;
-    blueAi: Tank[];
     redPlayer: Player;
-    redAi: Tank[];
-    bullets: Bullet[];
+    readonly blueAi: Tank[] = [];
+    readonly redAi: Tank[] = [];
+    readonly bullets: Bullet[] = [];
+    readonly items: Item[] = [];
+    readonly instancesByID: { [id: number]: (GameObjects.Container) } = {};
 
     sfx_shoot: BaseSound;
     sfx_hit: BaseSound;
@@ -65,6 +70,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     frameSize = PHYSICS_FRAME_SIZE; // ms
     lastUpdate = -1;
+    distanceMatrix: DistanceMatrix;
 
     get mainCamera() { return this.sys.cameras.main; }
 
@@ -83,6 +89,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         setUpAudio.call(this);
         log('create');
         this.getPhysicsSystem().init(this as b2ContactListener);
+        this.distanceMatrix = new DistanceMatrix();
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
@@ -99,6 +106,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
 
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
+        this.instancesByID[this.bluePlayer.uniqueID] = this.bluePlayer;
         this.bluePlayer.spawnItem = this.spawnItem;
         this.bluePlayer
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
@@ -106,6 +114,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.bluePlayer.initPhysics(() => { });
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
+        this.instancesByID[this.redPlayer.uniqueID] = this.redPlayer;
         this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer
             .initHpBar(new HpBar(this, 0, -25, 30, 4))
@@ -120,21 +129,21 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 .initHpBar(new HpBar(this, 0, -25, 30, 4))
                 .init(x, y);
             ai.initPhysics(() => { });
+
+            const list = team === Team.BLUE ? this.blueAi : this.redAi;
+            this.addToList(ai, list);
             return ai;
         };
-
-        this.blueAi = [];
-        this.redAi = [];
 
         if (!DEBUG_DISABLE_SPAWNING) {
             const spawnCallback = () => {
                 if (this.isGameOver) return;
-                this.blueAi = this.blueAi.concat([200, 400, 600].map((y) => {
-                    return createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
-                }));
-                this.redAi = this.redAi.concat([200, 400, 600].map((y) => {
-                    return createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
-                }));
+                [200, 400, 600].forEach((y) => {
+                    createAi(Team.BLUE, 0, Phaser.Math.RND.integerInRange(y - 50, y + 50));
+                });
+                [200, 400, 600].map((y) => {
+                    createAi(Team.RED, this.sys.game.canvas.width, Phaser.Math.RND.integerInRange(y - 50, y + 50));
+                });
             };
 
             this.spawnTimer = this.time.addEvent({
@@ -143,6 +152,23 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 callback: spawnCallback,
                 loop: true,
             });
+        }
+        for (let i = 0; i < 10; i++) {
+            const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
+            dir.scale(10);
+            const pos = new Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+            pos.add(dir);
+            const upgrades = {
+                range: 0,
+                damage: 0,
+                attackSpeed: 0,
+                maxHP: 0,
+                movementSpeed: 0,
+            };
+            const keys = Object.keys(upgrades);
+            const randomUpgradeKey = (<UpgradeType>keys[keys.length * Math.random() << 0]);
+            upgrades[randomUpgradeKey] += 1;
+            this.spawnItem(pos.x, pos.y, upgrades, true);
         }
 
         this.time.addEvent({
@@ -172,9 +198,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 if (countDownValue <= 0) { countDownText.setVisible(false); }
             },
             repeat: SPAWN_DELAY / 1000,
-        })
-
-        this.bullets = [];
+        });
 
         this.setUpGUI();
         this.setUpKeyboard();
@@ -182,7 +206,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     update(time: number, dt: number) {
-        log(`update ${time}`);
+        // verbose(`update ${time}`);
 
         const lastGameTime = this.lastUpdate;
         // log(`update (from ${lastGameTime} to ${gameTime})`);
@@ -202,120 +226,20 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.lastUpdate += this.frameSize;
             }
 
-            log(`update: ${i} fixedUpdate-ticks at ${time.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
+            // verbose(`update: ${i} fixedUpdate-ticks at ${time.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
         }
     }
 
     fixedUpdate(timeStep: number) {
-        log(`fixedUpdate start`);
+        // verbose(`fixedUpdate start`);
 
         this.getPhysicsSystem().update(
             timeStep,
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
         );
-
-        const updatePlayer = (player: Player, controlsList: Controls) => {
-            let xx = 0;
-            let yy = 0;
-
-            player.debugText.setText(`${player.x.toFixed(2)}, ${player.y.toFixed(2)}`);
-
-            if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
-            if (controlsList.down.isDown) { yy += PLAYER_MOVE_SPEED; }
-            if (controlsList.left.isDown) { xx -= PLAYER_MOVE_SPEED; }
-            if (controlsList.right.isDown) { xx += PLAYER_MOVE_SPEED; }
-
-            const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4;
-
-            if (player.team === Team.BLUE) {
-                if (player.x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth) {
-                    player.x = WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth;
-                }
-            } else {
-                if (player.x < BASE_LINE_WIDTH + quarterWidth) {
-                    player.x = BASE_LINE_WIDTH + quarterWidth;
-                }
-            }
-
-
-            player.tank?.repair();
-            player.moveInDirection(xx, yy);
-            player.updateAim();
-            if (player.hp <= 0) {
-                this.setGameOver(player.team === Team.BLUE ? Team.RED : Team.BLUE);
-            }
-        }
-        updatePlayer(this.bluePlayer, this.controlsList[0])
-        updatePlayer(this.redPlayer, this.controlsList[1])
-
-        const detectGameOver = (tank: Tank) => {
-            const isBlue = tank.team === Team.BLUE;
-            if (tank.hp <= 0) return false;
-            if (isBlue) {
-                return tank.x > (WORLD_WIDTH - BASE_LINE_WIDTH);
-            } else {
-                return tank.x < BASE_LINE_WIDTH;
-            }
-        }
-        const updateAi = (tank: Tank) => {
-            // AI decision logic
-            const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
-            const enemy = (tank.team === Team.BLUE ? [this.redPlayer, ...this.redAi]
-                : [this.bluePlayer, ...this.blueAi]);
-
-            const findTankWithClosestDistance = (myTank: Tank, enemy: (Player | Tank)[]) => {
-                let minDist = Infinity;
-                let target: (Player | Tank | null) = null;
-                enemy.forEach((enemyTank) => {
-                    const distance = Phaser.Math.Distance.Between(
-                        myTank.x, myTank.y, enemyTank.x, enemyTank.y
-                    );
-                    if (distance < minDist) {
-                        target = enemyTank;
-                        minDist = distance;
-                    }
-                })
-                return { target, distance: minDist }
-            }
-            const { target, distance } = findTankWithClosestDistance(tank, enemy)
-            if (target !== null && distance <= tank.range) {
-                // stop and attack
-                const fireBullet = async (tank: Tank, target: Tank | Player) => {
-                    if (!tank.canFire()) return;
-                    if (!target) return;
-                    const xDiff = target.x - tank.x;
-                    const yDiff = target.y - tank.y;
-                    tank.setFiring({ x: xDiff, y: yDiff });
-                    const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
-                    bullet.init(tank.x, tank.y, tank.getDamage(), tank.getRange());
-                    this.sfx_shoot.play();
-                    this.bullets.push(bullet);
-
-                    bullet.initPhysics(() => {
-                        bullet.b2Body.SetLinearVelocity({
-                            x: (xDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
-                            y: (yDiff / distance * BULLET_SPEED) * PIXEL_TO_METER,
-                        });
-                        bullet.b2Body.SetAwake(true);
-                    });
-                }
-                fireBullet(tank, target!);
-                // tank.b2Body.SetLinearVelocity({
-                //     x: 0 * PIXEL_TO_METER,
-                //     y: tank.b2Body.GetLinearVelocity().y,
-                // });
-            } else {
-                tank.b2Body.SetLinearVelocity({
-                    x: direction * PIXEL_TO_METER,
-                    y: tank.b2Body.GetLinearVelocity().y,
-                });
-            }
-            if (detectGameOver(tank)) {
-                this.setGameOver(tank.team);
-            }
-        }
-        this.blueAi.forEach((ai) => updateAi(ai))
-        this.redAi.forEach((ai) => updateAi(ai))
+        this.distanceMatrix.init([this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items]);
+        this.updatePlayers();
+        this.updateAi();
 
         const updateBullet = (bullet: Bullet) => {
             if (bullet.isOutOfRange()) {
@@ -323,7 +247,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             }
         };
         this.bullets.forEach((bullet) => updateBullet(bullet));
-        log(`fixedUpdate complete`);
+        // verbose(`fixedUpdate complete`);
     }
 
     setUpKeyboard() {
@@ -468,9 +392,6 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     removeTank(tank: Tank) {
-        this.blueAi = this.blueAi.filter(t => t !== tank);
-        this.redAi = this.redAi.filter(t => t !== tank);
-
         if (this.bluePlayer.tank === tank) this.bluePlayer.tank = null;
         if (this.redPlayer.tank === tank) this.redPlayer.tank = null;
 
@@ -484,9 +405,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         upgrades[randomUpgradeKey] += 1;
         this.spawnItem(position.x, position.y, upgrades, true);
     }
+
     removeBullet(bullet: Bullet) {
-        log('removeBullet');
-        this.bullets = this.bullets.filter(b => b !== bullet);
+        // log('removeBullet');
         bullet.destroy();
     }
 
@@ -497,43 +418,57 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
-            const fixtureDataA = contact.GetFixtureA()?.GetUserData();
-            const fixtureDataB = contact.GetFixtureB()?.GetUserData();
+            const fixtureDataA: IFixtureUserData = contact.GetFixtureA()?.GetUserData();
+            const fixtureDataB: IFixtureUserData = contact.GetFixtureB()?.GetUserData();
 
-            const bodyDataA = fixtureA.GetBody()?.GetUserData();
-            const bodyDataB = fixtureB.GetBody()?.GetUserData();
+            const bodyDataA: IBodyUserData = fixtureA.GetBody()?.GetUserData();
+            const bodyDataB: IBodyUserData = fixtureB.GetBody()?.GetUserData();
 
             const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
             const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
-            log(`BeginContact ` +
-                `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
-                ` vs ` +
-                `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
-            );
+            // log(`BeginContact ` +
+            //     `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
+            //     ` vs ` +
+            //     `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
+            // );
 
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
 
-            checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
-                log('do contact 1');
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact!);
-            });
-            if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 1');
-                continue;
-            }
+            // checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+            //     log('do contact 1');
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankStart(a, b, contact!);
+            // });
+            // if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+            //     log('gone 1');
+            //     continue;
+            // }
 
-            checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
-                log('do contact 2');
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact!);
+            // checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+            //     log('do contact 2');
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemStart(a, b, contact!);
+            // });
+            // if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
+            //     log('gone 2');
+            //     continue;
+            // }
+
+            checkPairGameObjectName('tank', 'item', (tankFixture: b2Fixture, itemFixture: b2Fixture) => {
+                // log('do contact 3');
+                const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
+                const item: Item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
+                if (item.upgrades) { tank.setUpgrade(item.upgrades); }
+
+                this.sfx_point.play();
+                item.destroy();
             });
             if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 2');
+                // log('gone 3');
                 continue;
             }
 
             checkPairGameObjectName('tank', 'bullet', (tankFixture: b2Fixture, bulletFixture: b2Fixture) => {
-                log('do contact 3');
+                // log('do contact 3');
                 const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
                 const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
                 tank.takeDamage(bullet.damage);
@@ -543,12 +478,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.removeBullet(bullet);
             });
             if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 3');
+                // log('gone 3');
                 continue;
             }
 
-            checkPairFixtureLabels('player-body', 'bullet', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
-                log('do contact 4');
+            checkPairFixtureLabels('player-body', 'bullet-body', (playerFixture: b2Fixture, bulletFixture: b2Fixture) => {
+                // log('do contact 4');
                 const player: Player = playerFixture.GetBody()?.GetUserData()?.gameObject as Player;
                 const bullet: Bullet = bulletFixture.GetBody()?.GetUserData()?.gameObject as Bullet;
                 player.takeDamage(bullet.damage);
@@ -556,7 +491,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.removeBullet(bullet);
             });
             if (fixtureA.GetBody()?.GetUserData()?.gameObject == null || fixtureB.GetBody()?.GetUserData()?.gameObject == null) {
-                log('gone 4');
+                // log('gone 4');
                 continue;
             }
 
@@ -571,31 +506,31 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const fixtureA = contact.GetFixtureA();
             const fixtureB = contact.GetFixtureB();
 
-            const fixtureDataA = contact.GetFixtureA()?.GetUserData();
-            const fixtureDataB = contact.GetFixtureB()?.GetUserData();
+            const fixtureDataA: IFixtureUserData = contact.GetFixtureA()?.GetUserData();
+            const fixtureDataB: IFixtureUserData = contact.GetFixtureB()?.GetUserData();
 
-            const bodyDataA = fixtureA.GetBody()?.GetUserData();
-            const bodyDataB = fixtureB.GetBody()?.GetUserData();
+            const bodyDataA: IBodyUserData = fixtureA.GetBody()?.GetUserData();
+            const bodyDataB: IBodyUserData = fixtureB.GetBody()?.GetUserData();
 
             const gameObjectA = fixtureA.GetBody()?.GetUserData()?.gameObject;
             const gameObjectB = fixtureB.GetBody()?.GetUserData()?.gameObject;
-            log(`EndContact ` +
-                `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
-                ` vs ` +
-                `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
-            );
+            // log(`EndContact ` +
+            //     `${bodyDataA?.label}(${gameObjectA?.uniqueID})'s ${fixtureDataA?.fixtureLabel}` +
+            //     ` vs ` +
+            //     `${bodyDataB?.label}(${gameObjectB?.uniqueID})'s ${fixtureDataB?.fixtureLabel}`
+            // );
 
 
             const checkPairGameObjectName = this.checkPairGameObjectName_(fixtureA, fixtureB);
             const checkPairFixtureLabels = this.checkPairFixtureLabels_(fixtureA, fixtureB);
 
-            checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact!);
-            });
+            // checkPairFixtureLabels('player-hand', 'tank-body', (a: b2Fixture, b: b2Fixture) => {
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingTankEnd(a, b, contact!);
+            // });
 
-            checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
-                (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact!);
-            });
+            // checkPairFixtureLabels('player-hand', 'item-body', (a: b2Fixture, b: b2Fixture) => {
+            //     (<Player>a.GetBody()?.GetUserData()?.gameObject).onTouchingItemEnd(a, b, contact!);
+            // });
 
 
             // checkPairGameObjectName('player_bullet', 'enemy', (a: b2Fixture, b: b2Fixture) => {
@@ -640,8 +575,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     private checkPairFixtureLabels_(fixtureA: b2Fixture, fixtureB: b2Fixture) {
-        const fixtureDataA = fixtureA.GetUserData();
-        const fixtureDataB = fixtureB.GetUserData();
+        const fixtureDataA: IFixtureUserData = fixtureA.GetUserData();
+        const fixtureDataB: IFixtureUserData = fixtureB.GetUserData();
 
         return (
             nameA: string, nameB: string,
@@ -660,10 +595,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         const isBlue = winner === Team.BLUE;
         if (isBlue) {
             this.redAi.forEach(ai => ai.destroy());
-            this.redAi = [];
+            this.redAi.length = 0;
         } else {
             this.blueAi.forEach(ai => ai.destroy());
-            this.blueAi = [];
+            this.blueAi.length = 0;
         }
         this.cameras.main.shake(1000, 0.04, false);
         this.isGameOver = true;
@@ -692,11 +627,233 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         box.initPhysics(() => {
             if (isScatter) {
                 const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
-                dir.scale(0.04 * PIXEL_TO_METER);
+                dir.scale(0.02 * PIXEL_TO_METER);
                 box.b2Body.SetLinearVelocity(dir);
             }
         });
+
+        this.addToList(box, this.items);
         return box;
+    }
+
+    addToList(gameObject: (GameObjects.Container & { uniqueID: number }), list: (GameObjects.Container & { uniqueID: number })[]) {
+        list.push(gameObject);
+        this.instancesByID[gameObject.uniqueID] = gameObject;
+        gameObject.on('destroy', () => {
+            list.splice(list.indexOf(gameObject), 1);
+            delete this.instancesByID[gameObject.uniqueID];
+            this.distanceMatrix.removeTransform(gameObject);
+        });
+    }
+
+    updatePlayers() {
+        const updatePlayer = (player: Player, controlsList: Controls) => {
+            let xx = 0;
+            let yy = 0;
+
+            player.debugText.setText(`${player.x.toFixed(2)}, ${player.y.toFixed(2)}`);
+
+            if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
+            if (controlsList.down.isDown) { yy += PLAYER_MOVE_SPEED; }
+            if (controlsList.left.isDown) { xx -= PLAYER_MOVE_SPEED; }
+            if (controlsList.right.isDown) { xx += PLAYER_MOVE_SPEED; }
+
+            const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4;
+
+            if (player.team === Team.BLUE) {
+                if (player.x > WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth) {
+                    player.x = WORLD_WIDTH - BASE_LINE_WIDTH - quarterWidth;
+                }
+            } else {
+                if (player.x < BASE_LINE_WIDTH + quarterWidth) {
+                    player.x = BASE_LINE_WIDTH + quarterWidth;
+                }
+            }
+
+            player.doCollision();
+            player.tank?.repair();
+            player.moveInDirection(xx, yy);
+            player.updateAim();
+            if (player.hp <= 0) {
+                this.setGameOver(player.team === Team.BLUE ? Team.RED : Team.BLUE);
+            }
+        };
+
+        updatePlayer(this.bluePlayer, this.controlsList[0]);
+        updatePlayer(this.redPlayer, this.controlsList[1]);
+    }
+
+    updateAi() {
+
+        const updateTank = (tank: Tank) => {
+            // AI decision logic
+
+            let closestTankID = -1;
+            let closestTankDistance = Infinity;
+            let closestTank: Tank | Player | null = null;
+            let closestItemID = -1;
+            let closestItemDistance = Infinity;
+            let closestItem: Item | null = null;
+
+            this.distanceMatrix.distanceMatrix[tank.uniqueID].forEach((distance, entityID) => {
+                if (entityID === tank.uniqueID) { return; }
+                const entity = this.instancesByID[entityID];
+                if (entity == null) { return; }
+
+                const name = entity.name;
+                switch (name) {
+                    case 'tank':
+                    case 'player':
+                        {
+                            if ((entity as (Tank | Player)).team === tank.team) { return; }
+                            if (closestTankDistance > distance) {
+                                closestTankID = entityID;
+                                closestTankDistance = distance;
+                            }
+                        }
+                        break;
+                    case 'item':
+                        {
+                            if (tank.team === Team.BLUE && entity.x < tank.x) { return; }
+                            if (tank.team === Team.RED && entity.x > tank.x) { return; }
+                            if (closestItemDistance > distance) {
+                                closestItemID = entityID;
+                                closestItemDistance = distance;
+                            }
+                        }
+                        break;
+                }
+            });
+            if (closestTankID !== -1) {
+                closestTank = this.instancesByID[closestTankID] as (Tank | Player);
+                // this.physicsDebugLayer?.lineStyle(1, 0xFF0000, 0.5);
+                // this.physicsDebugLayer?.lineBetween(tank.x, tank.y, closestTank.x, closestTank.y);
+            }
+            if (closestItemID !== -1) {
+                closestItem = this.instancesByID[closestItemID] as Item;
+                // this.physicsDebugLayer?.lineStyle(1, 0x00FF00, 0.5);
+                // this.physicsDebugLayer?.lineBetween(tank.x, tank.y, closestItem.x, closestItem.y);
+            }
+
+            if (closestTank !== null && closestTankDistance <= tank.range) {
+                // stop and attack
+                this.fireBullet(tank, closestTank!, closestTankDistance);
+                // tank.b2Body.SetLinearVelocity({
+                //     x: 0 * PIXEL_TO_METER,
+                //     y: tank.b2Body.GetLinearVelocity().y,
+                // });
+            } else if (closestItem !== null && closestItemDistance <= TANK_CHASE_ITEM_RANGE) {
+                const targetVelocity = new Vector2(
+                    closestItem.x - tank.x,
+                    closestItem.y - tank.y
+                );
+                const targetAngle = targetVelocity.angle();
+                const originalAngle = tank.b2Body.GetAngle();
+                const stepAngle = lerpRadians(originalAngle, targetAngle, 0.07);
+                const velocity = new Vector2(
+                    Math.cos(stepAngle),
+                    Math.sin(stepAngle)
+                );
+                velocity.normalize().scale(TANK_SPEED * tank.movementSpeed * PIXEL_TO_METER);
+                tank.b2Body.SetLinearVelocity(velocity);
+                const rot = Math.atan2(velocity.y, velocity.x);
+                tank.hpBar.setRotation(-rot);
+                tank.uiContainer.setRotation(-rot);
+                tank.setRotation(rot);
+            } else {
+                const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
+                const targetVelocity = new Vector2(
+                    direction,
+                   0
+                );
+                const targetAngle = targetVelocity.angle();
+                const originalAngle = tank.b2Body.GetAngle();
+                const stepAngle = lerpRadians(originalAngle, targetAngle, 0.07);
+                const velocity = new Vector2(
+                    Math.cos(stepAngle),
+                    Math.sin(stepAngle)
+                );
+                velocity.normalize().scale(TANK_SPEED * tank.movementSpeed * PIXEL_TO_METER);
+                tank.b2Body.SetLinearVelocity(velocity);
+                const rot = Math.atan2(velocity.y, velocity.x);
+                tank.hpBar.setRotation(-rot);
+                tank.uiContainer.setRotation(-rot);
+                tank.setRotation(rot);
+            }
+        }
+
+        this.blueAi.forEach((ai) => updateTank(ai));
+        this.redAi.forEach((ai) => updateTank(ai));
+
+
+        const detectGameOver = (tank: Tank) => {
+            const isBlue = tank.team === Team.BLUE;
+            if (tank.hp <= 0) return false;
+            if (isBlue) {
+                return tank.x > (WORLD_WIDTH - BASE_LINE_WIDTH);
+            } else {
+                return tank.x < BASE_LINE_WIDTH;
+            }
+        }
+        this.blueAi.forEach((ai) => {
+            if (detectGameOver(ai)) {
+                this.setGameOver(ai.team);
+            }
+        });
+        this.redAi.forEach((ai) => {
+            if (detectGameOver(ai)) {
+                this.setGameOver(ai.team);
+            }
+        });
+    }
+
+    fireBullet(tank: Tank, target: Tank | Player, distance: number) {
+        if (!tank.canFire()) return;
+        if (!target) return;
+        const tempMatrix = new Phaser.GameObjects.Components.TransformMatrix();
+        const tempParentMatrix = new Phaser.GameObjects.Components.TransformMatrix();
+
+        tank.barrelSprite.getWorldTransformMatrix(tempMatrix, tempParentMatrix);
+        const d: any = tempMatrix.decomposeMatrix();
+
+        const xDiff = target.x - d.translateX;
+        const yDiff = target.y - d.translateY;
+
+        const targetDir = new Vector2(xDiff, yDiff);
+        const targetAngle = targetDir.angle();
+        let originalTankAngle = tank.rotation;
+        while (originalTankAngle < 0) { originalTankAngle += 2 * Math.PI; }
+
+        if (Math.abs(targetAngle - originalTankAngle) > 0.03) {
+            const stepAngle = lerpRadians(originalTankAngle, targetAngle, 0.03);
+            tank.setRotation(stepAngle);
+            tank.hpBar.setRotation(-stepAngle);
+            tank.uiContainer.setRotation(-stepAngle);
+        }
+
+        let originalAngle = tank.barrelSprite.rotation + tank.rotation + Math.PI / 2;
+        while (originalAngle < 0) { originalAngle += 2 * Math.PI; }
+        if (Math.abs(targetAngle - originalAngle) > 0.04) {
+            const stepAngle = lerpRadians(originalAngle, targetAngle, 0.04);
+            tank.barrelSprite.setRotation(stepAngle - Math.PI / 2 - tank.rotation);
+        } else {
+            tank.setFiring(targetDir);
+
+            const bullet = <Bullet>this.add.existing(new Bullet(this, tank.team));
+            bullet.init(d.translateX, d.translateY, tank.getDamage(), tank.getRange());
+            this.sfx_shoot.play();
+
+            this.addToList(bullet, this.bullets);
+
+            targetDir.scale(1 / distance * BULLET_SPEED);
+            bullet.initPhysics(() => {
+                bullet.b2Body.SetLinearVelocity({
+                    x: targetDir.x * PIXEL_TO_METER,
+                    y: targetDir.y * PIXEL_TO_METER,
+                });
+                bullet.b2Body.SetAwake(true);
+            });
+        }
     }
 
     getPhysicsSystem() {

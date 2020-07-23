@@ -1,4 +1,3 @@
-import MatterContainer from './MatterContainer';
 
 import { collisionCategory } from './collisionCategory';
 import { capitalize } from '../utils/utils';
@@ -10,24 +9,26 @@ import { MainScene } from '../scenes/MainScene';
 
 import * as Debug from 'debug';
 import { getUniqueID } from '../utils/UniqueID';
+import { IFixtureUserData } from '../PhysicsSystem';
+import { GameObjects, Scene } from 'phaser';
 
 const log = Debug('tank-beyond-repair:Bullet:log');
 // const warn = Debug('tank-beyond-repair:MainScene:warn');
 // warn.log = console.warn.bind(console);
 
-export class Bullet extends Phaser.GameObjects.Container {
+export class Bullet extends GameObjects.Container {
 
     uniqueID: number;
     team: Team;
     damage: number;
     range: number;
-    sprite: Phaser.GameObjects.Graphics;
+    sprite: GameObjects.Graphics;
     originalX: number;
     originalY: number;
 
     b2Body: b2Body;
 
-    constructor(scene: Phaser.Scene, team: Team) {
+    constructor(scene: Scene, team: Team) {
         super(scene, 0, 0, []);
         this.uniqueID = getUniqueID();
         this.team = team;
@@ -47,7 +48,7 @@ export class Bullet extends Phaser.GameObjects.Container {
             ;
         this.damage = damage;
         this.range = range + 20; // add 20 for buffer
-        this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage + 2));
+        this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage * 3 + 2));
         return this;
     }
 
@@ -69,8 +70,8 @@ export class Bullet extends Phaser.GameObjects.Container {
         fixtureDef.filter.categoryBits = hostCollision;
         fixtureDef.filter.maskBits = collisionCategory.WORLD | enemyCollision;
         fixtureDef.userData = {
-            fixtureLabel: 'body',
-        };
+            fixtureLabel: 'bullet-body',
+        } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
         bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
