@@ -19,7 +19,7 @@ export class UpgradeObject {
 
 	}
 
-	static getRandomPartFromPool() {
+	static getRandomPartFromPool(partsValueMin: number, partsValueMaxIncl = 1, upgradeTypesMin = 1, upgradeTypesMax = 1) {
 		const upgrades = new UpgradeObject();
 
 		const cumulativeSpawnChance: { cumulativeWeight: number, key: ItemType }[] = [];
@@ -45,15 +45,14 @@ export class UpgradeObject {
 
 
 		if (randomUpgradeKey != null) {
-			if(randomUpgradeKey === ItemType.BATTERY){
-				upgrades.addParts({
-					[randomUpgradeKey]: Math.ceil(Math.random() * 120),
-				});
-			}else{
-				upgrades.addParts({
-					[randomUpgradeKey]: Math.ceil(Math.random() * 10),
-				});
+			let partVal = Math.ceil(Math.random() * Math.min(partsValueMaxIncl - partsValueMin)) + partsValueMin;
+
+			if (randomUpgradeKey === ItemType.BATTERY) {
+				partVal *= 100;
 			}
+			upgrades.addParts({
+				[randomUpgradeKey]: partVal,
+			});
 		}
 
 		return upgrades;
@@ -100,6 +99,12 @@ export class UpgradeObject {
 			}
 		});
 		this._levels = null; // set dirty
+	}
+
+	addAllParts(params: Array<Partial<ItemsList>>) {
+		for (const p of params) {
+			this.addParts(p);
+		}
 	}
 
 	clone() {

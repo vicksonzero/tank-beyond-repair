@@ -159,7 +159,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             dir.scale(10);
             const pos = new Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
             pos.add(dir);
-            const upgrades = UpgradeObject.getRandomPartFromPool();
+            const upgrades = UpgradeObject.getRandomPartFromPool(5);
+
+            const randomUpgrade2 = UpgradeObject.getRandomPartFromPool(5);
+            upgrades.addParts(randomUpgrade2.partsList);
             // const upgrades = new UpgradeObject();
             // upgrades.setParts({ battery: Math.floor(Math.random() * i * 100) + 1 });
             this.spawnItem(pos.x, pos.y, upgrades, true);
@@ -271,7 +274,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.redPlayer.onActionPressed(this.sfx_point, this.sfx_open);
         });
         this.cheats.spawnUpgrades.on('down', (evt: any) => {
-            const upgrades = UpgradeObject.getRandomPartFromPool();
+            const upgrades = UpgradeObject.getRandomPartFromPool(10);
             this.spawnItem(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, upgrades, true);
         });
     }
@@ -385,14 +388,14 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         tank.destroy();
         this.sfx_hit.play();
 
-        const randomUpgrade = UpgradeObject.getRandomPartFromPool();
+        const randomUpgrade = UpgradeObject.getRandomPartFromPool(1);
         upgrades.addParts(randomUpgrade.partsList);
 
         Object.entries(upgrades.partsList).forEach(([partName, level]) => {
             const u = new UpgradeObject();
             u.setParts({
                 [partName]: level,
-            })
+            });
             this.spawnItem(position.x, position.y, u, true);
         })
     }
@@ -849,7 +852,17 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     makeUpgradeGraphics(container: Phaser.GameObjects.Container, upgrades: UpgradeObject) {
         const parts = Object.entries(upgrades.partsList) as [ItemType, number][];
+        const filteredParts = (parts
+            .filter(([itemType, count]: [ItemType, number]) => {
+                const renderedCount = itemType === 'battery' ?
+                    Math.round(count / config.items.battery.chargeFull * 10) / 10
+                    : count;
+
+                return (renderedCount > 0);
+            })
+        );
         // log(JSON.stringify(parts));
+        log(filteredParts.length);
 
         const iconCount = parts.reduce((sum, [itemType, count]) => {
             return sum + (itemType === 'battery' ? Math.ceil(count / 100) : count);
@@ -872,12 +885,13 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         let iconGroup: GameObjects.Container | null = container.first as GameObjects.Container | null;
         let icon: GameObjects.Image | null;
         let label: GameObjects.Text | null;
-        parts.forEach(([itemType, count]: [ItemType, number]) => {
+
+        const iconSize = 24 / Math.sqrt(filteredParts.length);
+        const startY = (filteredParts.length - 1) / 2 * iconSize;
+        filteredParts.forEach(([itemType, count]: [ItemType, number], i: number) => {
             const renderedCount = itemType === 'battery' ?
                 Math.round(count / config.items.battery.chargeFull * 10) / 10
                 : count;
-
-            if (renderedCount === 0) return;
 
             if (!iconGroup) { iconGroup = container.next as GameObjects.Container | null; }
 
@@ -907,24 +921,30 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                         },
                     }, false),
                 ]);
-                icon.setOrigin(0.5);
-                icon.setScale(1.5);
             }
 
+            iconGroup.setY(startY - i * iconSize);
+
             icon = iconGroup.getAt(0) as GameObjects.Image;
+            icon.setOrigin(0.5);
+            icon.setScale(1.5 / Math.sqrt(filteredParts.length));
+
             label = iconGroup.getAt(1) as GameObjects.Text;
+            label.setFontSize(iconSize);
 
             if (itemType !== ItemType.BATTERY) {
                 icon.setFrame(itemIconFrame[itemType as string]);
-                label.setText(`x${renderedCount}`);
+                label.setText(renderedCount > 1 ? `x${renderedCount}` : '');
             }
 
             if (itemType === ItemType.BATTERY) {
                 const isFullBattery = renderedCount > 1;
-                if (!isFullBattery) {
+                if (isFullBattery) {
                     icon.setFrame(batteryIconFrames.batteryFull);
+                    label.setText(renderedCount > 1 ? `x${renderedCount}` : '');
                 } else {
-                    const charge = count % config.items.battery.chargeFull;
+                    label.setText(`${renderedCount * 100}%`);
+                    const charge = count;
                     if (charge > config.items.battery.chargeHalf) {
                         icon.setFrame(batteryIconFrames.batteryFull);
                     } else if (charge > config.items.battery.chargeLow) {

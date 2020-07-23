@@ -226,7 +226,7 @@ export class Player extends Phaser.GameObjects.Container {
         const itemDisplacementVector = reverseVelocity.scale(1);
 
         // align
-        if (this.holdingItemContainer) { this.displaceUpgrades(this.holdingItemContainer, itemDisplacementVector); }
+        // if (this.holdingItemContainer) { this.displaceUpgrades(this.holdingItemContainer, itemDisplacementVector); }
     }
 
     doCollision() {
