@@ -45,9 +45,15 @@ export class UpgradeObject {
 
 
 		if (randomUpgradeKey != null) {
-			upgrades.addParts({
-				[randomUpgradeKey]: Math.ceil(Math.random() * 10),
-			});
+			if(randomUpgradeKey === ItemType.BATTERY){
+				upgrades.addParts({
+					[randomUpgradeKey]: Math.ceil(Math.random() * 120),
+				});
+			}else{
+				upgrades.addParts({
+					[randomUpgradeKey]: Math.ceil(Math.random() * 10),
+				});
+			}
 		}
 
 		return upgrades;

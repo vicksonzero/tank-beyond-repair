@@ -63,6 +63,7 @@ export class Item extends GameObjects.Container {
         this.itemText.setOrigin(0.5, 1);
         // this.itemText.setVisible(false);
         this.itemSprite.setTint(this.normalTint)
+        this.itemSprite.setVisible(false);
 
         this.on('destroy', () => {
             if (this.warningEvent) this.warningEvent.destroy();
@@ -132,7 +133,7 @@ export class Item extends GameObjects.Container {
             callback: () => {
                 this.warningLoop = this.scene.time.addEvent({
                     delay: 100,
-                    callback: () => { this.itemSprite.setVisible(!this.itemSprite.visible) },
+                    callback: () => { this.itemContainer.setVisible(!this.itemContainer.visible) },
                     loop: true,
                 });
             },
@@ -147,7 +148,7 @@ export class Item extends GameObjects.Container {
         if (this.warningEvent) this.warningEvent.destroy();
         if (this.warningLoop) this.warningLoop.destroy();
         if (this.dieEvent) this.dieEvent.destroy();
-        this.itemSprite.setVisible(true);
+        this.itemContainer.setVisible(true);
         this.initDeathTimer();
         return this;
     }

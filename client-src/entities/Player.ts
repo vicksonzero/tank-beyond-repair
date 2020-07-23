@@ -331,11 +331,11 @@ export class Player extends Phaser.GameObjects.Container {
                 this.add(this.holdingItem = this.scene.make.container({ x: xx, y: yy }) as HoldingItem);
                 this.holdingItem.setScale(1.15);
 
-                this.holdingItem.add(this.scene.make.image({
-                    x: 0, y: 0,
-                    key: `allSprites_default`,
-                    frame: 'crateMetal',
-                }));
+                // this.holdingItem.add(this.scene.make.image({
+                //     x: 0, y: 0,
+                //     key: `allSprites_default`,
+                //     frame: 'crateMetal',
+                // }));
 
                 sfx_pickup.play();
                 this.holdingItem.upgrades = new UpgradeObject();
@@ -343,6 +343,7 @@ export class Player extends Phaser.GameObjects.Container {
                 const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
 
                 this.holdingItem.add(this.holdingItemContainer = this.scene.make.container({ x: 0, y: 0 }));
+                (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
 
                 this.pointerTarget.destroy();
                 this.pointerTarget = null;
