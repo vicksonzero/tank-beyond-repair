@@ -81,6 +81,7 @@ export class Tank extends Phaser.GameObjects.Container {
             armor: 0,
         });
         this.lastBatteryTick = this.scene.time.now;
+        this.refreshAttributes(false);
 
         const color = this.team === Team.BLUE ? 'dark' : 'sand';
         this.add([
@@ -145,7 +146,7 @@ export class Tank extends Phaser.GameObjects.Container {
         return this;
     }
     updateHpBar() {
-        this.hpBar.updateHpBatteryBar(this.hp, this._attr.maxHP, this.upgrades.partsList.battery, (this._attr.maxHP - 5) * 0.5);
+        this.hpBar.updateHpBatteryBar(this.hp, this._attr.maxHP, this.upgrades.partsList.battery, (this._attr.maxHP - 5) * 0.2);
     }
 
     initPhysics(physicsFinishedCallback: () => void): this {
@@ -222,7 +223,7 @@ export class Tank extends Phaser.GameObjects.Container {
     takeBatteryDamage(time: number): this {
         if (time - this.lastBatteryTick > 1000) {
             this.upgrades.addParts({
-                battery: -1,
+                battery: -2,
             });
             this.updateHpBar();
             this.lastBatteryTick += 1000;
@@ -251,7 +252,10 @@ export class Tank extends Phaser.GameObjects.Container {
 
         this._attr.attackInterval = Math.max(20, this._attr.attackInterval); // cap at a point
 
-        if (doRefreshGraphics) { this.refreshUpgradeGraphics(); }
+        if (doRefreshGraphics) {
+            this.refreshUpgradeGraphics();
+            this.updateHpBar();
+        }
     }
 
     refreshUpgradeGraphics(): this {
