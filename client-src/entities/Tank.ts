@@ -1,17 +1,17 @@
 
-import { collisionCategory } from './collisionCategory';
-import { capitalize } from '../utils/utils';
-import { Team } from './Team';
-import { HpBar } from '../ui/HpBar';
-import { UpgradeObject } from './Upgrade';
+import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2World } from '@flyover/box2d';
+import { AttributeType, IAttributeMap } from '../config/config';
 import { PIXEL_TO_METER } from '../constants';
-import { b2Body, b2BodyType, b2CircleShape, b2FixtureDef, b2BodyDef, b2World } from '@flyover/box2d';
-import { MainScene } from '../scenes/MainScene';
-import { getUniqueID } from '../utils/UniqueID';
 import { IFixtureUserData } from '../PhysicsSystem';
-
+import { MainScene } from '../scenes/MainScene';
+import { HpBar } from '../ui/HpBar';
 import { Immutable } from '../utils/ImmutableType';
-import { IAttributeMap, AttributeType } from '../config/config';
+import { getUniqueID } from '../utils/UniqueID';
+import { capitalize } from '../utils/utils';
+import { collisionCategory } from './collisionCategory';
+import { Team } from './Team';
+import { UpgradeObject } from './Upgrade';
+
 
 type Image = Phaser.GameObjects.Image;
 type Graphics = Phaser.GameObjects.Graphics;
@@ -28,6 +28,7 @@ export class Tank extends Phaser.GameObjects.Container {
     repairCnt = 1;
     hp = 100;
     battery = 100;
+    lastBatteryTick = 0;
 
     private _attr: IAttributeMap = {
         range: 250,
@@ -79,6 +80,8 @@ export class Tank extends Phaser.GameObjects.Container {
             barrel: 1,
             armor: 0,
         });
+        this.lastBatteryTick = this.scene.time.now;
+
         const color = this.team === Team.BLUE ? 'dark' : 'sand';
         this.add([
             this.bodySprite = this.scene.make.image({
@@ -142,7 +145,7 @@ export class Tank extends Phaser.GameObjects.Container {
         return this;
     }
     updateHpBar() {
-        this.hpBar.updateHPBar(this.hp, this._attr.maxHP, (this._attr.maxHP - 5) * 0.5);
+        this.hpBar.updateHpBatteryBar(this.hp, this._attr.maxHP, this.upgrades.partsList.battery, (this._attr.maxHP - 5) * 0.5);
     }
 
     initPhysics(physicsFinishedCallback: () => void): this {
@@ -213,6 +216,18 @@ export class Tank extends Phaser.GameObjects.Container {
 
         this.updateHpBar();
         this.refreshUpgradeGraphics();
+        return this;
+    }
+
+    takeBatteryDamage(time: number): this {
+        if (time - this.lastBatteryTick > 1000) {
+            this.upgrades.addParts({
+                battery: -1,
+            });
+            this.updateHpBar();
+            this.lastBatteryTick += 1000;
+        }
+
         return this;
     }
 

@@ -48,7 +48,7 @@ export class UpgradeObject {
 			let partVal = Math.ceil(Math.random() * Math.min(partsValueMaxIncl - partsValueMin)) + partsValueMin;
 
 			if (randomUpgradeKey === ItemType.BATTERY) {
-				partVal *= 100;
+				partVal *= 20;
 			}
 			upgrades.addParts({
 				[randomUpgradeKey]: partVal,
@@ -148,11 +148,13 @@ export class UpgradeObject {
 	getAttribute(attributeName: AttributeType) {
 		return Object.entries(this.levels).reduce((result, [partType, partLevel]: [PartType, number]) => {
 
-			const a = config.parts[partType] || [];
-			const b = a[partLevel] || {};
+			const a = config.parts[partType];
+			if (!a) { console.warn(`unknown partType "${partType}"`); }
+			const b = (a || [])[partLevel];
+			if (!b) { console.warn(`unknown partLevel "${partLevel}" of type "${partType}"`); }
 
 
-			const stat = b.stat?.[attributeName] || 0;
+			const stat = b?.stat?.[attributeName] || 0;
 			return result + stat;
 		}, 0);
 	}

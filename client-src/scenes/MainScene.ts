@@ -110,7 +110,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.instancesByID[this.bluePlayer.uniqueID] = this.bluePlayer;
         this.bluePlayer.spawnItem = this.spawnItem;
         this.bluePlayer
-            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initHpBar(new HpBar(this, 0, -30, 30, 4, 2))
             .init(100, 100);
         this.bluePlayer.initPhysics(() => { });
 
@@ -118,7 +118,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.instancesByID[this.redPlayer.uniqueID] = this.redPlayer;
         this.redPlayer.spawnItem = this.spawnItem;
         this.redPlayer
-            .initHpBar(new HpBar(this, 0, -25, 30, 4))
+            .initHpBar(new HpBar(this, 0, -30, 30, 4, 2))
             .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
             .faceLeft();
         this.redPlayer.initPhysics(() => { });
@@ -127,7 +127,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
             ai
-                .initHpBar(new HpBar(this, 0, -25, 30, 4))
+                .initHpBar(new HpBar(this, 0, -30, 30, 4, 2))
                 .init(x, y);
             ai.initPhysics(() => { });
 
@@ -394,7 +394,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         Object.entries(upgrades.partsList).forEach(([partName, level]) => {
             const u = new UpgradeObject();
             u.setParts({
-                [partName]: level,
+                [partName]: Math.ceil(level* 0.5),
             });
             this.spawnItem(position.x, position.y, u, true);
         })
@@ -773,6 +773,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.hpBar.setRotation(-rot);
                 tank.uiContainer.setRotation(-rot);
                 tank.setRotation(rot);
+            }
+
+            tank.takeBatteryDamage(this.time.now);
+            if (tank.upgrades.partsList.battery <= 0) {
+                this.removeTank(tank);
             }
         }
 

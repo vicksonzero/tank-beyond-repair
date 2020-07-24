@@ -173,7 +173,7 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     updateHpBar() {
-        this.hpBar.updateHPBar(this.hp, this.maxHP);
+        this.hpBar.updateHpBar(this.hp, this.maxHP);
     }
 
     moveInDirection(dirX: number, dirY: number) {
