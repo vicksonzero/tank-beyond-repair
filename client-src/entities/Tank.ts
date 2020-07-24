@@ -220,12 +220,18 @@ export class Tank extends Phaser.GameObjects.Container {
         return this;
     }
 
-    takeBatteryDamage(time: number): this {
+    takeBatteryDamage(amount: number): this {
+        this.upgrades.addParts({
+            battery: -amount,
+        });
+        this.updateHpBar();
+
+        return this;
+    }
+
+    takeAutoBatteryDamage(time: number): this {
         if (time - this.lastBatteryTick > 1000) {
-            this.upgrades.addParts({
-                battery: -2,
-            });
-            this.updateHpBar();
+            this.takeBatteryDamage(2);
             this.lastBatteryTick += 1000;
         }
 

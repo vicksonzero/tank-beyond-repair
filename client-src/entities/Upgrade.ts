@@ -150,8 +150,13 @@ export class UpgradeObject {
 
 			const a = config.parts[partType];
 			if (!a) { console.warn(`unknown partType "${partType}"`); }
-			const b = (a || [])[partLevel];
-			if (!b) { console.warn(`unknown partLevel "${partLevel}" of type "${partType}"`); }
+
+			let c = partLevel;
+			while (a != null && c > 0 && a[c] == null) {
+				c--;
+			}
+			const b = (a || [])[c];
+			if (!b) { console.warn(`unknown partLevel (${c}) of type "${partType}"`); }
 
 
 			const stat = b?.stat?.[attributeName] || 0;

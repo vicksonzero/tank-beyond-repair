@@ -775,7 +775,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.setRotation(rot);
             }
 
-            tank.takeBatteryDamage(this.time.now);
+            tank.takeAutoBatteryDamage(this.time.now);
             if (tank.upgrades.partsList.battery <= 0) {
                 this.removeTank(tank);
             }
