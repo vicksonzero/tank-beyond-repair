@@ -873,6 +873,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             barrel: 'Barrel',
             armor: 'Iron_Plating',
         };
+        const itemIconTint: { [x: string]: number } = {
+            battery: 0x88ff88,
+            scrap: 0xffffff,
+            barrel: 0xff8888,
+            armor: 0x8888ff,
+        };
         const batteryIconFrames: { [x: string]: string } = {
             batteryFull: 'Battery_Full',
             batteryHalf: 'Battery_Half',
@@ -936,6 +942,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 icon.setFrame(itemIconFrame[itemType as string]);
                 label.setText(renderedCount > 1 ? `x${renderedCount}` : '');
             }
+
+            icon.setTint(itemIconTint[itemType]);
 
             if (itemType === ItemType.BATTERY) {
                 const isFullBattery = renderedCount > 1;
