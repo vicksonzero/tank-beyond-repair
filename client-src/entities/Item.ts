@@ -128,10 +128,10 @@ export class Item extends GameObjects.Container {
     }
 
     initDeathTimer(): this {
-        this.warningEvent = this.scene.time.addEvent({
+        this.warningEvent = (this.scene as MainScene).fixedTime.addEvent({
             delay: ITEM_LIFESPAN_WARNING,
             callback: () => {
-                this.warningLoop = this.scene.time.addEvent({
+                this.warningLoop = (this.scene as MainScene).fixedTime.addEvent({
                     delay: 100,
                     callback: () => { this.itemContainer.setVisible(!this.itemContainer.visible) },
                     loop: true,
@@ -139,7 +139,7 @@ export class Item extends GameObjects.Container {
             },
             loop: false,
         });
-        this.dieEvent = this.scene.time.addEvent({ delay: ITEM_LIFESPAN, callback: () => { this.destroy() }, loop: false });
+        this.dieEvent = (this.scene as MainScene).fixedTime.addEvent({ delay: ITEM_LIFESPAN, callback: () => { this.destroy() }, loop: false });
         return this;
     }
 

@@ -44,6 +44,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     spawnTimer: Phaser.Time.TimerEvent;
     bg: Phaser.GameObjects.TileSprite;
 
+    fixedTime: Phaser.Time.Clock;
+    fixedElapsedTime: number;
+
     backgroundUILayer: Container;
     itemLayer: Container;
     tankLayer: Container;
@@ -89,6 +92,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     create(): void {
         setUpAudio.call(this);
         log('create');
+        this.fixedTime = new Phaser.Time.Clock(this);
+        this.fixedElapsedTime = 0;
         this.getPhysicsSystem().init(this as b2ContactListener);
         this.distanceMatrix = new DistanceMatrix();
         this.isGameOver = false;
@@ -147,7 +152,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 });
             };
 
-            this.spawnTimer = this.time.addEvent({
+            this.spawnTimer = this.fixedTime.addEvent({
                 startAt: SPAWN_DELAY,
                 delay: SPAWN_INTERVAL,
                 callback: spawnCallback,
@@ -169,7 +174,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.spawnItem(pos.x, pos.y, upgrades, true);
         }
 
-        this.time.addEvent({
+        this.fixedTime.addEvent({
             delay: SPAWN_DELAY,
             callback: () => {
                 this.sfx_bgm.play();
@@ -188,7 +193,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 align: "center",
             },
         ).setOrigin(0.5);
-        this.time.addEvent({
+        this.fixedTime.addEvent({
             delay: 1000,
             callback: () => {
                 countDownValue -= 1;
@@ -212,15 +217,16 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         if (this.lastUpdate === -1) {
             this.lastUpdate = time;
 
-            const timeStep = 1000 / this.frameSize; // seconds
-            this.fixedUpdate(timeStep);
+            // seconds
+            this.fixedElapsedTime += this.frameSize;
+            this.fixedUpdate(this.fixedElapsedTime, this.frameSize);
         } else {
             let i = 0;
             while (this.lastUpdate + this.frameSize < time && i < PHYSICS_MAX_FRAME_CATCHUP) {
                 i++;
 
-                const timeStep = 1000 / this.frameSize; // seconds
-                this.fixedUpdate(timeStep);
+                this.fixedElapsedTime += this.frameSize;
+                this.fixedUpdate(this.fixedElapsedTime, this.frameSize);
                 this.lastUpdate += this.frameSize;
             }
             this.lastUpdate = time;
@@ -229,9 +235,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         }
     }
 
-    fixedUpdate(timeStep: number) {
+    fixedUpdate(fixedTime: number, frameSize: number) {
+        const timeStep = 1000 / frameSize;
         // verbose(`fixedUpdate start`);
 
+        this.fixedTime.preUpdate(fixedTime, frameSize);
         this.getPhysicsSystem().update(
             timeStep,
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
@@ -246,6 +254,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             }
         };
         this.bullets.forEach((bullet) => updateBullet(bullet));
+        this.fixedTime.update(fixedTime, frameSize);
         // verbose(`fixedUpdate complete`);
     }
 
@@ -781,7 +790,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.setRotation(rot);
             }
 
-            tank.takeAutoBatteryDamage(this.time.now);
+            tank.takeAutoBatteryDamage(this.fixedTime.now);
             if (tank.upgrades.partsList.battery <= 0) {
                 this.removeTank(tank);
             }

@@ -59,7 +59,7 @@ config:
           - type: cannon
             offset: [-4, 0]
       - stat:
-          maxHP: 220      
+          maxHP: 220
           movementSpeed: 0.8
           maxBattery: 180
         graphics:

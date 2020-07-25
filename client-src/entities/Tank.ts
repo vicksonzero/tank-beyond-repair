@@ -217,7 +217,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.hp -= amount;
 
         this.bodySprite.setTint(Teams[this.team].hitTint);
-        this.undoTintEvent = this.scene.time.addEvent({
+        this.undoTintEvent = (this.scene as MainScene).fixedTime.addEvent({
             delay: 100, loop: false, callback: () => {
                 this.bodySprite.setTint(Teams[this.team].normalTint);
             }
