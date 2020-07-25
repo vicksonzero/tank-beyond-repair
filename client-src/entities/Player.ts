@@ -237,13 +237,16 @@ export class Player extends Phaser.GameObjects.Container {
         for (let contactEdge = this.b2Body.GetContactList(); contactEdge; contactEdge = contactEdge.next) {
 
             const contact = contactEdge.contact;
-            const sensorFixture = ((contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel === 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
-            if (!['player-hand'].includes((sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel)) { continue; }
+            const fixtureLabelA = (contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel;
+            const sensorFixture = (fixtureLabelA === 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
+            const sensorFixtureLabel = (sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel;
+
+            if (!['player-hand'].includes(sensorFixtureLabel)) { continue; }
 
             const sensorBody = sensorFixture.GetBody();
             const sensorPosition = sensorBody.GetWorldPoint((sensorFixture.GetShape() as b2CircleShape).m_p, { x: 0, y: 0 });
 
-            const itemFixture = ((contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel !== 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
+            const itemFixture = (fixtureLabelA !== 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
             const itemBody = itemFixture.GetBody();
             const itemPosition = itemBody.GetPosition();
 
@@ -298,7 +301,7 @@ export class Player extends Phaser.GameObjects.Container {
             this.tryDropItemOnFloor(sfx_pickup);
 
         } else if (this.pointerTarget.name === 'item' && this.holdingItem) {
-            this.trySwapItemsWithFloorItem(this.pointerTarget as Item, sfx_pickup);
+            this.tryScoopItem(sfx_pickup);
 
         } else if (this.pointerTarget.name === 'item' && !this.holdingItem) {
             this.tryPickUpItem(sfx_pickup);
@@ -314,7 +317,7 @@ export class Player extends Phaser.GameObjects.Container {
         if (!this.pointerTarget) return false;
 
         // did not pass pointerTarget as item because we are going to set it to null
-        const item = this.pointerTarget as Item;
+        const floorItem = this.pointerTarget as Item;
 
         const rotation = this.bodySprite.rotation;
         const xx = Math.cos(rotation) * 30;
@@ -330,7 +333,7 @@ export class Player extends Phaser.GameObjects.Container {
 
         sfx_pickup.play();
         this.holdingItem.upgrades = new UpgradeObject();
-        this.holdingItem.upgrades.setParts(item.upgrades.partsList);
+        this.holdingItem.upgrades.setParts(floorItem.upgrades.partsList);
         const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
 
         this.holdingItem.add(this.holdingItemContainer = this.scene.make.container({ x: 0, y: 0 }));
@@ -357,6 +360,27 @@ export class Player extends Phaser.GameObjects.Container {
         item.setUpgrades(myOldUpgrade);
         this.holdingItem.destroy();
         this.holdingItem = null;
+
+        return true;
+    }
+
+    tryScoopItem(sfx_pickup: Phaser.Sound.BaseSound): boolean {
+        if (!this.holdingItem) return false;
+        if (!this.holdingItem.upgrades) return false;
+        if (!this.pointerTarget) return false;
+
+        // did not pass pointerTarget as item because we are going to set it to null
+        const floorItem = this.pointerTarget as Item;
+
+        const myOldUpgrade = this.holdingItem.upgrades.clone();
+
+        sfx_pickup.play();
+        this.holdingItem.upgrades.addParts(floorItem.upgrades.partsList);
+        const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
+        (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
+
+        this.pointerTarget.destroy();
+        this.pointerTarget = null;
 
         return true;
     }
@@ -402,7 +426,7 @@ export class Player extends Phaser.GameObjects.Container {
         this.pointerTarget = item;
         item.on(Item.ITEM_DIE, this.onTargetDie);
 
-        item.itemSprite.setTint(item.highlightTint);
+        item.setHighlightTint();
         // item.itemText.setVisible(true);
     }
 
@@ -410,7 +434,7 @@ export class Player extends Phaser.GameObjects.Container {
         item.off(Item.ITEM_DIE, this.onTargetDie);
         this.pointerTarget = null;
 
-        item.itemSprite.setTint(item.normalTint);
+        item.setNormalTint();
         // item.itemText.setVisible(false);
     }
 

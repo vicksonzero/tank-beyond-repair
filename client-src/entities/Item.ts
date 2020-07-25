@@ -25,7 +25,7 @@ export class Item extends GameObjects.Container {
     itemContainer: Container;
     itemText: Text;
     uniqueID: number;
-    
+
     normalTint = 0x00FFFF;
     highlightTint = 0xAAAAAA;
 
@@ -143,6 +143,17 @@ export class Item extends GameObjects.Container {
         return this;
     }
 
+    setNormalTint() {
+        // this.itemContainer.list.forEach((iconSet: Phaser.GameObjects.Container) => {
+        //     (iconSet.getAt(0) as Phaser.GameObjects.Image).setTint(this.normalTint);
+        // });
+    }
+
+    setHighlightTint() {
+        // this.itemContainer.list.forEach((iconSet: Phaser.GameObjects.Container) => {
+        //     (iconSet.getAt(0) as Phaser.GameObjects.Image).setTint(this.highlightTint);
+        // });
+    }
 
     refreshDeathTimer(): this {
         if (this.warningEvent) this.warningEvent.destroy();
