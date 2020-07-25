@@ -25,13 +25,13 @@ config:
   partRequirements:
     chassis:
       - steel: 1
-      - steel: 10
-      - steel: 25
+      - steel: 5
+      - steel: 20
       - steel: 40
     cannon:
       - barrel: 1
-      - barrel: 10
-      - barrel: 25
+      - barrel: 5
+      - barrel: 15
     armor:
       - armor: 5
       - armor: 15
@@ -49,7 +49,7 @@ config:
           - type: cannon
             offset: [-4, 0]
       - stat:
-          maxHP: 150
+          maxHP: 200
           movementSpeed: 1
           maxBattery: 150
         graphics:

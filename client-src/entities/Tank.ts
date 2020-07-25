@@ -327,7 +327,7 @@ export class Tank extends Phaser.GameObjects.Container {
 
         this.barrelSprite.setScale(1 + 0.2 * this.upgrades.levels.cannon, 1 + 0.2 * this.upgrades.levels.cannon);
 
-        this.bodySprite.setScale(Math.pow(this.upgrades.levels.chassis, 1 / 3));
+        this.bodySprite.setScale(Math.pow((this.upgrades.levels.chassis + 1), 1 / 3));
 
         return this;
     }

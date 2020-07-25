@@ -11,7 +11,7 @@ export const Teams = {
     [Team.RED]: {
         facing: Math.PI,
         normalTint: 0xff5555,
-        highlightTint: 0xff7777,
+        highlightTint: 0xff8888,
         hitTint: 0xFF0000,
         damagedTint: 0xaa3333,
     },

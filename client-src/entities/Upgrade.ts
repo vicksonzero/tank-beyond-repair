@@ -143,7 +143,7 @@ export class UpgradeObject {
 					break;
 				}
 			}
-			result[partType] = i;
+			result[partType] = (i - 1);
 		});
 
 		return result;
