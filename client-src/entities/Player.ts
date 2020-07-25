@@ -11,6 +11,8 @@ import { Item } from './Item';
 import { Tank } from './Tank';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
+import { config } from '../config/config';
+
 
 const log = Debug('tank-beyond-repair:Player:log');
 // const warn = Debug('tank-beyond-repair:Player:warn');
@@ -298,11 +300,16 @@ export class Player extends Phaser.GameObjects.Container {
 
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
         if (!this.pointerTarget) {
-            this.tryDropItemOnFloor(sfx_pickup);
+            if (this.canDropItemInHand()) this.tryDropItemOnFloor(sfx_pickup);
 
         } else if (this.pointerTarget.name === 'item' && this.holdingItem) {
-            this.tryScoopItem(sfx_pickup);
+            const floorItem = this.pointerTarget as Item;
 
+            if (UpgradeObject.canStackOnto(this.holdingItem.upgrades, floorItem.upgrades)) {
+                this.tryScoopItem(sfx_pickup);
+            }else{
+                this.trySwapItemsWithFloorItem(floorItem, sfx_pickup);
+            }
         } else if (this.pointerTarget.name === 'item' && !this.holdingItem) {
             this.tryPickUpItem(sfx_pickup);
 
@@ -345,6 +352,12 @@ export class Player extends Phaser.GameObjects.Container {
         return true;
     }
 
+    canDropItemInHand() {
+        if (!this.holdingItem) return false;
+
+        return true;
+    }
+
     tryDropItemOnFloor(sfx_pickup: Phaser.Sound.BaseSound): boolean {
         if (!this.holdingItem) return false;
         if (!this.spawnItem) return false;
@@ -372,7 +385,6 @@ export class Player extends Phaser.GameObjects.Container {
         // did not pass pointerTarget as item because we are going to set it to null
         const floorItem = this.pointerTarget as Item;
 
-        const myOldUpgrade = this.holdingItem.upgrades.clone();
 
         sfx_pickup.play();
         this.holdingItem.upgrades.addParts(floorItem.upgrades.partsList);

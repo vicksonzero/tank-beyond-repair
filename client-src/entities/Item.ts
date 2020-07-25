@@ -155,6 +155,10 @@ export class Item extends GameObjects.Container {
         // });
     }
 
+    static canStackItems(a: Item, b: Item) {
+        return UpgradeObject.canStackOnto(a.upgrades, b.upgrades);
+    }
+
     refreshDeathTimer(): this {
         if (this.warningEvent) this.warningEvent.destroy();
         if (this.warningLoop) this.warningLoop.destroy();

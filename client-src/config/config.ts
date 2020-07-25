@@ -83,9 +83,18 @@ export interface IPartGraphics {
 }
 
 export interface IUIControls {
-    swipeThumbSize: number,
-    minSwipeDist: number,
-    directionSnaps: number,
+    swipeThumbSize: number;
+    minSwipeDist: number;
+    directionSnaps: number;
+    
+    // allowPickUpItems: boolean;
+    // allowDropItems: boolean;
+    // allowHandFeedItemsIntoTanks: boolean;
+
+    pickUpItemsByContact: boolean;
+
+    allowMultipleItemsInHand: boolean;
+    allowMultipleItemTypesInHand: boolean;
 }
 
 export interface ICreditEntry {

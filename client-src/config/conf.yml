@@ -4,12 +4,11 @@ config:
     minSwipeDist: 50
     directionSnaps: 4
 
-    allowPickUpItems: false
-    allowDropItems: false
-    allowHandFeedItemsIntoTanks: false
+    # allowPickUpItems: true
+    # allowDropItems: true
+    # allowHandFeedItemsIntoTanks: true
 
     pickUpItemsByContact: false
-    pickUpItemsByActionButton: true
 
     allowMultipleItemsInHand: true
     allowMultipleItemTypesInHand: false
@@ -26,17 +25,17 @@ config:
   partRequirements:
     chassis:
       - steel: 1
-      - steel: 2
       - steel: 10
-      - steel: 20
+      - steel: 25
+      - steel: 40
     cannon:
       - barrel: 1
-      - barrel: 4
-      - barrel: 9
+      - barrel: 10
+      - barrel: 25
     armor:
-      - armor: 1
-      - armor: 2
-      - armor: 4
+      - armor: 5
+      - armor: 15
+      - armor: 25
   parts:
     chassis:
       - stat:

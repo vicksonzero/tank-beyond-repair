@@ -154,15 +154,16 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 loop: true,
             });
         }
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 20; i++) {
             const dir = Phaser.Math.RandomXY(new Vector2(1, 1), 10);
             dir.scale(10);
             const pos = new Vector2(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
             pos.add(dir);
             const upgrades = UpgradeObject.getRandomPartFromPool(5);
 
-            const randomUpgrade2 = UpgradeObject.getRandomPartFromPool(5);
-            upgrades.addParts(randomUpgrade2.partsList);
+            // const randomUpgrade2 = UpgradeObject.getRandomPartFromPool(5);
+            // upgrades.addParts(randomUpgrade2.partsList);
+
             // const upgrades = new UpgradeObject();
             // upgrades.setParts({ battery: Math.floor(Math.random() * i * 100) + 1 });
             this.spawnItem(pos.x, pos.y, upgrades, true);
@@ -394,7 +395,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         Object.entries(upgrades.partsList).forEach(([partName, level]) => {
             const u = new UpgradeObject();
             u.setParts({
-                [partName]: Math.ceil(level * 0.5),
+                [partName]: Math.ceil(level * 0.7),
             });
             const offset = Phaser.Math.RandomXY(new Vector2(1, 1), 20);
             this.spawnItem(position.x + offset.x, position.y + offset.y, u, true);

@@ -173,4 +173,31 @@ export class UpgradeObject {
 		return `P: ${this.partsList.steel}/${this.partsList.barrel}/${this.partsList.armor}/${this.partsList.battery}\n` +
 			`Lv: ${this.levels.chassis}|${this.levels.cannon}|${this.levels.armor}|${this.levels.gun}|${this.levels.missile}|${this.levels.rocket}`;
 	}
+
+	static canStackOnto(a?: UpgradeObject, b?: UpgradeObject): boolean {
+		if (!a) return false;
+		if (!b) return false;
+		const allowMultipleItemsInHand = config.controls.allowMultipleItemsInHand;
+		const allowMultipleItemTypesInHand = config.controls.allowMultipleItemTypesInHand;
+
+		if (!allowMultipleItemsInHand) return false;
+		//else
+		if (allowMultipleItemTypesInHand) return true;
+		//else
+
+		const partEntriesA = (Object.entries(a.partsList)
+			.filter(([key, value]) => value !== 0)
+		);
+		if (partEntriesA.length > 1) {
+			throw new Error('upgrades cannot stack types when allowMultipleItemTypesInHand is false');
+		}
+		const partEntriesB = (Object.entries(b.partsList)
+			.filter(([key, value]) => value !== 0)
+		);
+		if (partEntriesB.length > 1) {
+			throw new Error('upgrades cannot stack types when allowMultipleItemTypesInHand is false');
+		}
+
+		return partEntriesA[0] != null && partEntriesB[0] != null && partEntriesA[0][0] === partEntriesB[0][0];
+	}
 }
