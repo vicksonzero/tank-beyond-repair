@@ -54,7 +54,7 @@ export class Player extends Phaser.GameObjects.Container {
     b2Body: b2Body;
     playerHandSensor: b2Fixture;
 
-    spawnItem: (x: number, y: number, upgrades: UpgradeObject) => Item; // to be filled in by MainScene
+    spawnItem?: (x: number, y: number, upgrades: UpgradeObject) => Item; // to be filled in by MainScene
 
 
     // onHitPart?: (parent: any, part: Part, contactPoints: { vertex: { x: number, y: number } }[]) => void;
@@ -295,26 +295,26 @@ export class Player extends Phaser.GameObjects.Container {
 
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
         if (!this.pointerTarget) {
-            if (this.holdingItem) {
-                this.dropItemOnFloor(sfx_pickup);
-            }
-        } else if (this.pointerTarget.name === 'item') {
-            if (this.holdingItem) {
-                if (this.holdingItem.upgrades) {
-                    this.swapItemsWithFloorItem(this.pointerTarget as Item, sfx_pickup);
-                }
-            } else {
-                this.pickUpItem(this.pointerTarget as Item, sfx_pickup);
-            }
+            this.tryDropItemOnFloor(sfx_pickup);
+
+        } else if (this.pointerTarget.name === 'item' && this.holdingItem) {
+            this.trySwapItemsWithFloorItem(this.pointerTarget as Item, sfx_pickup);
+
+        } else if (this.pointerTarget.name === 'item' && !this.holdingItem) {
+            this.tryPickUpItem(sfx_pickup);
+
         } else if (this.pointerTarget.name === 'tank') {
-            if (this.holdingItem) {
-                this.putItemIntoTank(this.pointerTarget as Tank, sfx_upgrade);
-            }
+            this.tryPutItemIntoTank(this.pointerTarget as Tank, sfx_upgrade);
+
         }
     }
 
-    pickUpItem(item: Item, sfx_pickup: Phaser.Sound.BaseSound): boolean {
+    tryPickUpItem(sfx_pickup: Phaser.Sound.BaseSound): boolean {
         if (!this.holdingItem) return false;
+        if (!this.pointerTarget) return false;
+
+        // did not pass pointerTarget as item because we are going to set it to null
+        const item = this.pointerTarget as Item;
 
         const rotation = this.bodySprite.rotation;
         const xx = Math.cos(rotation) * 30;
@@ -342,28 +342,29 @@ export class Player extends Phaser.GameObjects.Container {
         return true;
     }
 
-    dropItemOnFloor(sfx_pickup: Phaser.Sound.BaseSound): boolean {
+    tryDropItemOnFloor(sfx_pickup: Phaser.Sound.BaseSound): boolean {
         if (!this.holdingItem) return false;
+        if (!this.spawnItem) return false;
 
         // drop item on floor
         const rotation = this.bodySprite.rotation;
         const xx = Math.cos(rotation) * 30;
         const yy = Math.sin(rotation) * 30;
-        const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
+        const item = this.spawnItem(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
 
-        if (item) {
-            sfx_pickup.play();
-            const myOldUpgrade = this.holdingItem.upgrades!;
-            item.setUpgrades(myOldUpgrade);
-            this.holdingItem.destroy();
-            this.holdingItem = null;
-        }
+        sfx_pickup.play();
+        const myOldUpgrade = this.holdingItem.upgrades!;
+        item.setUpgrades(myOldUpgrade);
+        this.holdingItem.destroy();
+        this.holdingItem = null;
 
         return true;
     }
 
-    swapItemsWithFloorItem(floorItem: Item, sfx_pickup: Phaser.Sound.BaseSound): boolean {
+    trySwapItemsWithFloorItem(floorItem: Item, sfx_pickup: Phaser.Sound.BaseSound): boolean {
         if (!this.holdingItem) return false;
+
+        if (!this.holdingItem.upgrades) return false;
 
         const myOldUpgrade = this.holdingItem.upgrades.clone();
 
@@ -377,7 +378,7 @@ export class Player extends Phaser.GameObjects.Container {
         return true;
     }
 
-    putItemIntoTank(tank: Tank, sfx_upgrade: Phaser.Sound.BaseSound): boolean {
+    tryPutItemIntoTank(tank: Tank, sfx_upgrade: Phaser.Sound.BaseSound): boolean {
         if (!this.holdingItem) return false;
 
         if (this.holdingItem.upgrades) { tank.setUpgrade(this.holdingItem.upgrades); }
