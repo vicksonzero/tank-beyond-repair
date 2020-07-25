@@ -296,69 +296,97 @@ export class Player extends Phaser.GameObjects.Container {
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
         if (!this.pointerTarget) {
             if (this.holdingItem) {
-                // drop item on floor
-                const rotation = this.bodySprite.rotation;
-                const xx = Math.cos(rotation) * 30;
-                const yy = Math.sin(rotation) * 30;
-                const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
-
-                if (item) {
-                    sfx_pickup.play();
-                    const myOldUpgrade = this.holdingItem.upgrades!;
-                    item.setUpgrades(myOldUpgrade);
-                    this.holdingItem.destroy();
-                    this.holdingItem = null;
-                }
+                this.dropItemOnFloor(sfx_pickup);
             }
         } else if (this.pointerTarget.name === 'item') {
-            const item = this.pointerTarget as Item;
-
             if (this.holdingItem) {
                 if (this.holdingItem.upgrades) {
-                    const myOldUpgrade = this.holdingItem.upgrades.clone();
-
-                    sfx_pickup.play();
-                    this.holdingItem.upgrades = item.upgrades.clone();
-                    const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
-                    (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
-
-                    item.setUpgrades(myOldUpgrade).refreshDeathTimer();
+                    this.swapItemsWithFloorItem(this.pointerTarget as Item, sfx_pickup);
                 }
             } else {
-                const rotation = this.bodySprite.rotation;
-                const xx = Math.cos(rotation) * 30;
-                const yy = Math.sin(rotation) * 30;
-                this.add(this.holdingItem = this.scene.make.container({ x: xx, y: yy }) as HoldingItem);
-                this.holdingItem.setScale(1.15);
-
-                // this.holdingItem.add(this.scene.make.image({
-                //     x: 0, y: 0,
-                //     key: `allSprites_default`,
-                //     frame: 'crateMetal',
-                // }));
-
-                sfx_pickup.play();
-                this.holdingItem.upgrades = new UpgradeObject();
-                this.holdingItem.upgrades.setParts(item.upgrades.partsList);
-                const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
-
-                this.holdingItem.add(this.holdingItemContainer = this.scene.make.container({ x: 0, y: 0 }));
-                (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
-
-                this.pointerTarget.destroy();
-                this.pointerTarget = null;
+                this.pickUpItem(this.pointerTarget as Item, sfx_pickup);
             }
         } else if (this.pointerTarget.name === 'tank') {
-            const tank = this.pointerTarget as Tank;
             if (this.holdingItem) {
-
-                if (this.holdingItem.upgrades) { tank.setUpgrade(this.holdingItem.upgrades); }
-
-                sfx_upgrade.play();
-                this.holdingItem.destroy();
-                this.holdingItem = null;
+                this.putItemIntoTank(this.pointerTarget as Tank, sfx_upgrade);
             }
         }
+    }
+
+    pickUpItem(item: Item, sfx_pickup: Phaser.Sound.BaseSound): boolean {
+        if (!this.holdingItem) return false;
+
+        const rotation = this.bodySprite.rotation;
+        const xx = Math.cos(rotation) * 30;
+        const yy = Math.sin(rotation) * 30;
+        this.add(this.holdingItem = this.scene.make.container({ x: xx, y: yy }) as HoldingItem);
+        this.holdingItem.setScale(1.15);
+
+        // this.holdingItem.add(this.scene.make.image({
+        //     x: 0, y: 0,
+        //     key: `allSprites_default`,
+        //     frame: 'crateMetal',
+        // }));
+
+        sfx_pickup.play();
+        this.holdingItem.upgrades = new UpgradeObject();
+        this.holdingItem.upgrades.setParts(item.upgrades.partsList);
+        const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
+
+        this.holdingItem.add(this.holdingItemContainer = this.scene.make.container({ x: 0, y: 0 }));
+        (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
+
+        this.pointerTarget.destroy();
+        this.pointerTarget = null;
+
+        return true;
+    }
+
+    dropItemOnFloor(sfx_pickup: Phaser.Sound.BaseSound): boolean {
+        if (!this.holdingItem) return false;
+
+        // drop item on floor
+        const rotation = this.bodySprite.rotation;
+        const xx = Math.cos(rotation) * 30;
+        const yy = Math.sin(rotation) * 30;
+        const item = this.spawnItem?.(this.x + xx, this.y + yy, this.holdingItem.upgrades!);
+
+        if (item) {
+            sfx_pickup.play();
+            const myOldUpgrade = this.holdingItem.upgrades!;
+            item.setUpgrades(myOldUpgrade);
+            this.holdingItem.destroy();
+            this.holdingItem = null;
+        }
+
+        return true;
+    }
+
+    swapItemsWithFloorItem(floorItem: Item, sfx_pickup: Phaser.Sound.BaseSound): boolean {
+        if (!this.holdingItem) return false;
+
+        const myOldUpgrade = this.holdingItem.upgrades.clone();
+
+        sfx_pickup.play();
+        this.holdingItem.upgrades = floorItem.upgrades.clone();
+        const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
+        (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
+
+        floorItem.setUpgrades(myOldUpgrade).refreshDeathTimer();
+
+        return true;
+    }
+
+    putItemIntoTank(tank: Tank, sfx_upgrade: Phaser.Sound.BaseSound): boolean {
+        if (!this.holdingItem) return false;
+
+        if (this.holdingItem.upgrades) { tank.setUpgrade(this.holdingItem.upgrades); }
+
+        sfx_upgrade.play();
+        this.holdingItem.destroy();
+        this.holdingItem = null;
+
+        return true;
     }
 
     startTargetingItem(item: Item) {
