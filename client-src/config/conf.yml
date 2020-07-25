@@ -4,7 +4,7 @@ config:
     minSwipeDist: 50
     directionSnaps: 4
   itemSpawnChance:
-    scrap: 4
+    steel: 4
     barrel: 2
     armor: 2
     battery: 2
@@ -15,10 +15,10 @@ config:
       chargeLow: 25
   partRequirements:
     chassis:
-      - scrap: 1
-      - scrap: 2
-      - scrap: 6
-      - scrap: 10
+      - steel: 1
+      - steel: 2
+      - steel: 10
+      - steel: 20
     cannon:
       - barrel: 1
       - barrel: 4

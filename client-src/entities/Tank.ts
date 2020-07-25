@@ -75,7 +75,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.team = team
         this.upgrades = new UpgradeObject();
         this.upgrades.setParts({
-            scrap: 1,
+            steel: 1,
             battery: 100,
             barrel: 1,
             armor: 0,

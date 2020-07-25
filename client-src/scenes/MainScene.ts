@@ -874,13 +874,13 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         }, 0);
 
         const itemIconFrame: { [x: string]: string } = {
-            scrap: 'I-Beam',
+            steel: 'I-Beam',
             barrel: 'Barrel',
             armor: 'Iron_Plating',
         };
         const itemIconTint: { [x: string]: number } = {
             battery: 0x88ff88,
-            scrap: 0xffffff,
+            steel: 0xffffff,
             barrel: 0xff8888,
             armor: 0x8888ff,
         };

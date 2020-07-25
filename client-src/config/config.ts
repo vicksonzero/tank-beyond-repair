@@ -35,7 +35,7 @@ export type IPartList = {
 }
 
 export enum ItemType {
-    SCRAP = 'scrap',
+    STEEL = 'steel',
     BARREL = 'barrel',
     ARMOR = 'armor',
     BATTERY = 'battery',

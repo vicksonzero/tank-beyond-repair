@@ -5,7 +5,7 @@ import { capitalize } from '../utils/utils';
 
 export class UpgradeObject {
 	private _partsList: ItemsList = {
-		'scrap': 0,
+		'steel': 0,
 		'barrel': 0,
 		'armor': 0,
 		'battery': 0,
@@ -79,7 +79,7 @@ export class UpgradeObject {
 
 	setParts(params: Partial<ItemsList>) {
 		this._partsList = {
-			scrap: 0,
+			steel: 0,
 			barrel: 0,
 			armor: 0,
 			battery: 0,
@@ -148,24 +148,25 @@ export class UpgradeObject {
 	getAttribute(attributeName: AttributeType) {
 		return Object.entries(this.levels).reduce((result, [partType, partLevel]: [PartType, number]) => {
 
-			const a = config.parts[partType];
-			if (!a) { console.warn(`unknown partType "${partType}"`); }
+			const partLevels = config.parts[partType];
+			if (!partLevels) { console.warn(`unknown partType "${partType}"`); }
 
-			let c = partLevel;
-			while (a != null && c > 0 && a[c] == null) {
-				c--;
+			let matchingPartLevel = partLevel;
+			while (partLevels != null && matchingPartLevel > 0 && partLevels[matchingPartLevel] == null) {
+				matchingPartLevel--;
 			}
-			const b = (a || [])[c];
-			if (!b) { console.warn(`unknown partLevel (${c}) of type "${partType}"`); }
+			const partLevelEntry = (partLevels || [])[matchingPartLevel];
+			if (partLevel !== matchingPartLevel) { console.warn(`unknown partLevel (${matchingPartLevel}) of type "${partType}"`); }
+			if (!partLevelEntry) { console.warn(`unknown partLevel (${matchingPartLevel}) of type "${partType}"`); }
 
 
-			const stat = b?.stat?.[attributeName] || 0;
+			const stat = partLevelEntry?.stat?.[attributeName] || 0;
 			return result + stat;
 		}, 0);
 	}
 
 	toString() {
-		return `${this.partsList.scrap}/${this.partsList.barrel}/${this.partsList.armor}/${this.partsList.battery}\n` +
+		return `${this.partsList.steel}/${this.partsList.barrel}/${this.partsList.armor}/${this.partsList.battery}\n` +
 			`${this.levels.chassis}|${this.levels.cannon}|${this.levels.armor}|${this.levels.gun}|${this.levels.missile}|${this.levels.rocket}`;
 	}
 }
