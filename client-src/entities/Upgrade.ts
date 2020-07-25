@@ -1,7 +1,11 @@
 import { AttributeType, config, IPartList, ItemsList, ItemType, PartType } from '../config/config';
 import { Immutable } from '../utils/ImmutableType';
 import { capitalize } from '../utils/utils';
+import * as Debug from 'debug';
 
+const log = Debug('tank-beyond-repair:UpgradeObject:log');
+const warn = Debug('tank-beyond-repair:UpgradeObject:warn');
+warn.log = console.warn.bind(console);
 
 export class UpgradeObject {
 	private _partsList: ItemsList = {
@@ -149,15 +153,15 @@ export class UpgradeObject {
 		return Object.entries(this.levels).reduce((result, [partType, partLevel]: [PartType, number]) => {
 
 			const partLevels = config.parts[partType];
-			if (!partLevels) { console.warn(`unknown partType "${partType}"`); }
+			if (!partLevels) { warn(`unknown partType "${partType}"`); }
 
 			let matchingPartLevel = partLevel;
 			while (partLevels != null && matchingPartLevel > 0 && partLevels[matchingPartLevel] == null) {
 				matchingPartLevel--;
 			}
 			const partLevelEntry = (partLevels || [])[matchingPartLevel];
-			if (partLevel !== matchingPartLevel) { console.warn(`unknown partLevel (${matchingPartLevel}) of type "${partType}"`); }
-			if (!partLevelEntry) { console.warn(`unknown partLevel (${matchingPartLevel}) of type "${partType}"`); }
+			if (partLevel !== matchingPartLevel) { warn(`unknown partLevel (${matchingPartLevel}) of type "${partType}"`); }
+			if (!partLevelEntry) { warn(`unknown partLevel (${matchingPartLevel}) of type "${partType}"`); }
 
 
 			const stat = partLevelEntry?.stat?.[attributeName] || 0;

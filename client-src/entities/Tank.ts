@@ -11,6 +11,7 @@ import { capitalize } from '../utils/utils';
 import { collisionCategory } from './collisionCategory';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
+import { Item } from './Item';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -59,6 +60,7 @@ export class Tank extends Phaser.GameObjects.Container {
     uiContainer: Container;
     detailsText: Text;
     rangeMarker: Graphics;
+    upgradeAnimationsContainer: Container;
 
     b2Body: b2Body;
 
@@ -113,6 +115,9 @@ export class Tank extends Phaser.GameObjects.Container {
         this.uiContainer.setVisible(false);
         this.detailsText.setOrigin(0.5, 1);
 
+        this.add(
+            this.upgradeAnimationsContainer = this.scene.make.container({ x: 0, y: 0 })
+        );
 
         this.bodySprite.setAngle(90);
         this.barrelSprite.setOrigin(0.5, 0);
@@ -236,6 +241,31 @@ export class Tank extends Phaser.GameObjects.Container {
         }
 
         return this;
+    }
+
+    takeItem(item: Item) {
+        this.setUpgrade(item.upgrades);
+
+        let upgradeGraphics = this.scene.make.container({ x: 0, y: 0 });
+        (this.scene as MainScene).makeUpgradeGraphics(upgradeGraphics, item.upgrades);
+        this.upgradeAnimationsContainer.add(upgradeGraphics);
+
+        // const point = new Phaser.Geom.Point();
+        // const tempMatrix = new Phaser.GameObjects.Components.TransformMatrix();
+        // this.upgradeAnimationsContainer.getWorldTransformMatrix(tempMatrix);
+        // // tempMatrix.transformPoint(item.x, item.y, point);
+        upgradeGraphics.setX(item.x - this.x);
+        upgradeGraphics.setY(item.y - this.y);
+        upgradeGraphics.setScale(1.3);
+        this.scene.add.tween({
+            targets: upgradeGraphics,
+            x: 0,
+            y: 0,
+            scale: 0,
+            ease: 'Cubic.easeIn',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
+            duration: 1000,
+            onComplete: () => { upgradeGraphics.destroy(); },
+        })
     }
 
     setUpgrade(upgrades: UpgradeObject) {

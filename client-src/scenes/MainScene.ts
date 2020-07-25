@@ -394,9 +394,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         Object.entries(upgrades.partsList).forEach(([partName, level]) => {
             const u = new UpgradeObject();
             u.setParts({
-                [partName]: Math.ceil(level* 0.5),
+                [partName]: Math.ceil(level * 0.5),
             });
-            this.spawnItem(position.x, position.y, u, true);
+            const offset = Phaser.Math.RandomXY(new Vector2(1, 1), 20);
+            this.spawnItem(position.x + offset.x, position.y + offset.y, u, true);
         })
     }
 
@@ -451,7 +452,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 // log('do contact 3');
                 const tank: Tank = tankFixture.GetBody()?.GetUserData()?.gameObject as Tank;
                 const item: Item = itemFixture.GetBody()?.GetUserData()?.gameObject as Item;
-                if (item.upgrades) { tank.setUpgrade(item.upgrades); }
+                if (item.upgrades) { tank.takeItem(item); }
 
                 this.sfx_point.play();
                 item.destroy();
@@ -752,6 +753,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.hpBar.setRotation(-rot);
+                tank.upgradeAnimationsContainer.setRotation(-rot);
+
                 tank.uiContainer.setRotation(-rot);
                 tank.setRotation(rot);
             } else {
@@ -771,6 +774,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.hpBar.setRotation(-rot);
+                tank.upgradeAnimationsContainer.setRotation(-rot);
                 tank.uiContainer.setRotation(-rot);
                 tank.setRotation(rot);
             }
@@ -827,6 +831,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const stepAngle = lerpRadians(originalTankAngle, targetAngle, 0.03);
             tank.setRotation(stepAngle);
             tank.hpBar.setRotation(-stepAngle);
+            tank.upgradeAnimationsContainer.setRotation(-stepAngle);
             tank.uiContainer.setRotation(-stepAngle);
         }
 
