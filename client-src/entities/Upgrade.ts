@@ -170,7 +170,7 @@ export class UpgradeObject {
 	}
 
 	toString() {
-		return `${this.partsList.steel}/${this.partsList.barrel}/${this.partsList.armor}/${this.partsList.battery}\n` +
-			`${this.levels.chassis}|${this.levels.cannon}|${this.levels.armor}|${this.levels.gun}|${this.levels.missile}|${this.levels.rocket}`;
+		return `P: ${this.partsList.steel}/${this.partsList.barrel}/${this.partsList.armor}/${this.partsList.battery}\n` +
+			`Lv: ${this.levels.chassis}|${this.levels.cannon}|${this.levels.armor}|${this.levels.gun}|${this.levels.missile}|${this.levels.rocket}`;
 	}
 }
