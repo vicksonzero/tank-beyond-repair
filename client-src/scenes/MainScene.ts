@@ -881,8 +881,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         const itemIconTint: { [x: string]: number } = {
             battery: 0x88ff88,
             steel: 0xffffff,
-            barrel: 0xff8888,
-            armor: 0x8888ff,
+            barrel: 0xffaaaa,
+            armor: 0xaaaaff,
         };
         const batteryIconFrames: { [x: string]: string } = {
             batteryFull: 'Battery_Full',

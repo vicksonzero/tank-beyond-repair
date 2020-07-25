@@ -32,7 +32,7 @@ export class HpBar extends Phaser.GameObjects.Graphics {
         console.log('hp, maxHP, segmentCount', hp, maxHP, segmentCount);
 
         const hue = (hp / maxHP * 120 / 360);
-        const borderColor = Phaser.Display.Color.HSLToColor(hue, 1, 0.4).color;
+        const borderColor = Phaser.Display.Color.HSLToColor(hue, 1, 0.3).color;
         const fillColor = Phaser.Display.Color.HSLToColor(hue, 1, 0.5).color;
 
         this.lineStyle(1, borderColor, 1);
