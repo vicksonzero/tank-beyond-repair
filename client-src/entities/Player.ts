@@ -310,7 +310,7 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     tryPickUpItem(sfx_pickup: Phaser.Sound.BaseSound): boolean {
-        if (!this.holdingItem) return false;
+        if (this.holdingItem) return false;
         if (!this.pointerTarget) return false;
 
         // did not pass pointerTarget as item because we are going to set it to null
@@ -381,7 +381,15 @@ export class Player extends Phaser.GameObjects.Container {
     tryPutItemIntoTank(tank: Tank, sfx_upgrade: Phaser.Sound.BaseSound): boolean {
         if (!this.holdingItem) return false;
 
-        if (this.holdingItem.upgrades) { tank.setUpgrade(this.holdingItem.upgrades); }
+        if (!this.holdingItem.upgrades) return false;
+
+        tank.setUpgrade(this.holdingItem.upgrades);
+
+        const itemPos = (new Phaser.Math.Vector2(this.x - tank.x, this.y - tank.y)
+            .normalize()
+            .scale(20)
+        );
+        tank.addUpgradeAbsorbEffect(this.holdingItem.upgrades, itemPos, true);
 
         sfx_upgrade.play();
         this.holdingItem.destroy();

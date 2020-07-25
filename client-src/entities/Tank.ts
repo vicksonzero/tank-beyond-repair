@@ -228,12 +228,12 @@ export class Tank extends Phaser.GameObjects.Container {
         return this;
     }
 
-    setHighlightTint(){
+    setHighlightTint() {
         this.bodySprite.setTint(Teams[this.team].highlightTint);
         this.barrelSprite.setTint(Teams[this.team].highlightTint);
     }
 
-    setNormalTint(){
+    setNormalTint() {
         this.bodySprite.setTint(Teams[this.team].normalTint);
         this.barrelSprite.setTint(Teams[this.team].normalTint);
     }
@@ -259,32 +259,36 @@ export class Tank extends Phaser.GameObjects.Container {
     takeItem(item: Item) {
         this.setUpgrade(item.upgrades);
 
-        let upgradeGraphics = this.scene.make.container({ x: 0, y: 0 });
-        (this.scene as MainScene).makeUpgradeGraphics(upgradeGraphics, item.upgrades);
-        this.upgradeAnimationsContainer.add(upgradeGraphics);
-
-        // const point = new Phaser.Geom.Point();
-        // const tempMatrix = new Phaser.GameObjects.Components.TransformMatrix();
-        // this.upgradeAnimationsContainer.getWorldTransformMatrix(tempMatrix);
-        // // tempMatrix.transformPoint(item.x, item.y, point);
-        upgradeGraphics.setX(item.x - this.x);
-        upgradeGraphics.setY(item.y - this.y);
-        upgradeGraphics.setScale(1.3);
-        this.scene.add.tween({
-            targets: upgradeGraphics,
-            x: 0,
-            y: 0,
-            scale: 0,
-            ease: 'Cubic.easeIn',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
-            duration: 1000,
-            onComplete: () => { upgradeGraphics.destroy(); },
-        })
+        this.addUpgradeAbsorbEffect(item.upgrades, new Phaser.Math.Vector2(item.x, item.y), false);
     }
 
     setUpgrade(upgrades: UpgradeObject) {
         this.upgrades.addParts(upgrades.partsList);
 
         this.refreshAttributes();
+    }
+
+    addUpgradeAbsorbEffect(upgrades: UpgradeObject, fromPosition: Phaser.Math.Vector2, isLocalToTank: boolean) {
+        let upgradeGraphics = this.scene.make.container({ x: 0, y: 0 });
+        (this.scene as MainScene).makeUpgradeGraphics(upgradeGraphics, upgrades);
+        this.upgradeAnimationsContainer.add(upgradeGraphics);
+
+        // const point = new Phaser.Geom.Point();
+        // const tempMatrix = new Phaser.GameObjects.Components.TransformMatrix();
+        // this.upgradeAnimationsContainer.getWorldTransformMatrix(tempMatrix);
+        // // tempMatrix.transformPoint(item.x, item.y, point);
+        upgradeGraphics.setX(fromPosition.x - (isLocalToTank ? 0 : this.x));
+        upgradeGraphics.setY(fromPosition.y - (isLocalToTank ? 0 : this.y));
+        upgradeGraphics.setScale(1.2);
+        this.scene.add.tween({
+            targets: upgradeGraphics,
+            x: 0,
+            y: 0,
+            scale: 0,
+            ease: 'Cubic.easeIn',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
+            duration: 800,
+            onComplete: () => { upgradeGraphics.destroy(); },
+        })
     }
 
     refreshAttributes(doRefreshGraphics = true) {
