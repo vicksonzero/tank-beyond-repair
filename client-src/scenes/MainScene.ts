@@ -223,6 +223,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.fixedUpdate(timeStep);
                 this.lastUpdate += this.frameSize;
             }
+            this.lastUpdate = time;
 
             // verbose(`update: ${i} fixedUpdate-ticks at ${time.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
         }
