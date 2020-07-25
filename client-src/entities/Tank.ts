@@ -12,6 +12,7 @@ import { collisionCategory } from './collisionCategory';
 import { Team } from './Team';
 import { UpgradeObject } from './Upgrade';
 import { Item } from './Item';
+import { Teams } from './Teams';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -85,7 +86,8 @@ export class Tank extends Phaser.GameObjects.Container {
         this.lastBatteryTick = this.scene.time.now;
         this.refreshAttributes(false);
 
-        const color = this.team === Team.BLUE ? 'dark' : 'sand';
+        // const color = this.team === Team.BLUE ? 'dark' : 'sand';
+        const color = 'sand';
         this.add([
             this.bodySprite = this.scene.make.image({
                 x: 0, y: 0,
@@ -122,6 +124,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.bodySprite.setAngle(90);
         this.barrelSprite.setOrigin(0.5, 0);
         this.barrelSprite.setAngle(-90);
+        this.setNormalTint();
 
         this.on('destroy', () => {
             this.emit(Tank.TANK_DIE, this);
@@ -213,16 +216,26 @@ export class Tank extends Phaser.GameObjects.Container {
 
         this.hp -= amount;
 
-        this.bodySprite.setTint(0xFF0000);
+        this.bodySprite.setTint(Teams[this.team].hitTint);
         this.undoTintEvent = this.scene.time.addEvent({
             delay: 100, loop: false, callback: () => {
-                this.bodySprite.setTint(0xFFFFFF);
+                this.bodySprite.setTint(Teams[this.team].normalTint);
             }
         });
 
         this.updateHpBar();
         this.refreshUpgradeGraphics();
         return this;
+    }
+
+    setHighlightTint(){
+        this.bodySprite.setTint(Teams[this.team].highlightTint);
+        this.barrelSprite.setTint(Teams[this.team].highlightTint);
+    }
+
+    setNormalTint(){
+        this.bodySprite.setTint(Teams[this.team].normalTint);
+        this.barrelSprite.setTint(Teams[this.team].normalTint);
     }
 
     takeBatteryDamage(amount: number): this {

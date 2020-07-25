@@ -384,7 +384,7 @@ export class Player extends Phaser.GameObjects.Container {
         this.tank = tank;
         this.repairSprite.visible = true;
 
-        tank.bodySprite.setTint(0xAAAAAA);
+        tank.setHighlightTint();
         tank.uiContainer.setVisible(true);
     }
 
@@ -396,7 +396,7 @@ export class Player extends Phaser.GameObjects.Container {
         this.tank = null;
         this.repairSprite.visible = false;
 
-        tank.bodySprite.setTint(0xFFFFFF);
+        tank.setNormalTint();
         tank.uiContainer.setVisible(false);
     }
 
