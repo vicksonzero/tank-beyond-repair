@@ -3,6 +3,16 @@ config:
     swipeThumbSize: 30
     minSwipeDist: 50
     directionSnaps: 4
+
+    allowPickUpItems: false
+    allowDropItems: false
+    allowHandFeedItemsIntoTanks: false
+
+    pickUpItemsByContact: false
+    pickUpItemsByActionButton: true
+
+    allowMultipleItemsInHand: true
+    allowMultipleItemTypesInHand: false
   itemSpawnChance:
     steel: 4
     barrel: 2
