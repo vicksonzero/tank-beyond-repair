@@ -36,6 +36,11 @@ config:
       - armor: 5
       - armor: 15
       - armor: 25
+    motor:
+      - gear: 0
+      - gear: 3
+      - gear: 10
+      - gear: 20
   parts:
     chassis:
       - stat:
@@ -83,7 +88,7 @@ config:
           damage: 10
           attackInterval: 1500
           aimSpeed: 0.1 # rad/16ms
-          range: 250
+          range: 200
         graphics:
           sprite: cannon_1
           scale: [1, 1]
@@ -91,7 +96,7 @@ config:
           damage: 10
           attackInterval: 1000
           aimSpeed: 0.1 # rad/16ms
-          range: 300
+          range: 250
         graphics:
           sprite: cannon_2
           scale: [1, 1]
@@ -119,6 +124,16 @@ config:
         graphics:
           sprite: armor_3
           scale: [1, 1]
+    motor:
+      - stat:
+          movementSpeed: 1
+        graphics:
+      - stat:
+          movementSpeed: 1.2
+        graphics:
+      - stat:
+          movementSpeed: 1.5
+        graphics:
     gun: []
     missile: []
     rocket: []

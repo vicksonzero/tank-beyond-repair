@@ -13,6 +13,7 @@ export class UpgradeObject {
 		'barrel': 0,
 		'armor': 0,
 		'battery': 0,
+		'gear': 0,
 	};
 	private _levels: IPartList | null = null;
 	constructor() {
@@ -122,6 +123,7 @@ export class UpgradeObject {
 			chassis: 0,
 			cannon: 0,
 			armor: 0,
+			motor: 0,
 			gun: 0,
 			missile: 0,
 			rocket: 0,

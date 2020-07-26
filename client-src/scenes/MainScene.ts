@@ -402,11 +402,17 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         const randomUpgrade = UpgradeObject.getRandomPartFromPool(1);
         upgrades.addParts(randomUpgrade.partsList);
 
-        Object.entries(upgrades.partsList).forEach(([partName, level]) => {
+        Object.entries(upgrades.partsList).forEach(([partName, count]) => {
             const u = new UpgradeObject();
-            u.setParts({
-                [partName]: Math.ceil(level * 0.7),
-            });
+            if (partName === ItemType.BATTERY) {
+                u.setParts({
+                    [partName]: Math.max(10, Math.ceil(count * 0.7)),
+                });
+            } else {
+                u.setParts({
+                    [partName]: Math.ceil(count * 0.7),
+                });
+            }
             const offset = Phaser.Math.RandomXY(new Vector2(1, 1), 20);
             this.spawnItem(position.x + offset.x, position.y + offset.y, u, true);
         })

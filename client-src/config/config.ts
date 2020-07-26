@@ -25,6 +25,7 @@ export enum PartType {
     CHASSIS = 'chassis',
     CANNON = 'cannon',
     ARMOR = 'armor',
+    MOTOR = 'motor',
     GUN = 'gun',
     MISSILE = 'missile',
     ROCKET = 'rocket',
@@ -39,13 +40,24 @@ export enum ItemType {
     BARREL = 'barrel',
     ARMOR = 'armor',
     BATTERY = 'battery',
+    GEAR = 'gear',
 };
 
 export type ItemsList = {
     [x in ItemType]: number;
 };
 
-export type AttributeType = 'range' | 'damage' | 'attackInterval' | 'aimSpeed' | 'maxHP' | 'movementSpeed' | 'turnSpeed' | 'maxBattery' | 'dmgMultiplier';
+export type AttributeType =
+    'range' | 
+    'damage' | 
+    'attackInterval' | 
+    'aimSpeed' | 
+    'maxHP' | 
+    'movementSpeed' | 
+    'turnSpeed' | 
+    'maxBattery' | 
+    'dmgMultiplier'
+    ;
 
 export type IAttributeMap = {
     [x in AttributeType]: number;
@@ -86,7 +98,7 @@ export interface IUIControls {
     swipeThumbSize: number;
     minSwipeDist: number;
     directionSnaps: number;
-    
+
     // allowPickUpItems: boolean;
     // allowDropItems: boolean;
     // allowHandFeedItemsIntoTanks: boolean;
