@@ -5,8 +5,8 @@ import { ITEM_LIFESPAN, ITEM_LIFESPAN_WARNING, PIXEL_TO_METER } from '../constan
 import { IFixtureUserData } from '../PhysicsSystem';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
-import { collisionCategory } from './collisionCategory';
-import { UpgradeObject } from './Upgrade';
+import { collisionCategory } from '../models/collisionCategory';
+import { UpgradeObject } from '../models/Upgrade';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');

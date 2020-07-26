@@ -1,7 +1,7 @@
 
-import { collisionCategory } from './collisionCategory';
+import { collisionCategory } from '../models/collisionCategory';
 import { capitalize } from '../utils/utils';
-import { Team } from './Team';
+import { Team } from '../models/Team';
 import { Tank } from './Tank';
 import { b2Body, b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType, b2World } from '@flyover/box2d';
 import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';

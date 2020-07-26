@@ -1,4 +1,4 @@
-import { UpgradeObject } from "../entities/Upgrade";
+import { UpgradeObject } from "../models/Upgrade";
 
 export function capitalize(str: string) {
     return '' + str.charAt(0).toUpperCase() + str.substring(1);

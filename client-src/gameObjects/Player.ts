@@ -6,11 +6,11 @@ import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
 import { getUniqueID } from '../utils/UniqueID';
 import { capitalize } from '../utils/utils';
-import { collisionCategory } from './collisionCategory';
+import { collisionCategory } from '../models/collisionCategory';
 import { Item } from './Item';
 import { Tank } from './Tank';
-import { Team } from './Team';
-import { UpgradeObject } from './Upgrade';
+import { Team } from '../models/Team';
+import { UpgradeObject } from '../models/Upgrade';
 import { config } from '../config/config';
 
 

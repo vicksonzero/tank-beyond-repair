@@ -8,11 +8,11 @@ import { HpBar } from '../ui/HpBar';
 import { Immutable } from '../utils/ImmutableType';
 import { getUniqueID } from '../utils/UniqueID';
 import { capitalize } from '../utils/utils';
-import { collisionCategory } from './collisionCategory';
-import { Team } from './Team';
-import { UpgradeObject } from './Upgrade';
+import { collisionCategory } from '../models/collisionCategory';
+import { Team } from '../models/Team';
+import { UpgradeObject } from '../models/Upgrade';
 import { Item } from './Item';
-import { Teams } from './Teams';
+import { Teams } from '../models/Teams';
 
 
 type Image = Phaser.GameObjects.Image;
