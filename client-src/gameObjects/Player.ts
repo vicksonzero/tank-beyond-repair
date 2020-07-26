@@ -93,6 +93,7 @@ export class Player extends Phaser.GameObjects.Container {
 
         this.on('destroy', () => {
             if (this.undoTintEvent) this.undoTintEvent.destroy();
+            if (this.hpBar) this.hpBar.destroy();
         });
     }
     init(x: number, y: number): this {
@@ -105,7 +106,6 @@ export class Player extends Phaser.GameObjects.Container {
         return this;
     }
     initHpBar(hpBar: HpBar) {
-        this.add(hpBar);
         this.hpBar = hpBar;
         this.updateHpBar();
         return this;
@@ -232,6 +232,10 @@ export class Player extends Phaser.GameObjects.Container {
         // if (this.holdingItemContainer) { this.displaceUpgrades(this.holdingItemContainer, itemDisplacementVector); }
     }
 
+    lateUpdate() {
+        this.hpBar.setPosition(this.x, this.y);
+    }
+
     doCollision() {
         const world = this.scene.getPhysicsSystem().world;
         let closestFixture: b2Fixture | null = null;
@@ -308,7 +312,7 @@ export class Player extends Phaser.GameObjects.Container {
 
             if (UpgradeObject.canStackOnto(this.holdingItem.upgrades, floorItem.upgrades)) {
                 this.tryScoopItem(sfx_pickup);
-            }else{
+            } else {
                 this.trySwapItemsWithFloorItem(floorItem, sfx_pickup);
             }
         } else if (this.pointerTarget.name === 'item' && !this.holdingItem) {

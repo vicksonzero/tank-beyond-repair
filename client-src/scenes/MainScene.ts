@@ -114,16 +114,20 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.playerLayer.add(this.bluePlayer = new Player(this, Team.BLUE));
         this.instancesByID[this.bluePlayer.uniqueID] = this.bluePlayer;
         this.bluePlayer.spawnItem = this.spawnItem;
+        const hpBarB = new HpBar(this, 0, -30, 30, 4, 2);
+        this.uiLayer.add(hpBarB);
         this.bluePlayer
-            .initHpBar(new HpBar(this, 0, -30, 30, 4, 2))
+            .initHpBar(hpBarB)
             .init(100, 100);
         this.bluePlayer.initPhysics(() => { });
 
         this.playerLayer.add(this.redPlayer = new Player(this, Team.RED));
         this.instancesByID[this.redPlayer.uniqueID] = this.redPlayer;
         this.redPlayer.spawnItem = this.spawnItem;
+        const hpBarR = new HpBar(this, 0, -30, 30, 4, 2);
+        this.uiLayer.add(hpBarR);
         this.redPlayer
-            .initHpBar(new HpBar(this, 0, -30, 30, 4, 2))
+            .initHpBar(hpBarR)
             .init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
             .faceLeft();
         this.redPlayer.initPhysics(() => { });
@@ -131,8 +135,13 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         const createAi = (team: Team, x: number, y: number) => {
             let ai: Tank;
             this.tankLayer.add(ai = new Tank(this, team));
+            const hpBar = new HpBar(this, 0, -30, 30, 4, 2);
+            this.uiLayer.add(hpBar);
+            const uiContainer = this.make.container({ x: 0, y: 0 });
+            this.uiLayer.add(uiContainer);
             ai
-                .initHpBar(new HpBar(this, 0, -30, 30, 4, 2))
+                .initUiContainer(uiContainer)
+                .initHpBar(hpBar)
                 .init(x, y);
             ai.initPhysics(() => { });
 
@@ -255,7 +264,13 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         };
         this.bullets.forEach((bullet) => updateBullet(bullet));
         this.fixedTime.update(fixedTime, frameSize);
+        this.lateUpdate(fixedTime, frameSize);
         // verbose(`fixedUpdate complete`);
+    }
+
+    lateUpdate(fixedTime: number, frameSize: number) {
+        this.bluePlayer.lateUpdate();
+        this.redPlayer.lateUpdate();
     }
 
     setUpKeyboard() {
@@ -769,10 +784,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 velocity.normalize().scale(TANK_SPEED * tank.attr.movementSpeed * PIXEL_TO_METER);
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
-                tank.hpBar.setRotation(-rot);
                 tank.upgradeAnimationsContainer.setRotation(-rot);
 
-                tank.uiContainer.setRotation(-rot);
+                tank.hpBar.setPosition(tank.x, tank.y);
+                tank.uiContainer.setPosition(tank.x, tank.y);
                 tank.setRotation(rot);
             } else {
                 const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
@@ -790,9 +805,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 velocity.normalize().scale(TANK_SPEED * tank.attr.movementSpeed * PIXEL_TO_METER);
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
-                tank.hpBar.setRotation(-rot);
                 tank.upgradeAnimationsContainer.setRotation(-rot);
-                tank.uiContainer.setRotation(-rot);
+                tank.hpBar.setPosition(tank.x, tank.y);
+                tank.uiContainer.setPosition(tank.x, tank.y);
                 tank.setRotation(rot);
             }
 
@@ -847,9 +862,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         if (Math.abs(targetAngle - originalTankAngle) > 0.03) {
             const stepAngle = lerpRadians(originalTankAngle, targetAngle, 0.03);
             tank.setRotation(stepAngle);
-            tank.hpBar.setRotation(-stepAngle);
             tank.upgradeAnimationsContainer.setRotation(-stepAngle);
-            tank.uiContainer.setRotation(-stepAngle);
+            tank.hpBar.setPosition(tank.x, tank.y);
+            tank.uiContainer.setPosition(tank.x, tank.y);
         }
 
         let originalAngle = tank.barrelSprite.rotation + tank.rotation + Math.PI / 2;

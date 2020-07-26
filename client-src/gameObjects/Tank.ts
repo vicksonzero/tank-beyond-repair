@@ -103,7 +103,6 @@ export class Tank extends Phaser.GameObjects.Container {
             this.turretGraphics = this.scene.make.graphics({
                 x: -4, y: 0,
             }, false),
-            this.uiContainer = this.scene.make.container({ x: 0, y: 0 }),
         ]);
 
         this.turretGraphics.lineStyle(2, (this.team === Team.BLUE ? 0x333333 : 0x888888), 1);
@@ -111,12 +110,6 @@ export class Tank extends Phaser.GameObjects.Container {
         this.turretGraphics.fillCircle(0, 0, 8);
         this.turretGraphics.strokeCircle(0, 0, 8);
 
-        this.uiContainer.add([
-            this.detailsText = this.scene.make.text({ x: 0, y: -20, text: '', style: { align: 'center' } }),
-            this.rangeMarker = this.scene.make.graphics({ x: 0, y: 0 }),
-        ]);
-        this.uiContainer.setVisible(false);
-        this.detailsText.setOrigin(0.5, 1);
 
         this.add(
             this.upgradeAnimationsContainer = this.scene.make.container({ x: 0, y: 0 })
@@ -129,6 +122,8 @@ export class Tank extends Phaser.GameObjects.Container {
 
         this.on('destroy', () => {
             this.emit(Tank.TANK_DIE, this);
+            if (this.hpBar) this.hpBar.destroy();
+            if (this.uiContainer) this.uiContainer.destroy();
         });
     }
     init(x: number, y: number): this {
@@ -149,9 +144,18 @@ export class Tank extends Phaser.GameObjects.Container {
         return this;
     }
     initHpBar(hpBar: HpBar) {
-        this.add(hpBar);
         this.hpBar = hpBar;
         this.updateHpBar();
+        return this;
+    }
+    initUiContainer(uiContainer: Phaser.GameObjects.Container) {
+        this.uiContainer = uiContainer;
+        this.uiContainer.add([
+            this.detailsText = this.scene.make.text({ x: 0, y: -20, text: '', style: { align: 'center' } }),
+            this.rangeMarker = this.scene.make.graphics({ x: 0, y: 0 }),
+        ]);
+        this.uiContainer.setVisible(false);
+        this.detailsText.setOrigin(0.5, 1);
         return this;
     }
     updateHpBar() {
