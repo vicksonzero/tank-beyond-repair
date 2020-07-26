@@ -29,6 +29,7 @@ interface HoldingItem extends Container {
 
 export class Player extends Phaser.GameObjects.Container {
 
+    scene: MainScene;
     uniqueID: number;
     team: Team;
     hp: number;
@@ -63,7 +64,7 @@ export class Player extends Phaser.GameObjects.Container {
 
     private undoTintEvent?: Phaser.Time.TimerEvent;
 
-    constructor(scene: Phaser.Scene, team: Team) {
+    constructor(scene: MainScene, team: Team) {
         super(scene, 0, 0, []);
         this.uniqueID = getUniqueID();
         this.team = team;
@@ -158,14 +159,14 @@ export class Player extends Phaser.GameObjects.Container {
         } as IFixtureUserData;
 
 
-        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+        this.scene.getPhysicsSystem().scheduleCreateBody((world: b2World) => {
             this.b2Body = world.CreateBody(bodyDef);
             this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
             this.playerHandSensor = this.b2Body.CreateFixture(handsFixtureDef);
             this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
             this.on('destroy', () => {
-                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.scene.getPhysicsSystem().scheduleDestroyBody(this.b2Body);
                 this.b2Body.m_userData.gameObject = null;
             });
             physicsFinishedCallback();
@@ -232,7 +233,7 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     doCollision() {
-        const world = (this.scene as MainScene).getPhysicsSystem().world;
+        const world = this.scene.getPhysicsSystem().world;
         let closestFixture: b2Fixture | null = null;
         // let closestContact: b2Contact | null = null;
         let closestDistanceSq = Infinity;
@@ -344,7 +345,7 @@ export class Player extends Phaser.GameObjects.Container {
         const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
 
         this.holdingItem.add(this.holdingItemContainer = this.scene.make.container({ x: 0, y: 0 }));
-        (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
+        this.scene.makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
 
         this.pointerTarget.destroy();
         this.pointerTarget = null;
@@ -389,7 +390,7 @@ export class Player extends Phaser.GameObjects.Container {
         sfx_pickup.play();
         this.holdingItem.upgrades.addParts(floorItem.upgrades.partsList);
         const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
-        (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
+        this.scene.makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
 
         this.pointerTarget.destroy();
         this.pointerTarget = null;
@@ -407,7 +408,7 @@ export class Player extends Phaser.GameObjects.Container {
         sfx_pickup.play();
         this.holdingItem.upgrades = floorItem.upgrades.clone();
         const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
-        (this.scene as MainScene).makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
+        this.scene.makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
 
         floorItem.setUpgrades(myOldUpgrade).refreshDeathTimer();
 
@@ -485,7 +486,7 @@ export class Player extends Phaser.GameObjects.Container {
         this.hp = Math.max(0, this.hp);
 
         this.bodySprite.setTint(0xFF0000);
-        this.undoTintEvent = (this.scene as MainScene).fixedTime.addEvent({
+        this.undoTintEvent = this.scene.fixedTime.addEvent({
             delay: 100, loop: false, callback: () => {
                 this.bodySprite.setTint(0xFFFFFF);
             }

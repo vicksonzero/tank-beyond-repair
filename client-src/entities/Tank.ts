@@ -23,6 +23,7 @@ type Container = Phaser.GameObjects.Container;
 export class Tank extends Phaser.GameObjects.Container {
 
     static TANK_DIE = 'tank-die';
+    scene: MainScene;
     bodyRadius = 20;
     team: Team;
     uniqueID: number;
@@ -69,7 +70,7 @@ export class Tank extends Phaser.GameObjects.Container {
 
     private undoTintEvent?: Phaser.Time.TimerEvent;
 
-    constructor(scene: Phaser.Scene, team: Team) {
+    constructor(scene: MainScene, team: Team) {
         super(scene, 0, 0, []);
         this.uniqueID = getUniqueID();
         this
@@ -83,7 +84,7 @@ export class Tank extends Phaser.GameObjects.Container {
             barrel: 1,
             armor: 0,
         });
-        this.lastBatteryTick = this.scene.time.now;
+        this.lastBatteryTick = this.scene.fixedTime.now;
         this.refreshAttributes(false);
 
         // const color = this.team === Team.BLUE ? 'dark' : 'sand';
@@ -190,13 +191,13 @@ export class Tank extends Phaser.GameObjects.Container {
             gameObject: this,
         };
 
-        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+        this.scene.getPhysicsSystem().scheduleCreateBody((world: b2World) => {
             this.b2Body = world.CreateBody(bodyDef);
             this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
             this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
             this.on('destroy', () => {
-                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.scene.getPhysicsSystem().scheduleDestroyBody(this.b2Body);
                 this.b2Body.m_userData.gameObject = null;
             });
             physicsFinishedCallback();
@@ -217,7 +218,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.hp -= amount;
 
         this.bodySprite.setTint(Teams[this.team].hitTint);
-        this.undoTintEvent = (this.scene as MainScene).fixedTime.addEvent({
+        this.undoTintEvent = this.scene.fixedTime.addEvent({
             delay: 100, loop: false, callback: () => {
                 this.bodySprite.setTint(Teams[this.team].normalTint);
             }
@@ -270,7 +271,7 @@ export class Tank extends Phaser.GameObjects.Container {
 
     addUpgradeAbsorbEffect(upgrades: UpgradeObject, fromPosition: Phaser.Math.Vector2, isLocalToTank: boolean) {
         let upgradeGraphics = this.scene.make.container({ x: 0, y: 0 });
-        (this.scene as MainScene).makeUpgradeGraphics(upgradeGraphics, upgrades);
+        this.scene.makeUpgradeGraphics(upgradeGraphics, upgrades);
         this.upgradeAnimationsContainer.add(upgradeGraphics);
 
         // const point = new Phaser.Geom.Point();

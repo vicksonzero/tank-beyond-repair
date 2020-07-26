@@ -18,6 +18,7 @@ const log = Debug('tank-beyond-repair:Bullet:log');
 
 export class Bullet extends GameObjects.Container {
 
+    scene: MainScene;
     uniqueID: number;
     team: Team;
     damage: number;
@@ -28,7 +29,7 @@ export class Bullet extends GameObjects.Container {
 
     b2Body: b2Body;
 
-    constructor(scene: Scene, team: Team) {
+    constructor(scene: MainScene, team: Team) {
         super(scene, 0, 0, []);
         this.uniqueID = getUniqueID();
         this.team = team;
@@ -88,13 +89,13 @@ export class Bullet extends GameObjects.Container {
             gameObject: this,
         };
 
-        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+        this.scene.getPhysicsSystem().scheduleCreateBody((world: b2World) => {
             this.b2Body = world.CreateBody(bodyDef);
             this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
             this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
             this.on('destroy', () => {
-                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.scene.getPhysicsSystem().scheduleDestroyBody(this.b2Body);
                 this.b2Body.m_userData.gameObject = null;
             });
             physicsFinishedCallback();

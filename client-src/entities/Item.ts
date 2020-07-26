@@ -20,6 +20,7 @@ type Container = GameObjects.Container;
 export class Item extends GameObjects.Container {
 
 
+    scene: MainScene;
     static ITEM_DIE = 'item-die';
     itemSprite: Image;
     itemContainer: Container;
@@ -36,7 +37,7 @@ export class Item extends GameObjects.Container {
     private dieEvent?: Phaser.Time.TimerEvent;
     b2Body: b2Body;
 
-    constructor(scene: Phaser.Scene) {
+    constructor(scene: MainScene) {
         super(scene, 0, 0, []);
         this.uniqueID = getUniqueID();
         this
@@ -112,13 +113,13 @@ export class Item extends GameObjects.Container {
             gameObject: this,
         };
 
-        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+        this.scene.getPhysicsSystem().scheduleCreateBody((world: b2World) => {
             this.b2Body = world.CreateBody(bodyDef);
             this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
             this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
             this.on('destroy', () => {
-                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.scene.getPhysicsSystem().scheduleDestroyBody(this.b2Body);
                 this.b2Body.m_userData.gameObject = null;
             });
             physicsFinishedCallback();
@@ -128,10 +129,10 @@ export class Item extends GameObjects.Container {
     }
 
     initDeathTimer(): this {
-        this.warningEvent = (this.scene as MainScene).fixedTime.addEvent({
+        this.warningEvent = this.scene.fixedTime.addEvent({
             delay: ITEM_LIFESPAN_WARNING,
             callback: () => {
-                this.warningLoop = (this.scene as MainScene).fixedTime.addEvent({
+                this.warningLoop = this.scene.fixedTime.addEvent({
                     delay: 100,
                     callback: () => { this.itemContainer.setVisible(!this.itemContainer.visible) },
                     loop: true,
@@ -139,7 +140,7 @@ export class Item extends GameObjects.Container {
             },
             loop: false,
         });
-        this.dieEvent = (this.scene as MainScene).fixedTime.addEvent({ delay: ITEM_LIFESPAN, callback: () => { this.destroy() }, loop: false });
+        this.dieEvent = this.scene.fixedTime.addEvent({ delay: ITEM_LIFESPAN, callback: () => { this.destroy() }, loop: false });
         return this;
     }
 
@@ -173,7 +174,7 @@ export class Item extends GameObjects.Container {
 
         // const upgradeText = UpgradeObject.makeUpgradeString(this.upgrades);
         // this.itemText.setText(upgradeText);
-        (this.scene as MainScene).makeUpgradeGraphics(this.itemContainer, this.upgrades);
+        this.scene.makeUpgradeGraphics(this.itemContainer, this.upgrades);
         return this;
     }
 }
