@@ -14,6 +14,8 @@ export function preload(this: Phaser.Scene) {
     this.load.image('repair', './assets/sprites/kenney_emotespack/PNG/Vector/Style 8/emote_heart.png');
     this.load.image('btn_mute_dark', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight15.png');
     this.load.image('btn_mute_light', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight17.png');
+    this.load.image('factory_frame', './assets/sprites/dicksonmd/Factory-frame.png');
+    this.load.image('factory_door', './assets/sprites/dicksonmd/Factory-door.png');
 
     this.load.atlas('items_icon',
         './assets/sprites/dicksonmd/spritesheet (1).png',

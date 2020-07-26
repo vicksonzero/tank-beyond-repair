@@ -17,6 +17,7 @@ import { HpBar } from '../ui/HpBar';
 import { DistanceMatrix } from '../utils/DistanceMatrix';
 // import { GameObjects } from 'phaser';
 import { capitalize, lerpRadians } from '../utils/utils';
+import { Factory } from '../gameObjects/Factory';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -48,6 +49,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     fixedElapsedTime: number;
 
     backgroundUILayer: Container;
+    factoryLayer: Container;
     itemLayer: Container;
     tankLayer: Container;
     playerLayer: Container;
@@ -63,6 +65,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     readonly redAi: Tank[] = [];
     readonly bullets: Bullet[] = [];
     readonly items: Item[] = [];
+    readonly factories: Factory[] = [];
     readonly instancesByID: { [id: number]: (GameObjects.Container) } = {};
 
     sfx_shoot: BaseSound;
@@ -102,6 +105,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.bg.setAlpha(0.7);
 
         this.backgroundUILayer = this.add.container(0, 0);
+        this.factoryLayer = this.add.container(0, 0);
         this.itemLayer = this.add.container(0, 0);
         this.tankLayer = this.add.container(0, 0);
         this.playerLayer = this.add.container(0, 0);
@@ -133,8 +137,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.redPlayer.initPhysics(() => { });
 
         const createAi = (team: Team, x: number, y: number) => {
-            let ai: Tank;
-            this.tankLayer.add(ai = new Tank(this, team));
+            const ai = new Tank(this, team);
+            this.tankLayer.add(ai);
             const hpBar = new HpBar(this, 0, -30, 30, 4, 2);
             this.uiLayer.add(hpBar);
             const uiContainer = this.make.container({ x: 0, y: 0 });
@@ -149,6 +153,25 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.addToList(ai, list);
             return ai;
         };
+
+        const createFactory = (x: number, y: number) => {
+            const factory = new Factory(this);
+            this.factoryLayer.add(factory);
+            const hpBar = new HpBar(this, 0, -30, 30, 4, 2);
+            this.uiLayer.add(hpBar);
+            const uiContainer = this.make.container({ x: 0, y: 0 });
+            this.uiLayer.add(uiContainer);
+            factory
+                .initUiContainer(uiContainer)
+                .initHpBar(hpBar)
+                .init(x, y);
+            factory.initPhysics(() => { });
+
+            this.addToList(factory, this.factories);
+
+        };
+
+        createFactory(500, 500);
 
         if (!DEBUG_DISABLE_SPAWNING) {
             const spawnCallback = () => {
