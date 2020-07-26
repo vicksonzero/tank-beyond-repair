@@ -7,6 +7,7 @@ import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
 import { collisionCategory } from '../models/collisionCategory';
 import { UpgradeObject } from '../models/Upgrade';
+import { config, ItemType } from '../config/config';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
@@ -15,6 +16,21 @@ const log = Debug('tank-beyond-repair:Item:log');
 type Image = GameObjects.Image;
 type Text = GameObjects.Text;
 type Container = GameObjects.Container;
+
+
+export const itemIconNormalTint: { [x: string]: number } = {
+    battery: 0x88ff88,
+    steel: 0xdddddd,
+    barrel: 0xffaaaa,
+    armor: 0x99bbff,
+};
+
+export const itemIconHighlightTint: { [x: string]: number } = {
+    battery: 0xddffdd,
+    steel: 0xffffff,
+    barrel: 0xffdddd,
+    armor: 0xcceeff,
+};
 
 
 export class Item extends GameObjects.Container {
@@ -145,15 +161,37 @@ export class Item extends GameObjects.Container {
     }
 
     setNormalTint() {
-        // this.itemContainer.list.forEach((iconSet: Phaser.GameObjects.Container) => {
-        //     (iconSet.getAt(0) as Phaser.GameObjects.Image).setTint(this.normalTint);
-        // });
+        const parts = Object.entries(this.upgrades.partsList) as [ItemType, number][];
+        const filteredParts = (parts
+            .filter(([itemType, count]: [ItemType, number]) => {
+                const renderedCount = itemType === 'battery' ?
+                    Math.round(count / config.items.battery.chargeFull * 10) / 10
+                    : count;
+
+                return (renderedCount > 0);
+            })
+        );
+        filteredParts.forEach(([itemType, count], i: number) => {
+            const icon = (this.itemContainer.getAt(i) as Container).list[0] as Phaser.GameObjects.Image;
+            icon.setTint(itemIconNormalTint[itemType]);
+        });
     }
 
     setHighlightTint() {
-        // this.itemContainer.list.forEach((iconSet: Phaser.GameObjects.Container) => {
-        //     (iconSet.getAt(0) as Phaser.GameObjects.Image).setTint(this.highlightTint);
-        // });
+        const parts = Object.entries(this.upgrades.partsList) as [ItemType, number][];
+        const filteredParts = (parts
+            .filter(([itemType, count]: [ItemType, number]) => {
+                const renderedCount = itemType === 'battery' ?
+                    Math.round(count / config.items.battery.chargeFull * 10) / 10
+                    : count;
+
+                return (renderedCount > 0);
+            })
+        );
+        filteredParts.forEach(([itemType, count], i: number) => {
+            const icon = (this.itemContainer.getAt(i) as Container).list[0] as Phaser.GameObjects.Image;
+            icon.setTint(itemIconHighlightTint[itemType]);
+        });
     }
 
     static canStackItems(a: Item, b: Item) {

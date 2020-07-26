@@ -183,7 +183,7 @@ export class Tank extends Phaser.GameObjects.Container {
             this.x * PIXEL_TO_METER,
             this.y * PIXEL_TO_METER,
         ); // in meters
-        bodyDef.angle = 0; // in radians
+        bodyDef.angle = Teams[this.team].facing; // in radians
         bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
         bodyDef.userData = {

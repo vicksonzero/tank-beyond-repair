@@ -6,7 +6,7 @@ import { preload as _preload, setUpAudio } from '../assets';
 import { config, ItemType } from '../config/config';
 import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_CHASE_ITEM_RANGE, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 import { Bullet } from '../gameObjects/Bullet';
-import { Item } from '../gameObjects/Item';
+import { Item, itemIconNormalTint } from '../gameObjects/Item';
 // import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../gameObjects/Player';
 import { Tank } from '../gameObjects/Tank';
@@ -891,20 +891,14 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         // log(JSON.stringify(parts));
         log(filteredParts.length);
 
-        const iconCount = parts.reduce((sum, [itemType, count]) => {
-            return sum + (itemType === 'battery' ? Math.ceil(count / 100) : count);
-        }, 0);
+        // const iconCount = parts.reduce((sum, [itemType, count]) => {
+        //     return sum + (itemType === 'battery' ? Math.ceil(count / 100) : count);
+        // }, 0);
 
         const itemIconFrame: { [x: string]: string } = {
             steel: 'I-Beam',
             barrel: 'Barrel',
             armor: 'Iron_Plating',
-        };
-        const itemIconTint: { [x: string]: number } = {
-            battery: 0x88ff88,
-            steel: 0xffffff,
-            barrel: 0xffaaaa,
-            armor: 0x99bbff,
         };
         const batteryIconFrames: { [x: string]: string } = {
             batteryFull: 'Battery_Full',
@@ -969,8 +963,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 icon.setFrame(itemIconFrame[itemType as string]);
                 label.setText(renderedCount > 1 ? `x${renderedCount}` : '');
             }
-
-            icon.setTint(itemIconTint[itemType]);
+            icon.setTint(itemIconNormalTint[itemType]);
 
             if (itemType === ItemType.BATTERY) {
                 const isFullBattery = renderedCount > 1;
