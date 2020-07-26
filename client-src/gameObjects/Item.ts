@@ -86,7 +86,7 @@ export class Item extends GameObjects.Container {
     initPhysics(physicsFinishedCallback: () => void): this {
         // see node_modules/@flyover/box2d/Box2D/Collision/Shapes for more shapes
         const polygonShape = new b2PolygonShape();
-        polygonShape.SetAsBox(16 * PIXEL_TO_METER, 16 * PIXEL_TO_METER); //a 4x2 rectangle
+        polygonShape.SetAsBox(14 * PIXEL_TO_METER, 14 * PIXEL_TO_METER); //a 4x2 rectangle
 
         const fixtureDef = new b2FixtureDef();
         fixtureDef.shape = polygonShape;

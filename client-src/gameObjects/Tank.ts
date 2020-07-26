@@ -250,7 +250,7 @@ export class Tank extends Phaser.GameObjects.Container {
 
     takeAutoBatteryDamage(time: number): this {
         if (time - this.lastBatteryTick > 1000) {
-            this.takeBatteryDamage(4);
+            this.takeBatteryDamage(3);
             this.lastBatteryTick += 1000;
         }
 

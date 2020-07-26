@@ -904,7 +904,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             battery: 0x88ff88,
             steel: 0xffffff,
             barrel: 0xffaaaa,
-            armor: 0xaaaaff,
+            armor: 0x99bbff,
         };
         const batteryIconFrames: { [x: string]: string } = {
             batteryFull: 'Battery_Full',
@@ -919,7 +919,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         let icon: GameObjects.Image | null;
         let label: GameObjects.Text | null;
 
-        const iconSize = 24 / Math.sqrt(filteredParts.length);
+        const iconSize = 20 / Math.sqrt(filteredParts.length);
         const startY = (filteredParts.length - 1) / 2 * iconSize;
         filteredParts.forEach(([itemType, count]: [ItemType, number], i: number) => {
             const renderedCount = itemType === 'battery' ?
@@ -960,7 +960,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
             icon = iconGroup.getAt(0) as GameObjects.Image;
             icon.setOrigin(0.5);
-            icon.setScale(1.5 / Math.sqrt(filteredParts.length));
+            icon.setScale(1 / Math.sqrt(filteredParts.length));
 
             label = iconGroup.getAt(1) as GameObjects.Text;
             label.setFontSize(iconSize);
