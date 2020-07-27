@@ -29,11 +29,11 @@ export enum PartType {
     GUN = 'gun',
     MISSILE = 'missile',
     ROCKET = 'rocket',
-};
+}
 
 export type IPartList = {
     [x in PartType]: number;
-}
+};
 
 export enum ItemType {
     STEEL = 'steel',
@@ -41,7 +41,7 @@ export enum ItemType {
     ARMOR = 'armor',
     BATTERY = 'battery',
     GEAR = 'gear',
-};
+}
 
 export type ItemsList = {
     [x in ItemType]: number;
@@ -75,13 +75,13 @@ export type IItemSpawnChance = {
 
 export type IPartEffectMap = {
     [x in PartType]: Array<Partial<IPartEffect>>;
-};
+}
 
 export type IPartEffect = {
     stat: Partial<IAttributeMap>;
     graphics?: IPartGraphics;
     mountPoints?: IMountPoint;
-};
+}
 
 export type PointArray = number[]; // x,y
 
@@ -104,6 +104,7 @@ export interface IUIControls {
     // allowHandFeedItemsIntoTanks: boolean;
 
     pickUpItemsByContact: boolean;
+    prioritizeCompatibleItemStack: boolean;
 
     allowMultipleItemsInHand: boolean;
     allowMultipleItemTypesInHand: boolean;

@@ -9,6 +9,7 @@ config:
     # allowHandFeedItemsIntoTanks: true
 
     pickUpItemsByContact: false
+    prioritizeCompatibleItemStack: true
 
     allowMultipleItemsInHand: true
     allowMultipleItemTypesInHand: false

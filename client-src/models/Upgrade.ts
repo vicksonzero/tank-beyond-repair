@@ -176,6 +176,10 @@ export class UpgradeObject {
 			`Lv: ${this.levels.chassis}|${this.levels.cannon}|${this.levels.armor}|${this.levels.gun}|${this.levels.missile}|${this.levels.rocket}`;
 	}
 
+	compatibleWith(b: UpgradeObject) {
+		return UpgradeObject.canStackOnto(this, b);
+	}
+
 	static canStackOnto(a?: UpgradeObject, b?: UpgradeObject): boolean {
 		if (!a) return false;
 		if (!b) return false;
@@ -190,16 +194,17 @@ export class UpgradeObject {
 		const partEntriesA = (Object.entries(a.partsList)
 			.filter(([key, value]) => value !== 0)
 		);
-		if (partEntriesA.length > 1) {
-			throw new Error('upgrades cannot stack types when allowMultipleItemTypesInHand is false');
-		}
+		// if (partEntriesA.length > 1) {
+		// 	throw new Error('upgrades cannot stack types when allowMultipleItemTypesInHand is false');
+		// }
 		const partEntriesB = (Object.entries(b.partsList)
 			.filter(([key, value]) => value !== 0)
 		);
 		if (partEntriesB.length > 1) {
-			throw new Error('upgrades cannot stack types when allowMultipleItemTypesInHand is false');
+			throw new Error('upgrades b cannot stack types when allowMultipleItemTypesInHand is false');
 		}
 
-		return partEntriesA[0] != null && partEntriesB[0] != null && partEntriesA[0][0] === partEntriesB[0][0];
+		// return partEntriesA[0] != null && && partEntriesA[0][0] === partEntriesB[0][0];
+		return partEntriesB[0] != null && partEntriesA.some(([key, value])=> key === partEntriesB[0][0])
 	}
 }

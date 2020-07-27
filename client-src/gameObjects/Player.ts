@@ -1,17 +1,17 @@
 import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2Fixture, b2FixtureDef, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
+import { config } from '../config/config';
 import { PIXEL_TO_METER } from '../constants';
+import { collisionCategory } from '../models/collisionCategory';
+import { Team } from '../models/Team';
+import { UpgradeObject } from '../models/Upgrade';
 import { IBodyUserData, IFixtureUserData } from '../PhysicsSystem';
 import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
 import { getUniqueID } from '../utils/UniqueID';
 import { capitalize } from '../utils/utils';
-import { collisionCategory } from '../models/collisionCategory';
 import { Item } from './Item';
 import { Tank } from './Tank';
-import { Team } from '../models/Team';
-import { UpgradeObject } from '../models/Upgrade';
-import { config } from '../config/config';
 
 
 const log = Debug('tank-beyond-repair:Player:log');
@@ -237,8 +237,14 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     doCollision() {
-        const world = this.scene.getPhysicsSystem().world;
-        let closestFixture: b2Fixture | null = null;
+        const pickUpItemsByContact = config.controls.pickUpItemsByContact;
+        const prioritizeCompatibleItemStack = config.controls.prioritizeCompatibleItemStack;
+
+        const TargetMode = { BY_DISTANCE: 'by_distance', BY_ITEM: 'by_item' };
+        let targetMode = TargetMode.BY_DISTANCE;
+
+        // const world = this.scene.getPhysicsSystem().world;
+        let bestFixture: b2Fixture | null = null;
         // let closestContact: b2Contact | null = null;
         let closestDistanceSq = Infinity;
         for (let contactEdge = this.b2Body.GetContactList(); contactEdge; contactEdge = contactEdge.next) {
@@ -256,38 +262,57 @@ export class Player extends Phaser.GameObjects.Container {
             const itemFixture = (fixtureLabelA !== 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
             const itemBody = itemFixture.GetBody();
             const itemPosition = itemBody.GetPosition();
+            const itemLabel = (contactEdge.other.GetUserData() as IBodyUserData).label;
 
-            if (!['tank', 'item'].includes((contactEdge.other.GetUserData() as IBodyUserData).label)) { continue; }
+            if (!['tank', 'item'].includes(itemLabel)) { continue; }
 
+
+            if (prioritizeCompatibleItemStack && !!this.holdingItem?.upgrades && itemLabel === 'item') {
+                const item = (contactEdge.other.GetUserData() as IBodyUserData).gameObject as Item;
+                if (item.upgrades.compatibleWith(this.holdingItem.upgrades)) {
+                    // overrides and skips all distance requirements and proceed to item scooping
+                    targetMode = TargetMode.BY_ITEM;
+                    bestFixture = itemFixture;
+                    break;
+                }
+            }
 
             const distanceSq = Phaser.Math.Distance.Squared(sensorPosition.x, sensorPosition.y, itemPosition.x, itemPosition.y);
             // log(`doCollision ${(sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel} gets ${(itemFixture.GetUserData() as IFixtureUserData).fixtureLabel}`);
 
             if (distanceSq < closestDistanceSq) {
-                closestFixture = itemFixture;
+                bestFixture = itemFixture;
                 closestDistanceSq = distanceSq;
                 // closestContact = contact;
             }
         }
-        if (closestFixture) {
-            const bodyData = closestFixture.GetBody().GetUserData();
-            // log(`doCollision closestFixture is ${bodyData.label}`);
-            if (this.pointerTarget && this.pointerTarget !== bodyData.gameObject) {
-                if (this.pointerTarget.name === 'item') {
-                    const item = this.pointerTarget as Item;
-                    this.giveUpTargetingItem(item);
-                } else {
-                    const tank = this.pointerTarget as Tank;
-                    this.giveUpTargetingTank(tank);
-                }
-            }
-            const label = bodyData.label;
-            if (label === 'item') {
-                const item = bodyData.gameObject as Item;
-                this.startTargetingItem(item);
+        if (bestFixture) {
+            const userData = bestFixture.GetBody().GetUserData();
+
+            if (pickUpItemsByContact && userData.label === 'item' && this.holdingItem?.upgrades &&
+                (userData.gameObject as Item).upgrades.compatibleWith(this.holdingItem.upgrades)) {
+                this.pointerTarget = bestFixture.GetBody().GetUserData().gameObject;
+                this.tryScoopItem(this.scene.sfx_open);
             } else {
-                const tank = bodyData.gameObject as Tank;
-                this.startTargetingTank(tank);
+                const bodyData = bestFixture.GetBody().GetUserData();
+                // log(`doCollision closestFixture is ${bodyData.label}`);
+                if (this.pointerTarget && this.pointerTarget !== bodyData.gameObject) {
+                    if (this.pointerTarget.name === 'item') {
+                        const item = this.pointerTarget as Item;
+                        this.giveUpTargetingItem(item);
+                    } else {
+                        const tank = this.pointerTarget as Tank;
+                        this.giveUpTargetingTank(tank);
+                    }
+                }
+                const label = bodyData.label;
+                if (label === 'item') {
+                    const item = bodyData.gameObject as Item;
+                    this.startTargetingItem(item);
+                } else {
+                    const tank = bodyData.gameObject as Tank;
+                    this.startTargetingTank(tank);
+                }
             }
         } else {
             // log(`doCollision no closestFixture found`);
@@ -301,6 +326,58 @@ export class Player extends Phaser.GameObjects.Container {
                 }
             }
         }
+    }
+
+    getBestPointerTarget() {
+        const prioritizeCompatibleItemStack = config.controls.prioritizeCompatibleItemStack;
+
+        const TargetMode = { BY_DISTANCE: 'by_distance', BY_ITEM: 'by_item' };
+        let targetMode = TargetMode.BY_DISTANCE;
+
+        // const world = this.scene.getPhysicsSystem().world;
+        let bestFixture: b2Fixture | null = null;
+        // let closestContact: b2Contact | null = null;
+        let closestDistanceSq = Infinity;
+        for (let contactEdge = this.b2Body.GetContactList(); contactEdge; contactEdge = contactEdge.next) {
+
+            const contact = contactEdge.contact;
+            const fixtureLabelA = (contact.GetFixtureA()?.GetUserData() as IFixtureUserData).fixtureLabel;
+            const sensorFixture = (fixtureLabelA === 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
+            const sensorFixtureLabel = (sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel;
+
+            if (!['player-hand'].includes(sensorFixtureLabel)) { continue; }
+
+            const sensorBody = sensorFixture.GetBody();
+            const sensorPosition = sensorBody.GetWorldPoint((sensorFixture.GetShape() as b2CircleShape).m_p, { x: 0, y: 0 });
+
+            const itemFixture = (fixtureLabelA !== 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
+            const itemBody = itemFixture.GetBody();
+            const itemPosition = itemBody.GetPosition();
+            const itemLabel = (contactEdge.other.GetUserData() as IBodyUserData).label;
+
+            if (!['tank', 'item'].includes(itemLabel)) { continue; }
+
+
+            if (prioritizeCompatibleItemStack && !!this.holdingItem?.upgrades && itemLabel === 'item') {
+                const item = (contactEdge.other.GetUserData() as IBodyUserData).gameObject as Item;
+                if (item.upgrades.compatibleWith(this.holdingItem.upgrades)) {
+                    // overrides and skips all distance requirements and proceed to item scooping
+                    targetMode = TargetMode.BY_ITEM;
+                    bestFixture = itemFixture;
+                    break;
+                }
+            }
+
+            const distanceSq = Phaser.Math.Distance.Squared(sensorPosition.x, sensorPosition.y, itemPosition.x, itemPosition.y);
+            // log(`doCollision ${(sensorFixture.GetUserData() as IFixtureUserData).fixtureLabel} gets ${(itemFixture.GetUserData() as IFixtureUserData).fixtureLabel}`);
+
+            if (distanceSq < closestDistanceSq) {
+                bestFixture = itemFixture;
+                closestDistanceSq = distanceSq;
+                // closestContact = contact;
+            }
+        }
+        return bestFixture && (bestFixture.GetBody().GetUserData() as IBodyUserData).gameObject;
     }
 
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {
