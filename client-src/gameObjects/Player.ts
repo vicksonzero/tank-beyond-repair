@@ -353,18 +353,21 @@ export class Player extends Phaser.GameObjects.Container {
             const itemFixture = (fixtureLabelA !== 'player-hand') ? contact.GetFixtureA() : contact.GetFixtureB();
             const itemBody = itemFixture.GetBody();
             const itemPosition = itemBody.GetPosition();
-            const itemLabel = (contactEdge.other.GetUserData() as IBodyUserData).label;
+            const itemUserData = itemBody.GetUserData() as IBodyUserData;
+            const itemLabel = itemUserData.label;
 
             if (!['tank', 'item'].includes(itemLabel)) { continue; }
 
 
-            if (prioritizeCompatibleItemStack && !!this.holdingItem?.upgrades && itemLabel === 'item') {
-                const item = (contactEdge.other.GetUserData() as IBodyUserData).gameObject as Item;
-                if (item.upgrades.compatibleWith(this.holdingItem.upgrades)) {
-                    // overrides and skips all distance requirements and proceed to item scooping
-                    targetMode = TargetMode.BY_ITEM;
-                    bestFixture = itemFixture;
-                    break;
+            if (prioritizeCompatibleItemStack) {
+                if (!!this.holdingItem?.upgrades && itemLabel === 'item') {
+                    const item = itemUserData.gameObject as Item;
+                    if (item.upgrades.compatibleWith(this.holdingItem.upgrades)) {
+                        // overrides and skips all distance requirements and proceed to item scooping
+                        targetMode = TargetMode.BY_ITEM;
+                        bestFixture = itemFixture;
+                        break;
+                    }
                 }
             }
 
@@ -392,6 +395,7 @@ export class Player extends Phaser.GameObjects.Container {
             } else {
                 this.trySwapItemsWithFloorItem(floorItem, sfx_pickup);
             }
+
         } else if (this.pointerTarget.name === 'item' && !this.holdingItem) {
             this.tryPickUpItem(sfx_pickup);
 
