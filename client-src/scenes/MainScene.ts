@@ -103,6 +103,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
         this.bg.setAlpha(0.7);
+        this.bg.setTint(0xaaaaaa);
 
         this.backgroundUILayer = this.add.container(0, 0);
         this.factoryLayer = this.add.container(0, 0);
@@ -168,10 +169,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             factory.initPhysics(() => { });
 
             this.addToList(factory, this.factories);
-
         };
 
-        createFactory(500, 500);
+        createFactory(1366 / 4 * 1, 768 / 3 * 2);
+        createFactory(1366 / 4 * 3, 768 / 3 * 1);
 
         if (!DEBUG_DISABLE_SPAWNING) {
             const spawnCallback = () => {

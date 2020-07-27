@@ -1,18 +1,14 @@
 
-import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2World, b2PolygonShape } from '@flyover/box2d';
-import { AttributeType, IAttributeMap } from '../config/config';
+import { b2Body, b2BodyDef, b2BodyType, b2FixtureDef, b2PolygonShape, b2World } from '@flyover/box2d';
 import { PIXEL_TO_METER } from '../constants';
+import { collisionCategory } from '../models/collisionCategory';
+import { UpgradeObject } from '../models/Upgrade';
 import { IFixtureUserData } from '../PhysicsSystem';
 import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
-import { Immutable } from '../utils/ImmutableType';
 import { getUniqueID } from '../utils/UniqueID';
-import { capitalize } from '../utils/utils';
-import { collisionCategory } from '../models/collisionCategory';
-import { Team } from '../models/Team';
-import { UpgradeObject } from '../models/Upgrade';
 import { Item } from './Item';
-import { Teams } from '../models/Teams';
+import { Tweens } from 'phaser';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -24,6 +20,7 @@ export class Factory extends Phaser.GameObjects.Container {
 
     scene: MainScene;
     bodyRadius = 40;
+    doorSpriteSize = 150;
     uniqueID: number;
 
     hp = 100;
@@ -34,11 +31,6 @@ export class Factory extends Phaser.GameObjects.Container {
 
     upgrades: UpgradeObject;
 
-    // input
-    mouseTarget?: Phaser.Input.Pointer;
-    mouseOffset?: { x: number, y: number };
-    followingMouse?: boolean;
-
     bodySprite: Image;
     uiContainer: Container;
     upgradeAnimationsContainer: Container;
@@ -46,6 +38,8 @@ export class Factory extends Phaser.GameObjects.Container {
     factoryDoorR: Image;
     factoryDoorGraphicsL: Graphics;
     factoryDoorGraphicsR: Graphics;
+    platform: Container;
+    platformPlate: Graphics;
 
     b2Body: b2Body;
 
@@ -70,8 +64,11 @@ export class Factory extends Phaser.GameObjects.Container {
         this.refreshAttributes(false);
 
         // const color = this.team === Team.BLUE ? 'dark' : 'sand';
-        const color = 'sand';
+        let bg: Graphics;
         this.add([
+            bg = this.scene.make.graphics({
+                x: 0, y: 0,
+            }, false),
             this.upgradeAnimationsContainer = this.scene.make.container({ x: 0, y: 0 }),
             this.bodySprite = this.scene.make.image({
                 x: 0, y: 0,
@@ -80,7 +77,14 @@ export class Factory extends Phaser.GameObjects.Container {
             }, false),
         ]);
 
+        bg.fillStyle(0x334444);
+        bg.fillRect(-this.bodyRadius, -this.bodyRadius, this.bodyRadius * 2, this.bodyRadius * 2);
+
         this.upgradeAnimationsContainer.add([
+            this.platformPlate = this.scene.make.graphics({
+                x: 0, y: 0,
+            }, false),
+            this.platform = this.scene.make.container({ x: 0, y: 0 }),
             this.factoryDoorGraphicsL = this.scene.make.graphics({
                 x: 0, y: 0,
             }, false),
@@ -98,9 +102,8 @@ export class Factory extends Phaser.GameObjects.Container {
                 // frame: `tankBody_${color}`,
             }, false),
         ]);
-        this.factoryDoorL.setOrigin(0.5).setPosition(0, 0);
-        this.factoryDoorR.setOrigin(0.5).setPosition(0, 0);
-        this.factoryDoorR.setRotation(Math.PI);
+
+        this.initFactoryDoors();
 
         this.bodySprite.setAngle(90);
         this.bodySprite.setScale(0.27);
@@ -109,6 +112,42 @@ export class Factory extends Phaser.GameObjects.Container {
 
         this.on('destroy', () => {
             if (this.uiContainer) this.uiContainer.destroy();
+        });
+
+        // FIXME: not supposed to litter into constructor
+        // FIXME: not supposed to use phaser tween
+        // FIXME: use deterministic timers
+        let upgrade = UpgradeObject.getRandomPartFromPool(5);
+        this.scene.makeUpgradeGraphics(this.platform, upgrade);
+        const a = new Tweens.TweenManager(this.scene);
+        this.scene.tweens.add({
+            targets: { x: 0 },
+            x: 1,
+            duration: 10000,
+            yoyo: true,
+            repeat: -1,
+            onRepeat: (tween, targets) => {
+                // console.log('onRepeat');
+                upgrade = UpgradeObject.getRandomPartFromPool(5);
+                this.scene.makeUpgradeGraphics(this.platform, upgrade);
+            },
+            onYoyo: () => {
+                // console.log('onYoyo');
+                this.scene.spawnItem(this.x, this.y, upgrade, true);
+                this.platform.removeAll(true);
+            },
+            onUpdate: (tween, target) => {
+                const doorProgress = Math.max(0, Math.min(1, (target.x - 0.5) / 0.25));
+                this.updateFactoryDoorProgress(1 - doorProgress);
+
+                const plateProgress = Math.max(0, Math.min(1, (target.x - 0.5 - 0.175) / 0.325));
+                this.platformPlate.setScale(plateProgress * 0.35 + 0.5);
+                this.platformPlate.setAlpha(plateProgress * 0.35 + 0.5);
+                this.platform.setScale((plateProgress * 0.35 + 0.5) * 5);
+            },
+            onComplete: (tween, targets) => {
+                // console.log('onComplete');
+            },
         });
     }
     init(x: number, y: number): this {
@@ -144,14 +183,14 @@ export class Factory extends Phaser.GameObjects.Container {
         const fixtureDef = new b2FixtureDef();
         fixtureDef.shape = polygonShape;
         fixtureDef.density = 1;
-        fixtureDef.filter.categoryBits = collisionCategory.WORLD;
+        fixtureDef.filter.categoryBits = 0;
         fixtureDef.filter.maskBits = collisionCategory.WORLD | collisionCategory.RED | collisionCategory.BLUE;
         fixtureDef.userData = {
-            fixtureLabel: 'tank-body',
+            fixtureLabel: 'factory-body',
         } as IFixtureUserData;
 
         const bodyDef: b2BodyDef = new b2BodyDef();
-        bodyDef.type = b2BodyType.b2_dynamicBody; // can move around
+        bodyDef.type = b2BodyType.b2_staticBody; // can move around
         bodyDef.position.Set(
             this.x * PIXEL_TO_METER,
             this.y * PIXEL_TO_METER,
@@ -160,7 +199,7 @@ export class Factory extends Phaser.GameObjects.Container {
         bodyDef.linearDamping = 0.3; // t = ln(v' / v) / (-d) , where t=time_for_velocity_to_change (s), v and v' are velocity (m/s), d=damping
         bodyDef.fixedRotation = true;
         bodyDef.userData = {
-            label: 'tank',
+            label: 'factory',
             gameObject: this,
         };
 
@@ -190,6 +229,37 @@ export class Factory extends Phaser.GameObjects.Container {
         });
 
         return this;
+    }
+
+    initFactoryDoors() {
+        this.platformPlate.fillStyle(0x999999);
+        this.platformPlate.fillRect(-this.doorSpriteSize * 0.8, -this.doorSpriteSize * 0.8, this.doorSpriteSize * 0.8 * 2, this.doorSpriteSize * 0.8 * 2);
+        this.platformPlate.lineStyle(2, 0x000000, 1);
+        this.platformPlate.strokeRect(-this.doorSpriteSize * 0.8, -this.doorSpriteSize * 0.8, this.doorSpriteSize * 0.8 * 2, this.doorSpriteSize * 0.8 * 2);
+
+        this.factoryDoorL.setOrigin(0.5 + 0.1, 0.5).setPosition(0, 0);
+        this.factoryDoorR.setOrigin(0.5 + 0.1, 0.5).setPosition(0, 0);
+        this.factoryDoorL.setRotation(1 / 2 * Math.PI);
+        this.factoryDoorR.setRotation(-1 / 2 * Math.PI);
+
+        this.factoryDoorGraphicsL.setPosition(0, -this.doorSpriteSize);
+        this.factoryDoorGraphicsR.setPosition(0, this.doorSpriteSize);
+
+        this.factoryDoorGraphicsL.fillStyle(0x999999);
+        this.factoryDoorGraphicsL.fillRect(-this.doorSpriteSize, 0, this.doorSpriteSize * 2, this.doorSpriteSize - 15);
+
+        this.factoryDoorGraphicsR.fillStyle(0x999999);
+        this.factoryDoorGraphicsR.fillRect(-this.doorSpriteSize, 0, this.doorSpriteSize * 2, -(this.doorSpriteSize - 15));
+    }
+
+    updateFactoryDoorProgress(progress: number) {
+        const adjustedProgress = Phaser.Math.Easing.Cubic.Out(progress);
+
+        this.factoryDoorL.setPosition(0, -this.doorSpriteSize * (1 - adjustedProgress) * 0.8);
+        this.factoryDoorR.setPosition(0, this.doorSpriteSize * (1 - adjustedProgress) * 0.8);
+
+        this.factoryDoorGraphicsL.setScale(1, adjustedProgress);
+        this.factoryDoorGraphicsR.setScale(1, adjustedProgress);
     }
 
     setHighlightTint() {
@@ -230,7 +300,7 @@ export class Factory extends Phaser.GameObjects.Container {
         this.refreshAttributes();
     }
 
-    addUpgradeAbsorbEffect(upgrades: UpgradeObject, fromPosition: Phaser.Math.Vector2, isLocalToTank: boolean) {
+    addUpgradeAbsorbEffect(upgrades: UpgradeObject, fromPosition: Phaser.Math.Vector2, isLocalToEntity: boolean) {
         let upgradeGraphics = this.scene.make.container({ x: 0, y: 0 });
         this.scene.makeUpgradeGraphics(upgradeGraphics, upgrades);
         this.upgradeAnimationsContainer.add(upgradeGraphics);
@@ -239,8 +309,8 @@ export class Factory extends Phaser.GameObjects.Container {
         // const tempMatrix = new Phaser.GameObjects.Components.TransformMatrix();
         // this.upgradeAnimationsContainer.getWorldTransformMatrix(tempMatrix);
         // // tempMatrix.transformPoint(item.x, item.y, point);
-        upgradeGraphics.setX(fromPosition.x - (isLocalToTank ? 0 : this.x));
-        upgradeGraphics.setY(fromPosition.y - (isLocalToTank ? 0 : this.y));
+        upgradeGraphics.setX(fromPosition.x - (isLocalToEntity ? 0 : this.x));
+        upgradeGraphics.setY(fromPosition.y - (isLocalToEntity ? 0 : this.y));
         upgradeGraphics.setScale(1.2);
         this.scene.add.tween({
             targets: upgradeGraphics,

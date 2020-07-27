@@ -273,7 +273,7 @@ export class Tank extends Phaser.GameObjects.Container {
         this.refreshAttributes();
     }
 
-    addUpgradeAbsorbEffect(upgrades: UpgradeObject, fromPosition: Phaser.Math.Vector2, isLocalToTank: boolean) {
+    addUpgradeAbsorbEffect(upgrades: UpgradeObject, fromPosition: Phaser.Math.Vector2, isLocalToEntity: boolean) {
         let upgradeGraphics = this.scene.make.container({ x: 0, y: 0 });
         this.scene.makeUpgradeGraphics(upgradeGraphics, upgrades);
         this.upgradeAnimationsContainer.add(upgradeGraphics);
@@ -282,8 +282,8 @@ export class Tank extends Phaser.GameObjects.Container {
         // const tempMatrix = new Phaser.GameObjects.Components.TransformMatrix();
         // this.upgradeAnimationsContainer.getWorldTransformMatrix(tempMatrix);
         // // tempMatrix.transformPoint(item.x, item.y, point);
-        upgradeGraphics.setX(fromPosition.x - (isLocalToTank ? 0 : this.x));
-        upgradeGraphics.setY(fromPosition.y - (isLocalToTank ? 0 : this.y));
+        upgradeGraphics.setX(fromPosition.x - (isLocalToEntity ? 0 : this.x));
+        upgradeGraphics.setY(fromPosition.y - (isLocalToEntity ? 0 : this.y));
         upgradeGraphics.setScale(1.2);
         this.scene.add.tween({
             targets: upgradeGraphics,
