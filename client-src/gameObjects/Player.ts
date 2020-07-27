@@ -98,9 +98,9 @@ export class Player extends Phaser.GameObjects.Container {
     }
     init(x: number, y: number): this {
         this.setPosition(x, y);
-        this.hp = 500;
+        this.hp = 100;
 
-        this.maxHP = 500;
+        this.maxHP = 100;
 
         this.updateHpBar();
         return this;
@@ -381,6 +381,12 @@ export class Player extends Phaser.GameObjects.Container {
             }
         }
         return bestFixture && (bestFixture.GetBody().GetUserData() as IBodyUserData).gameObject;
+    }
+
+    setActive(val: boolean): this {
+        super.setActive(val);
+        this.b2Body.SetActive(val);
+        return this;
     }
 
     onActionPressed(sfx_upgrade: Phaser.Sound.BaseSound, sfx_pickup: Phaser.Sound.BaseSound) {

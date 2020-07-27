@@ -726,7 +726,21 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             player.moveInDirection(xx, yy);
             player.updateAim();
             if (player.hp <= 0) {
-                this.setGameOver(player.team === Team.BLUE ? Team.RED : Team.BLUE);
+                player.setVisible(false).setActive(false);
+                player.hp = player.maxHP;
+                this.fixedTime.addEvent({
+                    delay: 3000,
+                    loop: false,
+                    callback: () => {
+                        player.setVisible(true).setActive(true);
+                        if (player.team == Team.BLUE) {
+                            player.init(100, 100);
+                        } else {
+                            player.init(WORLD_WIDTH - 100, WORLD_HEIGHT - 100)
+                        }
+                    },
+                });
+                // this.setGameOver(player.team === Team.BLUE ? Team.RED : Team.BLUE);
             }
         };
 
@@ -750,6 +764,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 if (entityID === tank.uniqueID) { return; }
                 const entity = this.instancesByID[entityID];
                 if (entity == null) { return; }
+                if (!entity.active) { return; }
 
                 const name = entity.name;
                 switch (name) {
