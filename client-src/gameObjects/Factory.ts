@@ -1,5 +1,6 @@
 
 import { b2Body, b2BodyDef, b2BodyType, b2FixtureDef, b2PolygonShape, b2World } from '@flyover/box2d';
+import { Tweens } from 'phaser';
 import { PIXEL_TO_METER } from '../constants';
 import { collisionCategory } from '../models/collisionCategory';
 import { UpgradeObject } from '../models/Upgrade';
@@ -8,7 +9,6 @@ import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
 import { getUniqueID } from '../utils/UniqueID';
 import { Item } from './Item';
-import { Tweens } from 'phaser';
 
 
 type Image = Phaser.GameObjects.Image;

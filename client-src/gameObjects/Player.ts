@@ -86,7 +86,7 @@ export class Player extends Phaser.GameObjects.Container {
                 x: 0, y: 0,
                 text: '',
                 style: { align: 'left' }
-            })
+            }).setName('player-debugText')
         ]);
         this.repairSprite.visible = false;
         this.debugText.visible = false;

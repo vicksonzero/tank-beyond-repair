@@ -1,13 +1,13 @@
 import { b2Body, b2BodyDef, b2BodyType, b2FixtureDef, b2PolygonShape, b2World } from '@flyover/box2d';
 import * as Debug from 'debug';
 import { GameObjects } from 'phaser';
+import { config, ItemType } from '../config/config';
 import { ITEM_LIFESPAN, ITEM_LIFESPAN_WARNING, PIXEL_TO_METER } from '../constants';
+import { collisionCategory } from '../models/collisionCategory';
+import { UpgradeObject } from '../models/Upgrade';
 import { IFixtureUserData } from '../PhysicsSystem';
 import { MainScene } from '../scenes/MainScene';
 import { getUniqueID } from '../utils/UniqueID';
-import { collisionCategory } from '../models/collisionCategory';
-import { UpgradeObject } from '../models/Upgrade';
-import { config, ItemType } from '../config/config';
 
 const log = Debug('tank-beyond-repair:Item:log');
 // const warn = Debug('tank-beyond-repair:Item:warn');
@@ -74,7 +74,7 @@ export class Item extends GameObjects.Container {
                 x: 0, y: -20,
                 text: '',
                 style: { align: 'center' },
-            }),
+            }).setName('item-itemText'),
 
         ]);
         this.itemText.setOrigin(0.5, 1);

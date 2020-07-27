@@ -6,6 +6,7 @@ import { preload as _preload, setUpAudio } from '../assets';
 import { config, ItemType } from '../config/config';
 import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_CHASE_ITEM_RANGE, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 import { Bullet } from '../gameObjects/Bullet';
+import { Factory } from '../gameObjects/Factory';
 import { Item, itemIconNormalTint } from '../gameObjects/Item';
 // import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../gameObjects/Player';
@@ -17,7 +18,6 @@ import { HpBar } from '../ui/HpBar';
 import { DistanceMatrix } from '../utils/DistanceMatrix';
 // import { GameObjects } from 'phaser';
 import { capitalize, lerpRadians } from '../utils/utils';
-import { Factory } from '../gameObjects/Factory';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -225,7 +225,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 fill: '#FFF',
                 align: "center",
             },
-        ).setOrigin(0.5);
+        ).setOrigin(0.5).setName('mainScene-countDownText');
         this.fixedTime.addEvent({
             delay: 1000,
             callback: () => {
@@ -398,7 +398,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                     fill: '#FFF',
                     align: "center",
                 },
-            ).setOrigin(0.5));
+            ).setOrigin(0.5).setName(`controlTexts-${letters[i]}`));
             [32, 64, 96, 160].map((x) => {
                 controlGraphic.strokeRoundedRect(offsetX + x, offsetY + 64, 32, 32, 6);
                 controlTexts.push(this.add.text(
@@ -410,7 +410,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                         fill: '#FFF',
                         align: "center",
                     },
-                ).setOrigin(0.5));
+                ).setOrigin(0.5).setName(`controlTexts-${letters[i]}`));
             });
         };
         creatButton(150, 0, ['W', 'A', 'S', 'D', 'C']);
@@ -664,7 +664,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 fill: isBlue ? '#0000FF' : '#FF0000',
                 align: "center",
             },
-        ).setOrigin(0.5);
+        ).setOrigin(0.5).setName(`WInner Text`);
     }
 
     spawnItem = (x: number, y: number, upgrades: UpgradeObject, isScatter = false) => {
@@ -945,6 +945,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             batteryLow: 'Battery_Low',
         };
 
+        container.list.forEach((iconGroup: Container) => iconGroup.removeAll(true));
         container.removeAll(true);
 
         // FIXME: Use object pool instead when performance is too slow
@@ -985,7 +986,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                             fontWeight: 800,
                             fontFamily: 'Arial',
                         },
-                    }, false),
+                    }, false).setName('iconLabel'),
                 ]);
             }
 
