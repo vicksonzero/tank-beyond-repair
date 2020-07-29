@@ -7,7 +7,7 @@ import './utils/window';
 
 
 window._Debug = Debug;
-const verbose = Debug('tank-beyond-repair:client:verbose ');
+const verbose = Debug('tank-beyond-repair:client:verbose');
 // const warn = Debug('tank-beyond-repair:client:warn');
 // warn.log = console.warn.bind(console);
 

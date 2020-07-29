@@ -1,12 +1,12 @@
 
 import { b2Body, b2BodyType, b2CircleShape, b2ContactListener, b2JointType, b2PolygonShape, b2ShapeType, b2World, XY } from "@flyover/box2d";
 import * as Debug from 'debug';
-import { METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING, PIXEL_TO_METER } from "./constants";
 import { GameObjects } from "phaser";
+import { METER_TO_PIXEL, PHYSICS_ALLOW_SLEEPING, PIXEL_TO_METER } from "./constants";
 
 
-const verbose = Debug('tank-beyond-repair:PhysicsSystem:verbose ');
-const log = Debug('tank-beyond-repair:PhysicsSystem:log ');
+const verbose = Debug('tank-beyond-repair:PhysicsSystem:verbose');
+const log = Debug('tank-beyond-repair:PhysicsSystem:log');
 // const warn = Debug('tank-beyond-repair:PhysicsSystem:warn');
 // warn.log = console.warn.bind(console);
 
@@ -81,14 +81,14 @@ export class PhysicsSystem {
         this.readStateFromGame();
         if (graphics) { this.debugDraw(graphics); }
         // verbose('Begin updateToFrame');
-        this.updateOneFrame(timeStep);
+        this.stepPhysicsWorld(timeStep);
         this.destroyScheduledBodies('after Step');
         // verbose('End updateToFrame');
         this.createScheduledBodies();
         this.writeStateIntoGame();
     }
 
-    updateOneFrame(timeStep: number) {
+    stepPhysicsWorld(timeStep: number) {
         const velocityIterations = 10;   //how strongly to correct velocity
         const positionIterations = 10;   //how strongly to correct position
         this.world.Step(timeStep, velocityIterations, positionIterations);
