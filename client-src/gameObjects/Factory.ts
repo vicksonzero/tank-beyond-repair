@@ -134,7 +134,8 @@ export class Factory extends Phaser.GameObjects.Container {
             onYoyo: () => {
                 // console.log('onYoyo');
                 this.scene.spawnItem(this.x, this.y, upgrade, true);
-                this.platform.removeAll(true);
+                this.platform.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+                this.platform.removeAll(false);
             },
             onUpdate: (tween, target) => {
                 const doorProgress = Math.max(0, Math.min(1, (target.x - 0.5) / 0.25));
@@ -319,7 +320,10 @@ export class Factory extends Phaser.GameObjects.Container {
             scale: 0,
             ease: 'Cubic.easeIn',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
             duration: 800,
-            onComplete: () => { upgradeGraphics.destroy(); },
+            onComplete: () => { 
+                upgradeGraphics.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+                upgradeGraphics.removeAll(false).destroy();
+             },
         })
     }
 

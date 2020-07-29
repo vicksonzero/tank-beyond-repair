@@ -1,5 +1,8 @@
 import { AUDIO_START_MUTED } from "./constants";
+import { ItemIcon } from "./gameObjects/ItemIcon";
 import { MainScene } from "./scenes/MainScene";
+
+type Group = Phaser.GameObjects.Group;
 
 export function preload(this: Phaser.Scene) {
     // this.load.json('sheetMap', url);
@@ -31,15 +34,36 @@ export function preload(this: Phaser.Scene) {
 }
 
 export function setUpAnimations(this: Phaser.Scene) {
-    // this.anims.create({
-    //     key: 'player_idle',
-    //     frames: this.anims.generateFrameNames(
-    //         'platformercharacters_Player',
-    //         { frames: [0] }
-    //     ),
-    //     repeat: 0,
-    //     frameRate: 1
-    // });
+    this.anims.create({
+        key: 'explosion',
+        frames: this.anims.generateFrameNames(
+            'allSprites_default',
+            {
+                prefix: 'explosion',
+                start: 1,
+                end: 5,
+
+            },
+        ),
+        repeat: 0,
+        frameRate: 10,
+    });
+}
+
+export function setUpPools(this: MainScene) {
+    this.iconPool = this.add.group({
+        classType: ItemIcon,
+        runChildUpdate: false,
+        name: 'pool-icon',
+        createCallback: function (this: Group, entity: ItemIcon) {
+            console.log('Creating', entity.name);
+            entity.setName('item-icon-' + this.getLength());
+            console.log('Created', entity.name, this.getTotalFree());
+        },
+        removeCallback: function (this: Group, entity: ItemIcon) {
+            console.log('Removed', entity.name);
+        }
+    });
 }
 
 export function setUpAudio(this: MainScene) {

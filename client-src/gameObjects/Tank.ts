@@ -151,7 +151,7 @@ export class Tank extends Phaser.GameObjects.Container {
     initUiContainer(uiContainer: Phaser.GameObjects.Container) {
         this.uiContainer = uiContainer;
         this.uiContainer.add([
-            this.detailsText = this.scene.make.text({  x: 0, y: -20, text: '', style: { align: 'center' } }).setName('tank-detailsText'),
+            this.detailsText = this.scene.make.text({ x: 0, y: -20, text: '', style: { align: 'center' } }).setName('tank-detailsText'),
             this.rangeMarker = this.scene.make.graphics({ x: 0, y: 0 }),
         ]);
         this.uiContainer.setVisible(false);
@@ -292,7 +292,10 @@ export class Tank extends Phaser.GameObjects.Container {
             scale: 0,
             ease: 'Cubic.easeIn',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
             duration: 800,
-            onComplete: () => { upgradeGraphics.destroy(); },
+            onComplete: () => {
+                upgradeGraphics.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+                upgradeGraphics.removeAll(false).destroy();
+            },
         })
     }
 

@@ -13,7 +13,7 @@ import { IFixtureUserData } from '../PhysicsSystem';
 import { GameObjects, Scene } from 'phaser';
 
 const log = Debug('tank-beyond-repair:Bullet:log');
-// const warn = Debug('tank-beyond-repair:MainScene:warn');
+// const warn = Debug('tank-beyond-repair:Bullet:warn');
 // warn.log = console.warn.bind(console);
 
 export class Bullet extends GameObjects.Container {

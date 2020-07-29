@@ -435,6 +435,10 @@ export class Player extends Phaser.GameObjects.Container {
         this.holdingItem.upgrades.setParts(floorItem.upgrades.partsList);
         const upgradeText = UpgradeObject.makeUpgradeString(this.holdingItem.upgrades);
 
+        if (this.holdingItemContainer) {
+            this.holdingItemContainer.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+            this.holdingItemContainer.removeAll(false).destroy();
+        }
         this.holdingItem.add(this.holdingItemContainer = this.scene.make.container({ x: 0, y: 0 }));
         this.scene.makeUpgradeGraphics(this.holdingItemContainer, this.holdingItem.upgrades);
 

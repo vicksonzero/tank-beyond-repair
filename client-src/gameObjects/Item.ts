@@ -87,6 +87,8 @@ export class Item extends GameObjects.Container {
             if (this.warningLoop) this.warningLoop.destroy();
             if (this.dieEvent) this.dieEvent.destroy();
 
+            this.itemContainer.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+            this.itemContainer.removeAll(false);
             this.emit(Item.ITEM_DIE, this);
         });
     }

@@ -2,12 +2,14 @@ import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, 
 import * as Debug from 'debug';
 import "phaser";
 import { GameObjects } from 'phaser';
-import { preload as _preload, setUpAudio } from '../assets';
+import { preload as _preload, setUpAnimations, setUpAudio, setUpPools } from '../assets';
 import { config, ItemType } from '../config/config';
 import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_CHASE_ITEM_RANGE, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 import { Bullet } from '../gameObjects/Bullet';
+import { Explosion } from '../gameObjects/Explosion';
 import { Factory } from '../gameObjects/Factory';
 import { Item, itemIconNormalTint } from '../gameObjects/Item';
+import { ItemIcon } from '../gameObjects/ItemIcon';
 // import { Immutable } from '../utils/ImmutableType';
 import { Player } from '../gameObjects/Player';
 import { Tank } from '../gameObjects/Tank';
@@ -25,6 +27,7 @@ type Key = Phaser.Input.Keyboard.Key;
 type Container = Phaser.GameObjects.Container;
 type Graphics = Phaser.GameObjects.Graphics;
 type Image = Phaser.GameObjects.Image;
+type Group = Phaser.GameObjects.Group;
 
 const Vector2 = Phaser.Math.Vector2;
 const KeyCodes = Phaser.Input.Keyboard.KeyCodes;
@@ -56,6 +59,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     effectsLayer: Container;
     uiLayer: Container;
     physicsDebugLayer: Graphics;
+
+    iconPool: Group;
 
     btn_mute: Image;
 
@@ -93,6 +98,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     create(): void {
+        setUpPools.call(this);
+        setUpAnimations.call(this);
         setUpAudio.call(this);
         log('create');
         this.fixedTime = new Phaser.Time.Clock(this);
@@ -435,8 +442,9 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         const position = { x: tank.x, y: tank.y };
         const { upgrades } = tank;
-        tank.destroy();
+        this.effectsLayer.add(new Explosion(this).setPosition(tank.x, tank.y).playExplosion());
         this.sfx_hit.play();
+        tank.destroy();
 
         const randomUpgrade = UpgradeObject.getRandomPartFromPool(1);
         upgrades.addParts(randomUpgrade.partsList);
@@ -727,6 +735,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             player.updateAim();
             if (player.hp <= 0) {
                 player.setVisible(false).setActive(false);
+                this.effectsLayer.add(new Explosion(this).setPosition(player.x, player.y).playExplosion());
                 this.cameras.main.shake(100, 0.005, false);
                 player.hp = player.maxHP;
                 this.fixedTime.addEvent({
@@ -825,9 +834,6 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.upgradeAnimationsContainer.setRotation(-rot);
-
-                tank.hpBar.setPosition(tank.x, tank.y);
-                tank.uiContainer.setPosition(tank.x, tank.y);
                 tank.setRotation(rot);
             } else {
                 const direction = tank.team === Team.BLUE ? TANK_SPEED : -TANK_SPEED;
@@ -846,10 +852,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 tank.b2Body.SetLinearVelocity(velocity);
                 const rot = Math.atan2(velocity.y, velocity.x);
                 tank.upgradeAnimationsContainer.setRotation(-rot);
-                tank.hpBar.setPosition(tank.x, tank.y);
-                tank.uiContainer.setPosition(tank.x, tank.y);
                 tank.setRotation(rot);
             }
+
+            tank.hpBar.setPosition(tank.x, tank.y);
+            tank.uiContainer.setPosition(tank.x, tank.y);
 
             tank.takeAutoBatteryDamage(this.fixedTime.now);
             if (tank.upgrades.partsList.battery <= 0) {
@@ -903,8 +910,6 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             const stepAngle = lerpRadians(originalTankAngle, targetAngle, 0.03);
             tank.setRotation(stepAngle);
             tank.upgradeAnimationsContainer.setRotation(-stepAngle);
-            tank.hpBar.setPosition(tank.x, tank.y);
-            tank.uiContainer.setPosition(tank.x, tank.y);
         }
 
         let originalAngle = tank.barrelSprite.rotation + tank.rotation + Math.PI / 2;
@@ -961,11 +966,11 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             batteryLow: 'Battery_Low',
         };
 
-        container.list.forEach((iconGroup: Container) => iconGroup.removeAll(true));
-        container.removeAll(true);
+        container.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+        container.removeAll(false);
 
         // FIXME: Use object pool instead when performance is too slow
-        let iconGroup: GameObjects.Container | null = container.first as GameObjects.Container | null;
+        let iconGroup: ItemIcon | null = container.first as ItemIcon | null;
         let icon: GameObjects.Image | null;
         let label: GameObjects.Text | null;
 
@@ -976,43 +981,23 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 Math.round(count / config.items.battery.chargeFull * 10) / 10
                 : count;
 
-            if (!iconGroup) { iconGroup = container.next as GameObjects.Container | null; }
+            if (!iconGroup) { iconGroup = container.next as ItemIcon | null; }
 
             if (!iconGroup) {
                 container.add(
-                    iconGroup = this.make.container({
-                        x: 0, y: 0,
-                    })
+                    iconGroup = this.iconPool.get().setActive(true).setVisible(true) as ItemIcon,
                 );
-                container.bringToTop(iconGroup);
-
-                iconGroup.add([
-                    icon = this.make.image({
-                        x: 0, y: 0,
-                        key: `items_icon`,
-                        frame: 'Gear',
-                    }, false),
-                    label = this.make.text({
-                        x: 0, y: 0,
-                        text: '',
-                        style: {
-                            align: 'left',
-                            color: '#000000',
-                            fontSize: 24,
-                            fontWeight: 800,
-                            fontFamily: 'Arial',
-                        },
-                    }, false).setName('iconLabel'),
-                ]);
             }
+            container.bringToTop(iconGroup);
 
+            console.log(`iconGroup ${iconGroup.name} ${this.iconPool.getTotalUsed()} used`);
+            iconGroup.date = Date.now();
             iconGroup.setY(startY - i * iconSize);
 
-            icon = iconGroup.getAt(0) as GameObjects.Image;
-            icon.setOrigin(0.5);
+            icon = iconGroup.itemSprite;
             icon.setScale(1 / Math.sqrt(filteredParts.length));
 
-            label = iconGroup.getAt(1) as GameObjects.Text;
+            label = iconGroup.itemText;
             label.setFontSize(iconSize);
 
             if (itemType !== ItemType.BATTERY) {
