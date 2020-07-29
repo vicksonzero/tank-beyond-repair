@@ -17,9 +17,7 @@ export class ItemIcon extends GameObjects.Container {
     itemSprite: Image;
     itemText: Text;
 
-    date = 0;
-
-    constructor(scene: MainScene) {
+    constructor(scene: MainScene, x = 0, y = 0) {
         super(scene, 0, 0, []);
         this
             .setName('ItemIcon')
@@ -43,7 +41,7 @@ export class ItemIcon extends GameObjects.Container {
             }, false).setName('iconLabel'),
         ]);
 
-        
+
         this.itemSprite.setOrigin(0.5);
     }
 

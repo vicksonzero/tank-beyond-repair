@@ -2,17 +2,17 @@
 import { b2Body, b2BodyDef, b2BodyType, b2CircleShape, b2FixtureDef, b2World } from '@flyover/box2d';
 import { AttributeType, IAttributeMap } from '../config/config';
 import { PIXEL_TO_METER } from '../constants';
+import { collisionCategory } from '../models/collisionCategory';
+import { Team } from '../models/Team';
+import { Teams } from '../models/Teams';
+import { UpgradeObject } from '../models/Upgrade';
 import { IFixtureUserData } from '../PhysicsSystem';
 import { MainScene } from '../scenes/MainScene';
 import { HpBar } from '../ui/HpBar';
 import { Immutable } from '../utils/ImmutableType';
 import { getUniqueID } from '../utils/UniqueID';
 import { capitalize } from '../utils/utils';
-import { collisionCategory } from '../models/collisionCategory';
-import { Team } from '../models/Team';
-import { UpgradeObject } from '../models/Upgrade';
 import { Item } from './Item';
-import { Teams } from '../models/Teams';
 
 
 type Image = Phaser.GameObjects.Image;
@@ -359,15 +359,20 @@ export class Tank extends Phaser.GameObjects.Container {
         this.updateHpBar();
         this.refreshUpgradeGraphics();
     }
-    destroy() {
+    destroy(fromScene = false) {
         if (this.undoTintEvent) this.undoTintEvent.destroy();
         // this.gm.makeExplosion3(this.x, this.y);
         // this.gm.gameIsOver = true;
         this.visible = false;
         // this.b2Body.GetFixtureList().m_filter.categoryBits = 0;
 
+        this.upgradeAnimationsContainer.list.forEach((animationContainer: Container) => {
+            animationContainer.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+            animationContainer.removeAll(false).destroy();
+        });
+
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
-        super.destroy();
+        super.destroy(fromScene);
     }
 }

@@ -61,6 +61,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     physicsDebugLayer: Graphics;
 
     iconPool: Group;
+    explosionPool: Group;
 
     btn_mute: Image;
 
@@ -442,7 +443,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         const position = { x: tank.x, y: tank.y };
         const { upgrades } = tank;
-        this.effectsLayer.add(new Explosion(this).setPosition(tank.x, tank.y).playExplosion());
+        this.effectsLayer.add((this.explosionPool.get(tank.x, tank.y) as Explosion).playExplosion());
         this.sfx_hit.play();
         tank.destroy();
 
@@ -735,7 +736,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             player.updateAim();
             if (player.hp <= 0) {
                 player.setVisible(false).setActive(false);
-                this.effectsLayer.add(new Explosion(this).setPosition(player.x, player.y).playExplosion());
+                this.effectsLayer.add((this.explosionPool.get(player.x, player.y) as Explosion).playExplosion());
                 this.cameras.main.shake(100, 0.005, false);
                 player.hp = player.maxHP;
                 this.fixedTime.addEvent({
@@ -949,7 +950,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             })
         );
         // log(JSON.stringify(parts));
-        log(filteredParts.length);
+        // console.log('filteredParts.length', filteredParts.length);
 
         // const iconCount = parts.reduce((sum, [itemType, count]) => {
         //     return sum + (itemType === 'battery' ? Math.ceil(count / 100) : count);
@@ -989,9 +990,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 );
             }
             container.bringToTop(iconGroup);
+            // console.log(`iconGroup ${iconGroup.name} ${this.iconPool.getTotalUsed()} used`);
 
-            console.log(`iconGroup ${iconGroup.name} ${this.iconPool.getTotalUsed()} used`);
-            iconGroup.date = Date.now();
             iconGroup.setY(startY - i * iconSize);
 
             icon = iconGroup.itemSprite;

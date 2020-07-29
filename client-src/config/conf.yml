@@ -135,9 +135,12 @@ config:
       - stat:
           movementSpeed: 1.5
         graphics:
-    gun: []
-    missile: []
-    rocket: []
+    gun: 
+      - stat: {}
+    missile: 
+      - stat: {}
+    rocket: 
+      - stat: {}
   credits:
     - title: Programming
       names:

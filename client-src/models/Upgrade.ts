@@ -145,7 +145,7 @@ export class UpgradeObject {
 					break;
 				}
 			}
-			result[partType] = (i - 1);
+			result[partType] = Math.max(0, i - 1);
 		});
 
 		return result;

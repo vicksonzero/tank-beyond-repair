@@ -320,10 +320,10 @@ export class Factory extends Phaser.GameObjects.Container {
             scale: 0,
             ease: 'Cubic.easeIn',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
             duration: 800,
-            onComplete: () => { 
+            onComplete: () => {
                 upgradeGraphics.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
                 upgradeGraphics.removeAll(false).destroy();
-             },
+            },
         })
     }
 
@@ -351,7 +351,7 @@ export class Factory extends Phaser.GameObjects.Container {
         this.updateHpBar();
         this.refreshUpgradeGraphics();
     }
-    destroy() {
+    destroy(fromScene = false) {
         if (this.undoTintEvent) this.undoTintEvent.destroy();
         // this.gm.makeExplosion3(this.x, this.y);
         // this.gm.gameIsOver = true;
@@ -360,6 +360,6 @@ export class Factory extends Phaser.GameObjects.Container {
 
         // .setPosition(-1000, -1000);
         this.scene.cameras.main.shake(100, 0.005, false);
-        super.destroy();
+        super.destroy(fromScene);
     }
 }

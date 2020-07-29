@@ -87,8 +87,6 @@ export class Item extends GameObjects.Container {
             if (this.warningLoop) this.warningLoop.destroy();
             if (this.dieEvent) this.dieEvent.destroy();
 
-            this.itemContainer.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
-            this.itemContainer.removeAll(false);
             this.emit(Item.ITEM_DIE, this);
         });
     }
@@ -216,5 +214,11 @@ export class Item extends GameObjects.Container {
         // this.itemText.setText(upgradeText);
         this.scene.makeUpgradeGraphics(this.itemContainer, this.upgrades);
         return this;
+    }
+
+    destroy(fromScene = false) {
+        this.itemContainer.list.forEach((iconGroup: Container) => iconGroup.setActive(false).setVisible(false));
+        this.itemContainer.removeAll(false);
+        super.destroy(fromScene);
     }
 }

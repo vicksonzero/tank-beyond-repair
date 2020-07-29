@@ -1,4 +1,5 @@
 import { AUDIO_START_MUTED } from "./constants";
+import { Explosion } from "./gameObjects/Explosion";
 import { ItemIcon } from "./gameObjects/ItemIcon";
 import { MainScene } from "./scenes/MainScene";
 
@@ -54,14 +55,29 @@ export function setUpPools(this: MainScene) {
     this.iconPool = this.add.group({
         classType: ItemIcon,
         runChildUpdate: false,
-        name: 'pool-icon',
+        name: 'pool-item-icon',
         createCallback: function (this: Group, entity: ItemIcon) {
-            console.log('Creating', entity.name);
-            entity.setName('item-icon-' + this.getLength());
-            console.log('Created', entity.name, this.getTotalFree());
+            entity.setName(`${this.name}-${this.getLength()}`);
+            console.log(`${this.name}: ${this.getLength()} Created`);
         },
         removeCallback: function (this: Group, entity: ItemIcon) {
-            console.log('Removed', entity.name);
+            // place holder
+            console.log(`${this.name}: Removed`);
+            // debugger; // uncomment to debug accidental destroys instead of .setActive(false).setVisible(false)
+        }
+    });
+    this.explosionPool = this.add.group({
+        classType: Explosion,
+        runChildUpdate: false,
+        name: 'pool-effect-explosion',
+        createCallback: function (this: Group, entity: ItemIcon) {
+            entity.setName(`${this.name}-${this.getLength()}`);
+            console.log(`${this.name}: ${this.getLength()} Created`);
+        },
+        removeCallback: function (this: Group, entity: ItemIcon) {
+            // place holder
+            console.log(`${this.name}: Removed`);
+            // debugger; // uncomment to debug accidental destroys instead of .setActive(false).setVisible(false)
         }
     });
 }

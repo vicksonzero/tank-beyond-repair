@@ -16,10 +16,9 @@ export class Explosion extends GameObjects.Container {
     scene: MainScene;
     itemSprite: Sprite;
 
-    constructor(scene: MainScene) {
-        super(scene, 0, 0, []);
+    constructor(scene: MainScene, x = 0, y = 0) {
+        super(scene, x, y, []);
         this
-            .setName('explosion')
             ;
 
         this.add([
@@ -32,8 +31,9 @@ export class Explosion extends GameObjects.Container {
     }
 
     playExplosion(): this {
+        this.setActive(true).setVisible(true);
         this.itemSprite.on('animationcomplete', () => {
-            this.destroy();
+            this.setActive(false).setVisible(false);
         });
         this.itemSprite.play('explosion');
 
