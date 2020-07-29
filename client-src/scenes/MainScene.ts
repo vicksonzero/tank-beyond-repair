@@ -727,6 +727,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             player.updateAim();
             if (player.hp <= 0) {
                 player.setVisible(false).setActive(false);
+                this.cameras.main.shake(100, 0.005, false);
                 player.hp = player.maxHP;
                 this.fixedTime.addEvent({
                     delay: 3000,
