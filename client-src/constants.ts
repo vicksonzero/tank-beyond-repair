@@ -21,7 +21,7 @@ export const DEBUG_PHYSICS = false; // default false, draws the physics bodies a
 export const AUDIO_START_MUTED = true; // default false
 
 // physics
-export const PHYSICS_FRAME_SIZE = 16; // ms
+export const PHYSICS_FRAME_SIZE = 33; // ms
 export const PHYSICS_ALLOW_SLEEPING = false; // default false
 export const PHYSICS_MAX_FRAME_CATCHUP = 10; // times, default 10 times (10*16 = 160ms)
 

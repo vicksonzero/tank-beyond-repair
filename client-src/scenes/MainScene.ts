@@ -48,6 +48,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     spawnTimer: Phaser.Time.TimerEvent;
     bg: Phaser.GameObjects.TileSprite;
 
+    frameID = 0;
     fixedTime: Phaser.Time.Clock;
     fixedElapsedTime: number;
 
@@ -99,12 +100,14 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     }
 
     create(): void {
+        (window as any).aaa = this.time.now;
         setUpPools.call(this);
         setUpAnimations.call(this);
         setUpAudio.call(this);
         log('create');
         this.fixedTime = new Phaser.Time.Clock(this);
-        this.fixedElapsedTime = 0;
+        this.fixedElapsedTime = this.time.now;
+        this.frameID = 0;
         this.getPhysicsSystem().init(this as b2ContactListener);
         this.distanceMatrix = new DistanceMatrix();
         this.isGameOver = false;
@@ -259,6 +262,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.lastUpdate = time;
 
             // seconds
+            this.frameID += 1;
             this.fixedElapsedTime += this.frameSize;
             this.fixedUpdate(this.fixedElapsedTime, this.frameSize);
         } else {
@@ -266,11 +270,18 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             while (this.lastUpdate + this.frameSize < time && i < PHYSICS_MAX_FRAME_CATCHUP) {
                 i++;
 
+                this.frameID += 1;
                 this.fixedElapsedTime += this.frameSize;
                 this.fixedUpdate(this.fixedElapsedTime, this.frameSize);
                 this.lastUpdate += this.frameSize;
             }
-            this.lastUpdate = time;
+            if (this.lastUpdate + this.frameSize < time) {
+
+                // verbose(`${time - this.lastUpdate}ms skipped`);
+                this.lastUpdate = time;
+            }
+
+            // if (i > 1) { verbose(`${i - 1} frames skipped at frame-${this.frameID}`); }
 
             // verbose(`update: ${i} fixedUpdate-ticks at ${time.toFixed(3)} (from ${lastGameTime.toFixed(3)} to ${this.lastUpdate.toFixed(3)})`);
         }
@@ -278,7 +289,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     fixedUpdate(fixedTime: number, frameSize: number) {
         const timeStep = 1000 / frameSize;
-        // verbose(`fixedUpdate start`);
+        // verbose(`fixedUpdate start (frame-${this.frameID} ${this.fixedElapsedTime}ms ${this.time.now}ms -${this.time.now - (window as any).aaa - this.fixedElapsedTime}ms)`);
 
         this.fixedTime.preUpdate(fixedTime, frameSize);
         this.getPhysicsSystem().update(
@@ -296,6 +307,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         };
         this.bullets.forEach((bullet) => updateBullet(bullet));
         this.fixedTime.update(fixedTime, frameSize);
+        // verbose(`fixedUpdate end (frame-${this.frameID} ${this.fixedElapsedTime}ms ${this.fixedTime.now}ms)`);
         this.lateUpdate(fixedTime, frameSize);
         // verbose(`fixedUpdate complete`);
     }
