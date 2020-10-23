@@ -36,7 +36,27 @@ export class PhysicsSystem {
         this.world.SetContactListener(contactListener);
     }
 
-    readStateFromGame() {
+    update(timeStep: number, graphics?: Phaser.GameObjects.Graphics) {
+        this.destroyScheduledBodies('before Step');
+        this.readStateFromGame();
+        if (graphics) { this.debugDraw(graphics); }
+        // verbose('Begin updateToFrame');
+        this.stepPhysicsWorld(timeStep);
+        this.destroyScheduledBodies('after Step');
+        // verbose('End updateToFrame');
+        this.createScheduledBodies();
+        this.writeStateIntoGame();
+    }
+
+    scheduleCreateBody(callback: CreateBodyCallback) {
+        this.scheduledCreateBodyList.push(callback);
+    }
+
+    scheduleDestroyBody(body: b2Body) {
+        this.scheduledDestroyBodyList.push(body);
+    }
+
+    private readStateFromGame() {
         const verboseLogs: string[] = [];
         for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
             const userData: IBodyUserData = body.GetUserData(); // TODO: make an interface for user data
@@ -56,7 +76,7 @@ export class PhysicsSystem {
         // verbose('readStateFromGame\n' + verboseLogs.join('\n'));
     }
 
-    writeStateIntoGame() {
+    private writeStateIntoGame() {
         const verboseLogs: string[] = [];
         for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
             const userData: IBodyUserData = body.GetUserData();
@@ -76,29 +96,13 @@ export class PhysicsSystem {
         // verbose('writeStateIntoGame\n' + verboseLogs.join('\n'));
     }
 
-    update(timeStep: number, graphics?: Phaser.GameObjects.Graphics) {
-        this.destroyScheduledBodies('before Step');
-        this.readStateFromGame();
-        if (graphics) { this.debugDraw(graphics); }
-        // verbose('Begin updateToFrame');
-        this.stepPhysicsWorld(timeStep);
-        this.destroyScheduledBodies('after Step');
-        // verbose('End updateToFrame');
-        this.createScheduledBodies();
-        this.writeStateIntoGame();
-    }
-
-    stepPhysicsWorld(timeStep: number) {
+    private stepPhysicsWorld(timeStep: number) {
         const velocityIterations = 10;   //how strongly to correct velocity
         const positionIterations = 10;   //how strongly to correct position
         this.world.Step(timeStep, velocityIterations, positionIterations);
     }
 
-    scheduleCreateBody(callback: CreateBodyCallback) {
-        this.scheduledCreateBodyList.push(callback);
-    }
-
-    createScheduledBodies() {
+    private createScheduledBodies() {
         const len = this.scheduledCreateBodyList.length;
         if (len > 0) {
             // log(`createScheduledBodies: ${len} callbacks`);
@@ -109,11 +113,7 @@ export class PhysicsSystem {
         this.scheduledCreateBodyList = [];
     }
 
-    scheduleDestroyBody(body: b2Body) {
-        this.scheduledDestroyBodyList.push(body);
-    }
-
-    destroyScheduledBodies(debugString: string) {
+    private destroyScheduledBodies(debugString: string) {
         const len = this.scheduledCreateBodyList.length;
         if (len > 0) {
             // log(`destroyScheduledBodies(${debugString}): ${len} callbacks`);
@@ -124,7 +124,7 @@ export class PhysicsSystem {
         this.scheduledDestroyBodyList = [];
     }
 
-    debugDraw(graphics: Phaser.GameObjects.Graphics) {
+    private debugDraw(graphics: Phaser.GameObjects.Graphics) {
         // see node_modules/@flyover/box2d/Box2D/Dynamics/b2World.js DrawDebugData() 
         // for more example of drawing debug data onto screen
         graphics.clear();
@@ -132,7 +132,7 @@ export class PhysicsSystem {
         this.drawJoints(graphics);
     }
 
-    drawBodies(graphics: Phaser.GameObjects.Graphics) {
+    private drawBodies(graphics: Phaser.GameObjects.Graphics) {
         for (let body = this.world.GetBodyList(); body; body = body.GetNext()) {
             const pos = body.GetPosition();
             const angle = body.GetAngle(); // radian
@@ -206,7 +206,7 @@ export class PhysicsSystem {
         }
     }
 
-    drawJoints(graphics: Phaser.GameObjects.Graphics) {
+    private drawJoints(graphics: Phaser.GameObjects.Graphics) {
         for (let joint = this.world.GetJointList(); joint; joint = joint.GetNext()) {
             const color = 0x81cccc;
             graphics.lineStyle(2, color, 1);
