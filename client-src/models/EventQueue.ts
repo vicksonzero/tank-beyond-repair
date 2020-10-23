@@ -1,17 +1,27 @@
+// import * as BSON from 'bson';
+// import { fromUint8Array, toUint8Array } from 'js-base64';
 
-
-export type ActionTypes = 'input';
-export interface IAction {
-    type: ActionTypes;
-    [x: string]: any;
-};
-
-export interface InputAction extends IAction {
+export type InputAction = {
     type: 'input';
+    isSync: true;
     who: number;
     key: 'up' | 'down' | 'left' | 'right' | 'action';
     value: 'up' | 'down';
 }
+
+export type CheatInputAction = {
+    type: 'cheat-input';
+    isSync: true;
+    key: 'cheatSpawnUpgrades';
+}
+
+export type RNGAction = {
+    type: 'rng';
+    isSync: true;
+    value: string;
+}
+
+export type IAction = InputAction | RNGAction | CheatInputAction;
 
 export type Event = IAction | {
     frameID: number,
@@ -30,7 +40,7 @@ export class EventQueue {
         this.queue.set(frameID, bucket);
     }
 
-    getEventsOfFrame(frameID: number, type?: ActionTypes): IAction[] {
+    getEventsOfFrame(frameID: number, type?: IAction['type']): IAction[] {
         const events = this.queue.get(frameID) ?? [];
         if (type != null) {
             return events.filter(e => e.type === type);
@@ -38,19 +48,16 @@ export class EventQueue {
         return events;
     }
 
-    fromDataStr(json: { [x: number]: IAction[] } | string) {
+    loadFromDataStr(json: { [x: number]: IAction[] } | string) {
         if (typeof json === "string") {
             json = JSON.parse(json) as { [x: number]: IAction[] };
         }
 
-        return this.fromData(json);
+        return this.loadFromData(json);
     }
 
-    fromData(json: { [x: number]: IAction[] }) {
-        this.queue = new Map(
-            Object.entries(json)
-                .map(([k, v]) => ([Number(k), v]))
-        );
+    loadFromData(json: any) {
+        this.queue = new Map(json);
     }
 
     applyDelta(data: { [x: number]: IAction[] }) {
@@ -61,7 +68,24 @@ export class EventQueue {
     }
 
     toJSON(): string {
-        return JSON.stringify(this.queue);
+        return JSON.stringify([...this.queue]);
     }
+
+    // loadFromBSON(bsonString: string): this {
+    //     const res = this.fromBSON(bsonString);
+    //     // console.log(res);
+    //     this.queue = new Map(res);
+
+    //     return this;
+    // }
+
+    // fromBSON(bsonString: string) {
+    //     const res = Array.from(Object.values(BSON.deserialize(toUint8Array(bsonString))));
+    //     return res;
+    // }
+
+    // toBSON() {
+    //     return fromUint8Array(BSON.serialize([...this.queue]), true);
+    // }
 }
 

@@ -37,7 +37,7 @@ export class UpgradeObject {
 			})
 		});
 		// console.log(cumulativeSpawnChance);
-		const num = Math.random() * totalWeight;
+		const num = Phaser.Math.RND.frac() * totalWeight;
 		let randomUpgradeKey: ItemType | null = null;
 
 		for (let i = 0; i < cumulativeSpawnChance.length; i++) {
@@ -50,7 +50,7 @@ export class UpgradeObject {
 
 
 		if (randomUpgradeKey != null) {
-			let partVal = Math.ceil(Math.random() * Math.min(partsValueMaxIncl - partsValueMin)) + partsValueMin;
+			let partVal = Math.ceil(Phaser.Math.RND.frac() * Math.min(partsValueMaxIncl - partsValueMin)) + partsValueMin;
 
 			if (randomUpgradeKey === ItemType.BATTERY) {
 				partVal *= 20;

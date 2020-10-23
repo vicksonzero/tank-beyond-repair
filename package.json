@@ -21,6 +21,8 @@
   "license": "BSD-3-Clause",
   "dependencies": {
     "@flyover/box2d": "^1.0.1",
+    "bson": "^4.2.0",
+    "js-base64": "^3.5.2",
     "js-yaml": "^3.13.1"
   },
   "devDependencies": {
