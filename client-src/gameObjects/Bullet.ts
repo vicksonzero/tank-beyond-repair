@@ -1,7 +1,7 @@
 
-import { collisionCategory } from './collisionCategory';
+import { collisionCategory } from '../models/collisionCategory';
 import { capitalize } from '../utils/utils';
-import { Team } from './Team';
+import { Team } from '../models/Team';
 import { Tank } from './Tank';
 import { b2Body, b2CircleShape, b2FixtureDef, b2BodyDef, b2BodyType, b2World } from '@flyover/box2d';
 import { PIXEL_TO_METER, METER_TO_PIXEL } from '../constants';
@@ -13,11 +13,12 @@ import { IFixtureUserData } from '../PhysicsSystem';
 import { GameObjects, Scene } from 'phaser';
 
 const log = Debug('tank-beyond-repair:Bullet:log');
-// const warn = Debug('tank-beyond-repair:MainScene:warn');
+// const warn = Debug('tank-beyond-repair:Bullet:warn');
 // warn.log = console.warn.bind(console);
 
 export class Bullet extends GameObjects.Container {
 
+    scene: MainScene;
     uniqueID: number;
     team: Team;
     damage: number;
@@ -28,7 +29,7 @@ export class Bullet extends GameObjects.Container {
 
     b2Body: b2Body;
 
-    constructor(scene: Scene, team: Team) {
+    constructor(scene: MainScene, team: Team) {
         super(scene, 0, 0, []);
         this.uniqueID = getUniqueID();
         this.team = team;
@@ -48,7 +49,7 @@ export class Bullet extends GameObjects.Container {
             ;
         this.damage = damage;
         this.range = range + 20; // add 20 for buffer
-        this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage * 3 + 2));
+        this.sprite.fillCircleShape(new Phaser.Geom.Circle(0, 0, this.damage / 2 + 2));
         return this;
     }
 
@@ -88,13 +89,13 @@ export class Bullet extends GameObjects.Container {
             gameObject: this,
         };
 
-        (this.scene as MainScene).getPhysicsSystem().scheduleCreateBody((world: b2World) => {
+        this.scene.getPhysicsSystem().scheduleCreateBody((world: b2World) => {
             this.b2Body = world.CreateBody(bodyDef);
             this.b2Body.CreateFixture(fixtureDef); // a body can have multiple fixtures
             this.b2Body.SetPositionXY(this.x * PIXEL_TO_METER, this.y * PIXEL_TO_METER);
 
             this.on('destroy', () => {
-                (this.scene as MainScene).getPhysicsSystem().scheduleDestroyBody(this.b2Body);
+                this.scene.getPhysicsSystem().scheduleDestroyBody(this.b2Body);
                 this.b2Body.m_userData.gameObject = null;
             });
             physicsFinishedCallback();

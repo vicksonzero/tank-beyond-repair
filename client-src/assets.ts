@@ -1,5 +1,9 @@
-import { MainScene } from "./scenes/MainScene";
 import { AUDIO_START_MUTED } from "./constants";
+import { Explosion } from "./gameObjects/Explosion";
+import { ItemIcon } from "./gameObjects/ItemIcon";
+import { MainScene } from "./scenes/MainScene";
+
+type Group = Phaser.GameObjects.Group;
 
 export function preload(this: Phaser.Scene) {
     // this.load.json('sheetMap', url);
@@ -14,6 +18,13 @@ export function preload(this: Phaser.Scene) {
     this.load.image('repair', './assets/sprites/kenney_emotespack/PNG/Vector/Style 8/emote_heart.png');
     this.load.image('btn_mute_dark', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight15.png');
     this.load.image('btn_mute_light', './assets/sprites/onscreencontrols/Sprites/transparentLight/transparentLight17.png');
+    this.load.image('factory_frame', './assets/sprites/dicksonmd/Factory-frame.png');
+    this.load.image('factory_door', './assets/sprites/dicksonmd/Factory-door.png');
+
+    this.load.atlas('items_icon',
+        './assets/sprites/dicksonmd/spritesheet (1).png',
+        './assets/sprites/dicksonmd/spritesheet (1).json'
+    );
 
     this.load.audio('bgm', './assets/sfx/04 All of Us.mp3');
     this.load.audio('point', './assets/sfx/270304__littlerobotsoundfactory__collect-point-00.wav');
@@ -24,15 +35,51 @@ export function preload(this: Phaser.Scene) {
 }
 
 export function setUpAnimations(this: Phaser.Scene) {
-    // this.anims.create({
-    //     key: 'player_idle',
-    //     frames: this.anims.generateFrameNames(
-    //         'platformercharacters_Player',
-    //         { frames: [0] }
-    //     ),
-    //     repeat: 0,
-    //     frameRate: 1
-    // });
+    this.anims.create({
+        key: 'explosion',
+        frames: this.anims.generateFrameNames(
+            'allSprites_default',
+            {
+                prefix: 'explosion',
+                start: 1,
+                end: 5,
+
+            },
+        ),
+        repeat: 0,
+        frameRate: 10,
+    });
+}
+
+export function setUpPools(this: MainScene) {
+    this.iconPool = this.add.group({
+        classType: ItemIcon,
+        runChildUpdate: false,
+        name: 'pool-item-icon',
+        createCallback: function (this: Group, entity: ItemIcon) {
+            entity.setName(`${this.name}-${this.getLength()}`);
+            console.log(`${this.name}: ${this.getLength()} Created`);
+        },
+        removeCallback: function (this: Group, entity: ItemIcon) {
+            // place holder
+            console.log(`${this.name}: Removed`);
+            // debugger; // uncomment to debug accidental destroys instead of .setActive(false).setVisible(false)
+        }
+    });
+    this.explosionPool = this.add.group({
+        classType: Explosion,
+        runChildUpdate: false,
+        name: 'pool-effect-explosion',
+        createCallback: function (this: Group, entity: ItemIcon) {
+            entity.setName(`${this.name}-${this.getLength()}`);
+            console.log(`${this.name}: ${this.getLength()} Created`);
+        },
+        removeCallback: function (this: Group, entity: ItemIcon) {
+            // place holder
+            console.log(`${this.name}: Removed`);
+            // debugger; // uncomment to debug accidental destroys instead of .setActive(false).setVisible(false)
+        }
+    });
 }
 
 export function setUpAudio(this: MainScene) {

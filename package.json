@@ -20,10 +20,12 @@
   },
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@flyover/box2d": "^1.0.1"
+    "@flyover/box2d": "^1.0.1",
+    "js-yaml": "^3.13.1"
   },
   "devDependencies": {
     "@types/debug": "^4.1.5",
+    "@types/js-yaml": "^3.12.3",
     "@typescript-eslint/eslint-plugin": "^2.18.0",
     "@typescript-eslint/parser": "^2.18.0",
     "copy-webpack-plugin": "^5.1.1",
@@ -32,6 +34,7 @@
     "expose-loader": "^0.7.5",
     "json-loader": "^0.5.7",
     "phaser": "^3.21.0",
+    "raw-loader": "^4.0.0",
     "ts-loader": "^6.2.1",
     "typescript": "^3.8.3",
     "webpack": "^4.41.5",

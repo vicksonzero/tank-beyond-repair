@@ -1,0 +1,41 @@
+.sprite-Barrel {
+    width: 32px;
+    height: 32px;
+    background-position: -5px -5px;
+}
+
+.sprite-Battery_Full {
+    width: 32px;
+    height: 32px;
+    background-position: -47px -5px;
+}
+
+.sprite-Battery_Half {
+    width: 32px;
+    height: 32px;
+    background-position: -5px -47px;
+}
+
+.sprite-Battery_Low {
+    width: 32px;
+    height: 32px;
+    background-position: -47px -47px;
+}
+
+.sprite-Gear {
+    width: 32px;
+    height: 32px;
+    background-position: -89px -5px;
+}
+
+.sprite-I-Beam {
+    width: 32px;
+    height: 32px;
+    background-position: -89px -47px;
+}
+
+.sprite-Iron_Plating {
+    width: 32px;
+    height: 32px;
+    background-position: -5px -89px;
+}

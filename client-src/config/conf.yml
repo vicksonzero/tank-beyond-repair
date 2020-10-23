@@ -1,0 +1,165 @@
+config:
+  controls:
+    swipeThumbSize: 30
+    minSwipeDist: 50
+    directionSnaps: 4
+
+    # allowPickUpItems: true
+    # allowDropItems: true
+    # allowHandFeedItemsIntoTanks: true
+
+    pickUpItemsByContact: false
+    prioritizeCompatibleItemStack: true
+
+    allowMultipleItemsInHand: true
+    allowMultipleItemTypesInHand: false
+  itemSpawnChance:
+    steel: 4
+    barrel: 2
+    armor: 2
+    battery: 2
+  items:
+    battery:
+      chargeFull: 100
+      chargeHalf: 50
+      chargeLow: 25
+  partRequirements:
+    chassis:
+      - steel: 1
+      - steel: 5
+      - steel: 20
+      - steel: 40
+    cannon:
+      - barrel: 1
+      - barrel: 5
+      - barrel: 15
+    armor:
+      - armor: 5
+      - armor: 15
+      - armor: 25
+    motor:
+      - gear: 0
+      - gear: 3
+      - gear: 10
+      - gear: 20
+  parts:
+    chassis:
+      - stat:
+          maxHP: 100
+          movementSpeed: 1
+          maxBattery: 100
+        graphics:
+          sprite: chassis_1
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+      - stat:
+          maxHP: 200
+          movementSpeed: 1
+          maxBattery: 150
+        graphics:
+          sprite: chassis_2
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+      - stat:
+          maxHP: 320
+          movementSpeed: 0.8
+          maxBattery: 180
+        graphics:
+          sprite: chassis_3
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+      - stat:
+          maxHP: 450
+          movementSpeed: 0.8
+          maxBattery: 240
+        graphics:
+          sprite: chassis_4
+          scale: [1, 1]
+        mountPoints:
+          - type: cannon
+            offset: [-4, 0]
+    cannon:
+      - stat:
+          damage: 10
+          attackInterval: 1500
+          aimSpeed: 0.1 # rad/16ms
+          range: 200
+        graphics:
+          sprite: cannon_1
+          scale: [1, 1]
+      - stat:
+          damage: 10
+          attackInterval: 1000
+          aimSpeed: 0.1 # rad/16ms
+          range: 250
+        graphics:
+          sprite: cannon_2
+          scale: [1, 1]
+      - stat:
+          damage: 13
+          attackInterval: 700
+          aimSpeed: 0.1 # rad/16ms
+          range: 330
+        graphics:
+          sprite: cannon_3
+          scale: [1, 1]
+    armor:
+      - stat:
+          dmgMultiplier: -0.2
+        graphics:
+          sprite: armor_1
+          scale: [1, 1]
+      - stat:
+          dmgMultiplier: -0.3
+        graphics:
+          sprite: armor_2
+          scale: [1, 1]
+      - stat:
+          dmgMultiplier: -0.4
+        graphics:
+          sprite: armor_3
+          scale: [1, 1]
+    motor:
+      - stat:
+          movementSpeed: 1
+        graphics:
+      - stat:
+          movementSpeed: 1.2
+        graphics:
+      - stat:
+          movementSpeed: 1.5
+        graphics:
+    gun: 
+      - stat: {}
+    missile: 
+      - stat: {}
+    rocket: 
+      - stat: {}
+  credits:
+    - title: Programming
+      names:
+        - Dickson Chui
+        - William Chong
+        - Sunday Ku
+    - title: Graphics
+      names:
+        - Kenney.nl (Once again!)
+    - title: Sound
+      names:
+        - 'Music: Eric Skiff - Song Name - Resistor Anthems - Available at http://EricSkiff.com/music (CC-BY 4.0)'
+        - https://freesound.org/people/LittleRobotSoundFactory/packs/16681/ (CC-BY 3.0)
+        - https://freesound.org/people/Raclure/sounds/458867/ (CC0, but did not make it into the final game...)
+    - title: Testers & Community
+      names:
+        - names here
+
+
+
+
+
