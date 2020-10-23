@@ -21,7 +21,7 @@ import { Team } from '../models/Team';
 import { UpgradeObject } from '../models/Upgrade';
 import { IBodyUserData, IFixtureUserData, PhysicsSystem } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
-import { DistanceMatrix } from '../utils/DistanceMatrix';
+import { DistanceMatrixSystem } from '../DistanceMatrixSystem';
 // import { GameObjects } from 'phaser';
 import { capitalize, lerpRadians } from '../utils/utils';
 
@@ -88,7 +88,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     frameSize = PHYSICS_FRAME_SIZE; // ms
     lastUpdate = -1;
-    distanceMatrix: DistanceMatrix;
+    distanceMatrixSystem: DistanceMatrixSystem;
 
     get mainCamera() { return this.sys.cameras.main; }
 
@@ -113,7 +113,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.fixedElapsedTime = this.time.now;
         this.frameID = 0;
         this.getPhysicsSystem().init(this as b2ContactListener);
-        this.distanceMatrix = new DistanceMatrix();
+        this.distanceMatrixSystem = new DistanceMatrixSystem();
         this.isGameOver = false;
         this.bg = this.add.tileSprite(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'allSprites_default', 'tileGrass1');
         this.bg.setOrigin(0, 0);
@@ -300,7 +300,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             timeStep,
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
         );
-        this.distanceMatrix.init([this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items]);
+        this.distanceMatrixSystem.init([this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items]);
         this.updatePlayers();
         this.updateAi();
 
@@ -718,7 +718,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         gameObject.on('destroy', () => {
             list.splice(list.indexOf(gameObject), 1);
             delete this.instancesByID[gameObject.uniqueID];
-            this.distanceMatrix.removeTransform(gameObject);
+            this.distanceMatrixSystem.removeTransform(gameObject);
         });
     }
 
@@ -787,7 +787,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             let closestItemDistance = Infinity;
             let closestItem: Item | null = null;
 
-            this.distanceMatrix.distanceMatrix[tank.uniqueID].forEach((distance, entityID) => {
+            this.distanceMatrixSystem.distanceMatrix[tank.uniqueID].forEach((distance, entityID) => {
                 if (entityID === tank.uniqueID) { return; }
                 const entity = this.instancesByID[entityID];
                 if (entity == null) { return; }

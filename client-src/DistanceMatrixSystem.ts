@@ -2,7 +2,7 @@ import { GameObjects } from "phaser";
 
 export type TransformWithUniqueID = GameObjects.Components.Transform & { uniqueID: number };
 
-export class DistanceMatrix {
+export class DistanceMatrixSystem {
 
     distanceMatrix: number[][] = [];
     constructor() {
