@@ -1,11 +1,12 @@
+import { EventQueue, InputAction } from './../models/EventQueue';
 import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, b2ParticleBodyContact, b2ParticleContact, b2ParticleSystem, b2Shape } from '@flyover/box2d';
 import * as Debug from 'debug';
 import "phaser";
 import { GameObjects } from 'phaser';
-import { 
-    setUpAnimations as _setUpAnimations, 
-    setUpAudio as _setUpAudio, 
-    setUpPools as _setUpPools 
+import {
+    setUpAnimations as _setUpAnimations,
+    setUpAudio as _setUpAudio,
+    setUpPools as _setUpPools
 } from '../assets';
 import { config, ItemType } from '../config/config';
 import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_CHASE_ITEM_RANGE, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
@@ -24,6 +25,7 @@ import { HpBar } from '../ui/HpBar';
 import { DistanceMatrixSystem } from '../DistanceMatrixSystem';
 // import { GameObjects } from 'phaser';
 import { capitalize, lerpRadians } from '../utils/utils';
+import { PlayerInput } from '../models/PlayerInput';
 
 
 type BaseSound = Phaser.Sound.BaseSound;
@@ -43,10 +45,12 @@ const log = Debug('tank-beyond-repair:MainScene:log');
 
 export type Controls = { up: Key, down: Key, left: Key, right: Key, action: Key };
 
+
 export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     controlsList: Controls[];
     cheats: { spawnUpgrades: Key };
+    eventQueue: EventQueue;
 
     isGameOver: boolean;
     spawnTimer: Phaser.Time.TimerEvent;
@@ -56,6 +60,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     fixedTime: Phaser.Time.Clock;
     fixedElapsedTime: number;
 
+    playerInputs: PlayerInput[];
     backgroundUILayer: Container;
     factoryLayer: Container;
     itemLayer: Container;
@@ -112,6 +117,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.fixedTime = new Phaser.Time.Clock(this);
         this.fixedElapsedTime = this.time.now;
         this.frameID = 0;
+        this.eventQueue = new EventQueue();
+        this.playerInputs = [...new Array(2)].map(_ => new PlayerInput());
         this.getPhysicsSystem().init(this as b2ContactListener);
         this.distanceMatrixSystem = new DistanceMatrixSystem();
         this.isGameOver = false;
@@ -301,15 +308,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
         );
         this.distanceMatrixSystem.init([this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items]);
-        this.updatePlayers();
+        this.updatePlayerInput(this.frameID);
+        this.updatePlayers(this.frameID);
         this.updateAi();
+        this.updateCheats(this.frameID);
+        this.updateBullets(this.frameID);
 
-        const updateBullet = (bullet: Bullet) => {
-            if (bullet.isOutOfRange()) {
-                this.removeBullet(bullet);
-            }
-        };
-        this.bullets.forEach((bullet) => updateBullet(bullet));
         this.fixedTime.update(fixedTime, frameSize);
         // verbose(`fixedUpdate end (frame-${this.frameID} ${this.fixedElapsedTime}ms ${this.fixedTime.now}ms)`);
         this.lateUpdate(fixedTime, frameSize);
@@ -341,16 +345,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 action: this.input.keyboard.addKey(KeyCodes.FORWARD_SLASH),
             }
         ];
-        this.controlsList[0].action.on('down', (evt: any) => {
-            this.bluePlayer.onActionPressed(this.sfx_point, this.sfx_open);
-        });
-        this.controlsList[1].action.on('down', (evt: any) => {
-            this.redPlayer.onActionPressed(this.sfx_point, this.sfx_open);
-        });
-        this.cheats.spawnUpgrades.on('down', (evt: any) => {
-            const upgrades = UpgradeObject.getRandomPartFromPool(10);
-            this.spawnItem(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, upgrades, true);
-        });
+        this.bindInput();
     }
 
     setUpGUI() {
@@ -722,17 +717,83 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         });
     }
 
-    updatePlayers() {
-        const updatePlayer = (player: Player, controlsList: Controls) => {
+    bindInput() {
+        (this.controlsList[0].up
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'up', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'up', value: 'up' }) })
+        );
+        (this.controlsList[0].down
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'down', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'down', value: 'up' }) })
+        );
+        (this.controlsList[0].left
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'left', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'left', value: 'up' }) })
+        );
+        (this.controlsList[0].right
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'right', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'right', value: 'up' }) })
+        );
+        (this.controlsList[0].action
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'action', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 0, key: 'action', value: 'up' }) })
+        );
+
+        (this.controlsList[1].up
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'up', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'up', value: 'up' }) })
+        );
+        (this.controlsList[1].down
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'down', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'down', value: 'up' }) })
+        );
+        (this.controlsList[1].left
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'left', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'left', value: 'up' }) })
+        );
+        (this.controlsList[1].right
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'right', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'right', value: 'up' }) })
+        );
+        (this.controlsList[1].action
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'action', value: 'down' }) })
+            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', who: 1, key: 'action', value: 'up' }) })
+        );
+
+        this.cheats.spawnUpgrades
+            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', key: 'cheatSpawnUpgrades' }) })
+            ;
+        // this.controlsList[0].action.on('down', (evt: any) => {
+        //     this.bluePlayer.onActionPressed(this.sfx_point, this.sfx_open);
+        // });
+        // this.controlsList[1].action.on('down', (evt: any) => {
+        //     this.redPlayer.onActionPressed(this.sfx_point, this.sfx_open);
+        // });
+        // this.cheats.spawnUpgrades.on('down', (evt: any) => {
+        //     const upgrades = UpgradeObject.getRandomPartFromPool(10);
+        //     this.spawnItem(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, upgrades, true);
+        // });
+    }
+
+    updatePlayerInput(frameID: number) {
+        const events: InputAction[] = this.eventQueue.getEventsOfFrame(frameID, 'input') as InputAction[];
+        // if (events.length) console.log(frameID, JSON.stringify(events));
+        for (const event of events) {
+            this.playerInputs[event.who][event.key] = event.value === 'down';
+        }
+    }
+
+    updatePlayers(frameID: number) {
+        const updatePlayer = (player: Player, controlsList: PlayerInput) => {
             let xx = 0;
             let yy = 0;
 
             player.debugText.setText(`${player.x.toFixed(2)}, ${player.y.toFixed(2)}`);
 
-            if (controlsList.up.isDown) { yy -= PLAYER_MOVE_SPEED; }
-            if (controlsList.down.isDown) { yy += PLAYER_MOVE_SPEED; }
-            if (controlsList.left.isDown) { xx -= PLAYER_MOVE_SPEED; }
-            if (controlsList.right.isDown) { xx += PLAYER_MOVE_SPEED; }
+            if (controlsList.up) { yy -= PLAYER_MOVE_SPEED; }
+            if (controlsList.down) { yy += PLAYER_MOVE_SPEED; }
+            if (controlsList.left) { xx -= PLAYER_MOVE_SPEED; }
+            if (controlsList.right) { xx += PLAYER_MOVE_SPEED; }
 
             const quarterWidth = (WORLD_WIDTH - 2 * BASE_LINE_WIDTH) / 4;
 
@@ -771,8 +832,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             }
         };
 
-        updatePlayer(this.bluePlayer, this.controlsList[0]);
-        updatePlayer(this.redPlayer, this.controlsList[1]);
+        updatePlayer(this.bluePlayer, this.playerInputs[0]);
+        updatePlayer(this.redPlayer, this.playerInputs[1]);
     }
 
     updateAi() {
@@ -904,6 +965,26 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
                 this.setGameOver(ai.team);
             }
         });
+    }
+
+    updateCheats(frameID: number) {
+        const inputEvents = this.eventQueue.getEventsOfFrame(frameID, 'input');
+
+        for (const event of inputEvents) {
+            if (event.key === 'cheatSpawnUpgrades') {
+                const upgrades = UpgradeObject.getRandomPartFromPool(10);
+                this.spawnItem(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, upgrades, true);
+            }
+        }
+    }
+
+    updateBullets(frameID: number) {
+        const updateBullet = (bullet: Bullet) => {
+            if (bullet.isOutOfRange()) {
+                this.removeBullet(bullet);
+            }
+        };
+        this.bullets.forEach((bullet) => updateBullet(bullet));
     }
 
     fireBullet(tank: Tank, target: Tank | Player, distance: number) {
