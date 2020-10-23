@@ -2,7 +2,11 @@ import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, 
 import * as Debug from 'debug';
 import "phaser";
 import { GameObjects } from 'phaser';
-import { preload as _preload, setUpAnimations, setUpAudio, setUpPools } from '../assets';
+import { 
+    setUpAnimations as _setUpAnimations, 
+    setUpAudio as _setUpAudio, 
+    setUpPools as _setUpPools 
+} from '../assets';
 import { config, ItemType } from '../config/config';
 import { BASE_LINE_WIDTH, BULLET_SPEED, DEBUG_DISABLE_SPAWNING, DEBUG_PHYSICS, PHYSICS_FRAME_SIZE, PHYSICS_MAX_FRAME_CATCHUP, PIXEL_TO_METER, PLAYER_MOVE_SPEED, SPAWN_DELAY, SPAWN_INTERVAL, TANK_CHASE_ITEM_RANGE, TANK_SPEED, WORLD_HEIGHT, WORLD_WIDTH } from '../constants';
 import { Bullet } from '../gameObjects/Bullet';
@@ -96,14 +100,14 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     preload() {
         log('preload');
-        _preload.call(this);
+        // _preload.call(this);
     }
 
     create(): void {
         (window as any).aaa = this.time.now;
-        setUpPools.call(this);
-        setUpAnimations.call(this);
-        setUpAudio.call(this);
+        _setUpPools.call(this);
+        _setUpAnimations.call(this);
+        _setUpAudio.call(this);
         log('create');
         this.fixedTime = new Phaser.Time.Clock(this);
         this.fixedElapsedTime = this.time.now;

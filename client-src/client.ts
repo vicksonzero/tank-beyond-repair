@@ -3,6 +3,7 @@ import "phaser";
 import { WORLD_HEIGHT, WORLD_WIDTH } from './constants';
 import { PhysicsSystem } from './PhysicsSystem';
 import { MainScene } from "./scenes/MainScene";
+import { LoadingScene } from "./scenes/LoadingScene";
 import './utils/window';
 
 
@@ -19,7 +20,10 @@ const phaserConfig: Phaser.Types.Core.GameConfig = {
     disableContextMenu: true,
     type: Phaser.AUTO,
     parent: "game",
-    scene: MainScene,
+    scene: [
+        LoadingScene,
+        MainScene,
+    ],
     zoom: 1,
     backgroundColor: 0xDDDDDD,
     // physics: {

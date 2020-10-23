@@ -2,10 +2,19 @@ import { AUDIO_START_MUTED } from "./constants";
 import { Explosion } from "./gameObjects/Explosion";
 import { ItemIcon } from "./gameObjects/ItemIcon";
 import { MainScene } from "./scenes/MainScene";
+import * as Debug from 'debug';
 
 type Group = Phaser.GameObjects.Group;
 
+
+const verbose = Debug('tank-beyond-repair:assets:verbose');
+const log = Debug('tank-beyond-repair:assets:log');
+// const warn = Debug('tank-beyond-repair:assets:warn');
+// warn.log = console.warn.bind(console);
+
+
 export function preload(this: Phaser.Scene) {
+    log('preload');
     // this.load.json('sheetMap', url);
 
     this.load.atlasXML('allSprites_default',
@@ -35,6 +44,7 @@ export function preload(this: Phaser.Scene) {
 }
 
 export function setUpAnimations(this: Phaser.Scene) {
+    log('setUpAnimations');
     this.anims.create({
         key: 'explosion',
         frames: this.anims.generateFrameNames(
@@ -52,17 +62,18 @@ export function setUpAnimations(this: Phaser.Scene) {
 }
 
 export function setUpPools(this: MainScene) {
+    log('setUpPools');
     this.iconPool = this.add.group({
         classType: ItemIcon,
         runChildUpdate: false,
         name: 'pool-item-icon',
         createCallback: function (this: Group, entity: ItemIcon) {
             entity.setName(`${this.name}-${this.getLength()}`);
-            console.log(`${this.name}: ${this.getLength()} Created`);
+            // console.log(`${this.name}: ${this.getLength()} Created`);
         },
         removeCallback: function (this: Group, entity: ItemIcon) {
             // place holder
-            console.log(`${this.name}: Removed`);
+            // console.log(`${this.name}: Removed`);
             // debugger; // uncomment to debug accidental destroys instead of .setActive(false).setVisible(false)
         }
     });
@@ -72,17 +83,18 @@ export function setUpPools(this: MainScene) {
         name: 'pool-effect-explosion',
         createCallback: function (this: Group, entity: ItemIcon) {
             entity.setName(`${this.name}-${this.getLength()}`);
-            console.log(`${this.name}: ${this.getLength()} Created`);
+            // console.log(`${this.name}: ${this.getLength()} Created`);
         },
         removeCallback: function (this: Group, entity: ItemIcon) {
             // place holder
-            console.log(`${this.name}: Removed`);
+            // console.log(`${this.name}: Removed`);
             // debugger; // uncomment to debug accidental destroys instead of .setActive(false).setVisible(false)
         }
     });
 }
 
 export function setUpAudio(this: MainScene) {
+    log('setUpAudio');
     this.sfx_bgm = this.sound.add('bgm', {
         mute: false,
         volume: 0.7,
