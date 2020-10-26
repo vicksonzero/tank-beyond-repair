@@ -52,7 +52,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     controlsList: Controls[];
     cheats: { spawnUpgrades: Key };
     eventQueue: EventQueue;
-    positionHistory: { frameID: number, list: number[][] }[];
+    positionHistory: { frameID: number, type: 'create' | 'destroy' | 'pos', list: number[][] }[];
 
     isGameOver: boolean;
     spawnTimer: Phaser.Time.TimerEvent;
@@ -194,6 +194,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
             const list = team === Team.BLUE ? this.blueAi : this.redAi;
             this.addToList(ai, list);
+            const res = {
+                frameID: this.frameID,
+                type: 'create' as 'create',
+                list: [[ai.uniqueID, ai.x, ai.y]],
+            };
+            this.positionHistory.push(res);
             return ai;
         };
 
@@ -334,12 +340,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
         );
         this.distanceMatrixSystem.init([this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items]);
-        this.updatePlayerInput(this.frameID);
         this.updatePlayers(this.frameID);
         this.updateAi();
         this.updateCheats(this.frameID);
         this.updateBullets(this.frameID);
         this.updateEntityPositions(this.frameID);
+        this.updatePlayerInput(this.frameID);
 
         this.fixedTime.update(fixedTime, frameSize);
         this.fixedTweens.update(fixedTime, frameSize);
@@ -484,6 +490,14 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         const { upgrades } = tank;
         this.effectsLayer.add((this.explosionPool.get(tank.x, tank.y) as Explosion).playExplosion());
         this.sfx_hit.play();
+
+        const res = {
+            frameID: this.frameID,
+            type: 'destroy' as 'destroy',
+            list: [[tank.uniqueID, tank.x, tank.y]],
+        };
+        this.positionHistory.push(res);
+
         tank.destroy();
 
         const randomUpgrade = UpgradeObject.getRandomPartFromPool(1);
@@ -828,6 +842,15 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             this.redPlayer.y
         );
         for (const { who, key, value } of events) {
+            switch (key) {
+                case 'action':
+                    if (value === 'down') {
+                        const player = who === 0 ? this.bluePlayer : this.redPlayer;
+                        player.onActionPressed(this.sfx_point, this.sfx_open);
+                    }
+                    break;
+                default:
+            }
             this.playerInputs[who][key] = value === 'down';
         }
     }
@@ -1043,6 +1066,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         });
         const res = {
             frameID,
+            type: 'pos' as 'pos',
             list,
         };
         this.positionHistory.push(res);

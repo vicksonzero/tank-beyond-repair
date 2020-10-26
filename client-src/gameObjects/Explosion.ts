@@ -33,9 +33,16 @@ export class Explosion extends GameObjects.Container {
     playExplosion(): this {
         this.setActive(true).setVisible(true);
         this.itemSprite.on('animationcomplete', () => {
-            this.setActive(false).setVisible(false);
+            this.setVisible(false);
         });
         this.itemSprite.play('explosion');
+        
+        this.scene.fixedTime.addEvent({
+            delay: 1000,
+            callback: ()=>{
+                this.setActive(false);
+            },
+        });
 
         return this;
     }
