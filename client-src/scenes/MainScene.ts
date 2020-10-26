@@ -22,7 +22,7 @@ import { Team } from '../models/Team';
 import { UpgradeObject } from '../models/Upgrade';
 import { IBodyUserData, IFixtureUserData, PhysicsSystem } from '../PhysicsSystem';
 import { HpBar } from '../ui/HpBar';
-import { DistanceMatrixSystem } from '../DistanceMatrixSystem';
+import { DistanceMatrixSystem, TransformWithUniqueID } from '../DistanceMatrixSystem';
 // import { GameObjects } from 'phaser';
 import { capitalize, lerpRadians } from '../utils/utils';
 import { PlayerInput } from '../models/PlayerInput';
@@ -51,6 +51,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     controlsList: Controls[];
     cheats: { spawnUpgrades: Key };
     eventQueue: EventQueue;
+    positionHistory: { frameID: number, list: number[][] }[];
 
     isGameOver: boolean;
     spawnTimer: Phaser.Time.TimerEvent;
@@ -117,8 +118,17 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.fixedTime = new Phaser.Time.Clock(this);
         this.fixedElapsedTime = this.time.now;
         this.frameID = 0;
+        this.positionHistory = [];
+        (window as any).pos = () => this.positionHistory;
         (window as any).eq = this.eventQueue = new EventQueue();
         this.eventQueue.addActionAt(this.frameID + 1, { type: 'rng', isSync: true, value: 'aaa' });
+
+        (window as any).save = () => {
+            const result: any = {};
+            result.input = [...this.eventQueue.queue];
+            result.replay = [...this.positionHistory];
+            console.log(JSON.stringify(result));
+        };
 
         Phaser.Math.RND.init(['aaa']);
 
@@ -165,6 +175,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.redPlayer.initPhysics(() => { });
 
         const createAi = (team: Team, x: number, y: number) => {
+            console.log(`ddd createAi(${this.frameID}, ${x}, ${y})`);
+
             const ai = new Tank(this, team);
             this.tankLayer.add(ai);
             const hpBar = new HpBar(this, 0, -30, 30, 4, 2);
@@ -323,6 +335,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.updateAi();
         this.updateCheats(this.frameID);
         this.updateBullets(this.frameID);
+        this.updateEntityPositions(this.frameID);
 
         this.fixedTime.update(fixedTime, frameSize);
         // verbose(`fixedUpdate end (frame-${this.frameID} ${this.fixedElapsedTime}ms ${this.fixedTime.now}ms)`);
@@ -1011,6 +1024,20 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             }
         };
         this.bullets.forEach((bullet) => updateBullet(bullet));
+    }
+
+    updateEntityPositions(frameID: number) {
+        if (frameID % 100 !== 0) return;
+        const list = [this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items].map((entity: TransformWithUniqueID) => {
+            return [entity.uniqueID, Math.floor(entity.x), Math.floor(entity.y)];
+        });
+        const res = {
+            frameID,
+            list,
+        };
+        this.positionHistory.push(res);
+        console.log(frameID, JSON.stringify(list));
+
     }
 
     fireBullet(tank: Tank, target: Tank | Player, distance: number) {
