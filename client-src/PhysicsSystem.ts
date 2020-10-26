@@ -114,7 +114,7 @@ export class PhysicsSystem {
     }
 
     private destroyScheduledBodies(debugString: string) {
-        const len = this.scheduledCreateBodyList.length;
+        const len = this.scheduledDestroyBodyList.length;
         if (len > 0) {
             // log(`destroyScheduledBodies(${debugString}): ${len} callbacks`);
         }

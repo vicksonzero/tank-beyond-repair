@@ -1,5 +1,5 @@
-const { default: txt } = require('../config/saveFile.txt');
-import { CheatInputAction, EventQueue, InputAction, RNGAction } from './../models/EventQueue';
+import { PositionHistoryItems, ReplayManager } from './../config/ReplayManager';
+import { CheatInputAction, EventQueue, IAction, InputAction, RNGAction } from './../models/EventQueue';
 import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, b2ParticleBodyContact, b2ParticleContact, b2ParticleSystem, b2Shape } from '@flyover/box2d';
 import * as Debug from 'debug';
 import "phaser";
@@ -52,7 +52,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     controlsList: Controls[];
     cheats: { spawnUpgrades: Key };
     eventQueue: EventQueue;
-    positionHistory: { frameID: number, type: 'create' | 'destroy' | 'pos', list: number[][] }[];
+    positionHistory: PositionHistoryItems[];
+    replayManager: ReplayManager;
 
     isGameOver: boolean;
     spawnTimer: Phaser.Time.TimerEvent;
@@ -117,6 +118,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         _setUpAnimations.call(this);
         _setUpAudio.call(this);
         log('create');
+        this.replayManager = (window as any).replay;
         this.fixedTime = new Phaser.Time.Clock(this);
         this.fixedElapsedTime = this.fixedTime.now;
         this.fixedTweens = new Phaser.Tweens.TweenManager(this);
@@ -134,7 +136,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         };
 
         Phaser.Math.RND.init(['aaa']);
-        if (txt.length) this.eventQueue.loadFromDataStr(txt);
+        if (this.replayManager.isReplay) this.eventQueue.loadFromDataStr(this.replayManager.replayStr);
 
         this.playerInputs = [...new Array(2)].map(_ => new PlayerInput());
         this.getPhysicsSystem().init(this as b2ContactListener);
@@ -178,7 +180,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.redPlayer.initPhysics(() => { });
 
         const createAi = (team: Team, x: number, y: number) => {
-            console.log(`ddd createAi(${this.frameID}, ${x}, ${y})`);
+            // console.log(`ddd createAi(${this.frameID}, ${x}, ${y})`);
 
             const ai = new Tank(this, team);
             this.tankLayer.add(ai);
@@ -741,17 +743,26 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             .setUpgrades(upgrades)
             .initDeathTimer();
 
+
+        const angle = Phaser.Math.RND.angle();
+        const dir = new Vector2(
+            Math.cos(angle) * 4,
+            Math.sin(angle) * 4
+        );
+        dir.scale(0.02 * 3 * PIXEL_TO_METER);
+
         box.initPhysics(() => {
             if (isScatter) {
-                const angle = Phaser.Math.RND.angle();
-                const dir = new Vector2(
-                    Math.cos(angle) * 4,
-                    Math.sin(angle) * 4
-                );
-                dir.scale(0.02 * 3 * PIXEL_TO_METER);
                 box.b2Body.SetLinearVelocity(dir);
             }
         });
+
+        const res = {
+            frameID: this.frameID,
+            type: 'create-item' as 'create-item',
+            list: [[box.uniqueID, box.x, box.y, dir.x, dir.y]],
+        };
+        this.positionHistory.push(res);
 
         this.addToList(box, this.items);
         return box;
@@ -769,50 +780,50 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     bindInput() {
         (this.controlsList[0].up
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'up', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'up', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 0, 'up', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 0, 'up', 'up'); })
         );
         (this.controlsList[0].down
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'down', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'down', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 0, 'down', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 0, 'down', 'up'); })
         );
         (this.controlsList[0].left
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'left', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'left', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 0, 'left', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 0, 'left', 'up'); })
         );
         (this.controlsList[0].right
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'right', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'right', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 0, 'right', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 0, 'right', 'up'); })
         );
         (this.controlsList[0].action
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'action', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 0, key: 'action', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 0, 'action', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 0, 'action', 'up'); })
         );
 
         (this.controlsList[1].up
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'up', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'up', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 1, 'up', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 1, 'up', 'up'); })
         );
         (this.controlsList[1].down
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'down', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'down', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 1, 'down', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 1, 'down', 'up'); })
         );
         (this.controlsList[1].left
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'left', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'left', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 1, 'left', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 1, 'left', 'up'); })
         );
         (this.controlsList[1].right
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'right', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'right', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 1, 'right', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 1, 'right', 'up'); })
         );
         (this.controlsList[1].action
-            .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'action', value: 'down' }) })
-            .on('up', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'input', isSync: true, who: 1, key: 'action', value: 'up' }) })
+            .on('down', (_: any) => { this.onCursorPressed('input', 1, 'action', 'down'); })
+            .on('up', (_: any) => { this.onCursorPressed('input', 1, 'action', 'up'); })
         );
 
-        this.cheats.spawnUpgrades
+        (this.cheats.spawnUpgrades
             .on('down', (_: any) => { this.eventQueue.addActionAt(this.frameID + 1, { type: 'cheat-input', isSync: true, key: 'cheatSpawnUpgrades' }) })
-            ;
+        );
         // this.controlsList[0].action.on('down', (evt: any) => {
         //     this.bluePlayer.onActionPressed(this.sfx_point, this.sfx_open);
         // });
@@ -825,9 +836,15 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         // });
     }
 
+    onCursorPressed(type: InputAction['type'], who: number, key: InputAction['key'], value: InputAction['value']) {
+        if (this.replayManager.isReplay) return;
+
+        this.eventQueue.addActionAt(this.frameID + 1, { type, isSync: true, who, key, value });
+    }
+
     updateRNG(frameID: number) {
         const events = this.eventQueue.getEventsOfFrame(frameID, 'rng') as RNGAction[];
-        if (events.length) console.log(frameID, JSON.stringify(events));
+        // if (events.length) console.log(frameID, JSON.stringify(events));
         for (const { value } of events) {
             Phaser.Math.RND.init(value);
         }
@@ -835,12 +852,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     updatePlayerInput(frameID: number) {
         const events = this.eventQueue.getEventsOfFrame(frameID, 'input') as InputAction[];
-        if (events.length) console.log(frameID, JSON.stringify(events),
-            this.bluePlayer.x,
-            this.bluePlayer.y,
-            this.redPlayer.x,
-            this.redPlayer.y
-        );
+        // if (events.length) console.log(frameID, JSON.stringify(events),
+        //     this.bluePlayer.x,
+        //     this.bluePlayer.y,
+        //     this.redPlayer.x,
+        //     this.redPlayer.y
+        // );
         for (const { who, key, value } of events) {
             switch (key) {
                 case 'action':
@@ -1061,8 +1078,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     updateEntityPositions(frameID: number) {
         if (frameID % 100 !== 0) return;
-        const list = [this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items].map((entity: TransformWithUniqueID) => {
-            return [entity.uniqueID, entity.x, entity.y];
+        const list = [this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items].map((entity: TransformWithUniqueID & { name: string }) => {
+            return [entity.uniqueID, entity.name, entity.x, entity.y];
         });
         const res = {
             frameID,
@@ -1070,8 +1087,10 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
             list,
         };
         this.positionHistory.push(res);
-        console.log(frameID, JSON.stringify(list));
-
+        // console.log(frameID, JSON.stringify(list));
+        if (frameID === 3000) {
+            (window as any).save();
+        }
     }
 
     fireBullet(tank: Tank, target: Tank | Player, distance: number) {

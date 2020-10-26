@@ -342,10 +342,10 @@ export class Tank extends Phaser.GameObjects.Container {
 
     setFiring({ x, y }: { x: number, y: number }) {
         this.barrelSprite.setRotation(Math.atan2(y, x) - Math.PI / 2 - this.rotation);
-        this.lastFired = Date.now();
+        this.lastFired = this.scene.fixedElapsedTime;
     }
     canFire() {
-        const time = Date.now();
+        const time = this.scene.fixedElapsedTime;
         return (this.lastFired + this._attr.attackInterval < time);
     }
     repair() {
