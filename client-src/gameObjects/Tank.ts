@@ -285,7 +285,7 @@ export class Tank extends Phaser.GameObjects.Container {
         upgradeGraphics.setX(fromPosition.x - (isLocalToEntity ? 0 : this.x));
         upgradeGraphics.setY(fromPosition.y - (isLocalToEntity ? 0 : this.y));
         upgradeGraphics.setScale(1.2);
-        this.scene.add.tween({
+        this.scene.fixedTweens.add({
             targets: upgradeGraphics,
             x: 0,
             y: 0,

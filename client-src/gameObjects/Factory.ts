@@ -120,7 +120,7 @@ export class Factory extends Phaser.GameObjects.Container {
         let upgrade = UpgradeObject.getRandomPartFromPool(5);
         this.scene.makeUpgradeGraphics(this.platform, upgrade);
         const a = new Tweens.TweenManager(this.scene);
-        this.scene.tweens.add({
+        this.scene.fixedTweens.add({
             targets: { x: 0 },
             x: 1,
             duration: 10000,
@@ -313,7 +313,7 @@ export class Factory extends Phaser.GameObjects.Container {
         upgradeGraphics.setX(fromPosition.x - (isLocalToEntity ? 0 : this.x));
         upgradeGraphics.setY(fromPosition.y - (isLocalToEntity ? 0 : this.y));
         upgradeGraphics.setScale(1.2);
-        this.scene.add.tween({
+        this.scene.fixedTweens.add({
             targets: upgradeGraphics,
             x: 0,
             y: 0,

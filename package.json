@@ -36,7 +36,7 @@
     "expose-loader": "^0.7.5",
     "json-loader": "^0.5.7",
     "phaser": "^3.21.0",
-    "raw-loader": "^4.0.0",
+    "raw-loader": "^4.0.2",
     "ts-loader": "^6.2.1",
     "typescript": "^3.8.3",
     "webpack": "^4.41.5",

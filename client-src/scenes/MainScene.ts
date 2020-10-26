@@ -1,3 +1,4 @@
+const { default: txt } = require('../config/saveFile.txt');
 import { CheatInputAction, EventQueue, InputAction, RNGAction } from './../models/EventQueue';
 import { b2Contact, b2ContactImpulse, b2ContactListener, b2Fixture, b2Manifold, b2ParticleBodyContact, b2ParticleContact, b2ParticleSystem, b2Shape } from '@flyover/box2d';
 import * as Debug from 'debug';
@@ -59,6 +60,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     frameID = 0;
     fixedTime: Phaser.Time.Clock;
+    fixedTweens: Phaser.Tweens.TweenManager;
     fixedElapsedTime: number;
 
     playerInputs: PlayerInput[];
@@ -116,7 +118,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         _setUpAudio.call(this);
         log('create');
         this.fixedTime = new Phaser.Time.Clock(this);
-        this.fixedElapsedTime = this.time.now;
+        this.fixedElapsedTime = this.fixedTime.now;
+        this.fixedTweens = new Phaser.Tweens.TweenManager(this);
         this.frameID = 0;
         this.positionHistory = [];
         (window as any).pos = () => this.positionHistory;
@@ -131,8 +134,8 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         };
 
         Phaser.Math.RND.init(['aaa']);
+        if (txt.length) this.eventQueue.loadFromDataStr(txt);
 
-        this.eventQueue.loadFromDataStr('[[1,[{"type":"rng","value":"aaa"}]],[390,[{"type":"input","who":0,"key":"up","value":"down"}]],[394,[{"type":"input","who":0,"key":"right","value":"down"},{"type":"input","who":0,"key":"up","value":"up"}]],[406,[{"type":"input","who":0,"key":"down","value":"down"}]],[451,[{"type":"input","who":0,"key":"down","value":"up"}]],[461,[{"type":"input","who":0,"key":"down","value":"down"}]],[466,[{"type":"input","who":0,"key":"down","value":"up"}]],[489,[{"type":"input","who":0,"key":"down","value":"down"}]],[499,[{"type":"input","who":0,"key":"down","value":"up"}]],[508,[{"type":"input","who":0,"key":"down","value":"down"}]],[513,[{"type":"input","who":0,"key":"down","value":"up"}]],[520,[{"type":"input","who":0,"key":"down","value":"down"}]],[533,[{"type":"input","who":0,"key":"down","value":"up"}]],[544,[{"type":"input","who":0,"key":"down","value":"down"}]],[555,[{"type":"input","who":0,"key":"down","value":"up"}]],[556,[{"type":"input","who":0,"key":"down","value":"down"}]],[564,[{"type":"input","who":0,"key":"down","value":"up"}]],[604,[{"type":"input","who":0,"key":"up","value":"down"}]],[615,[{"type":"input","who":0,"key":"up","value":"up"}]],[632,[{"type":"input","who":0,"key":"up","value":"down"}]],[642,[{"type":"input","who":0,"key":"up","value":"up"}]],[658,[{"type":"input","who":0,"key":"up","value":"down"}]],[660,[{"type":"input","who":0,"key":"up","value":"up"}]],[675,[{"type":"input","who":0,"key":"up","value":"down"}]],[680,[{"type":"input","who":0,"key":"up","value":"up"}]],[689,[{"type":"input","who":0,"key":"up","value":"down"}]],[693,[{"type":"input","who":0,"key":"up","value":"up"}]],[941,[{"type":"input","who":0,"key":"down","value":"down"}]],[963,[{"type":"input","who":0,"key":"down","value":"up"}]],[974,[{"type":"input","who":0,"key":"up","value":"down"}]],[996,[{"type":"input","who":0,"key":"up","value":"up"}]],[1001,[{"type":"input","who":0,"key":"right","value":"up"}]],[1008,[{"type":"input","who":0,"key":"down","value":"down"}]],[1009,[{"type":"input","who":0,"key":"right","value":"down"}]],[1041,[{"type":"input","who":0,"key":"down","value":"up"}]],[1061,[{"type":"input","who":0,"key":"right","value":"up"}]],[1066,[{"type":"input","who":0,"key":"up","value":"down"}]],[1080,[{"type":"input","who":0,"key":"up","value":"up"}]]]');
         this.playerInputs = [...new Array(2)].map(_ => new PlayerInput());
         this.getPhysicsSystem().init(this as b2ContactListener);
         this.distanceMatrixSystem = new DistanceMatrixSystem();
@@ -325,6 +328,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
         this.updateRNG(this.frameID);
         this.fixedTime.preUpdate(fixedTime, frameSize);
+        this.fixedTweens.preUpdate();
         this.getPhysicsSystem().update(
             timeStep,
             (DEBUG_PHYSICS ? this.physicsDebugLayer : undefined)
@@ -338,6 +342,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
         this.updateEntityPositions(this.frameID);
 
         this.fixedTime.update(fixedTime, frameSize);
+        this.fixedTweens.update(fixedTime, frameSize);
         // verbose(`fixedUpdate end (frame-${this.frameID} ${this.fixedElapsedTime}ms ${this.fixedTime.now}ms)`);
         this.lateUpdate(fixedTime, frameSize);
         // verbose(`fixedUpdate complete`);
@@ -816,7 +821,12 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
 
     updatePlayerInput(frameID: number) {
         const events = this.eventQueue.getEventsOfFrame(frameID, 'input') as InputAction[];
-        if (events.length) console.log(frameID, JSON.stringify(events));
+        if (events.length) console.log(frameID, JSON.stringify(events),
+            this.bluePlayer.x,
+            this.bluePlayer.y,
+            this.redPlayer.x,
+            this.redPlayer.y
+        );
         for (const { who, key, value } of events) {
             this.playerInputs[who][key] = value === 'down';
         }
@@ -1029,7 +1039,7 @@ export class MainScene extends Phaser.Scene implements b2ContactListener {
     updateEntityPositions(frameID: number) {
         if (frameID % 100 !== 0) return;
         const list = [this.bluePlayer, this.redPlayer, ...this.blueAi, ...this.redAi, ...this.items].map((entity: TransformWithUniqueID) => {
-            return [entity.uniqueID, Math.floor(entity.x), Math.floor(entity.y)];
+            return [entity.uniqueID, entity.x, entity.y];
         });
         const res = {
             frameID,

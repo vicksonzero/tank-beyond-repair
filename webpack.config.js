@@ -16,7 +16,7 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.yml$/i,
+                test: /\.(yml|txt)$/i,
                 loader: 'raw-loader',
             },
             { test: /\.ts$/, loader: 'ts-loader', exclude: '/node_modules/' },
